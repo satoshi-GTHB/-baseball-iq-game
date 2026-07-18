@@ -43,11 +43,24 @@ function updateLevel(){
   const c=$('#curriculum-status');if(c)c.textContent=`現在：Lv.${state.level} ${info.name}｜${info.school}`;
   const p=$('#promotion-status');if(p)p.textContent=promotionText();
 }
-function renderField(q){const layer=$('#runner-layer');layer.innerHTML='';RUNNERS[q.situation].forEach(base=>{const [x,y]=POS[base];const self=q.self===base;const el=document.createElement('div');el.className='runner'+(self?' self':'');el.style.left=x+'%';el.style.top=y+'%';el.innerHTML=`${self?'<span class="self-label">自分</span>':''}<i class="runner-helmet"></i><i class="runner-head"></i><i class="runner-arm"></i><i class="runner-body"></i><i class="runner-leg"></i>`;layer.appendChild(el)})}
-function currentQuestions(mode){
-  const exact=QUESTION_BANK[mode].filter(q=>q.difficulty===state.level);
-  return exact.length?exact:QUESTION_BANK[mode].filter(q=>q.difficulty<=state.level);
-}
+function runnerSvg(){return `
+<svg viewBox="0 0 86 94" aria-hidden="true">
+  <g transform="rotate(-7 43 47)">
+    <ellipse cx="43" cy="88" rx="26" ry="5" fill="#06284a" opacity=".18"/>
+    <path d="M28 17 Q43 3 60 17 L58 28 Q43 22 27 29Z" fill="#06284a" stroke="#fff" stroke-width="2"/>
+    <path d="M55 16 L72 23 Q62 28 54 25Z" fill="#06284a" stroke="#fff" stroke-width="2"/>
+    <circle cx="44" cy="31" r="13" fill="#f2bd93" stroke="#06284a" stroke-width="3"/>
+    <circle cx="40" cy="30" r="1.7" fill="#152338"/><circle cx="49" cy="30" r="1.7" fill="#152338"/>
+    <path d="M40 36 Q45 40 50 35" fill="none" stroke="#8b4e32" stroke-width="2" stroke-linecap="round"/>
+    <path d="M29 43 Q43 38 58 45 L57 66 Q43 73 28 64Z" fill="#06284a" stroke="#fff" stroke-width="3"/>
+    <path d="M34 46 L52 46" stroke="#dc2638" stroke-width="4"/><text x="43" y="58" text-anchor="middle" font-size="8" font-weight="900" fill="#fff">FUJICON</text>
+    <path d="M31 48 L17 61" stroke="#f2bd93" stroke-width="7" stroke-linecap="round"/><path d="M56 48 L72 38" stroke="#f2bd93" stroke-width="7" stroke-linecap="round"/>
+    <path d="M35 66 L22 83" stroke="#fff" stroke-width="9" stroke-linecap="round"/><path d="M51 66 L68 79" stroke="#fff" stroke-width="9" stroke-linecap="round"/>
+    <path d="M20 84 L8 85" stroke="#06284a" stroke-width="7" stroke-linecap="round"/><path d="M67 80 L77 86" stroke="#06284a" stroke-width="7" stroke-linecap="round"/>
+    <path d="M25 64 L59 64" stroke="#dc2638" stroke-width="3"/>
+  </g>
+</svg>`}
+function renderField(q){const layer=$('#runner-layer');layer.innerHTML='';RUNNERS[q.situation].forEach(base=>{const [x,y]=POS[base];const self=q.self===base;const el=document.createElement('div');el.className='runner'+(self?' self':'');el.style.left=x+'%';el.style.top=y+'%';el.innerHTML=`${self?'<span class="self-label">自分</span>':''}${runnerSvg()}`;layer.appendChild(el)})}
 function renderQuestion(){const q=state.questions[state.index];$('#mode-title').textContent=state.mode==='defense'?'守備編':'ランナー編';$('#question-count').textContent=`${state.index+1} / ${state.questions.length}`;$('#situation-tag').textContent=q.label;$('#role-tag').textContent=`Lv.${q.difficulty} ${LEVELS[q.difficulty-1].name}`;$('#question-text').textContent=q.q;$('#question-note').textContent=q.note;$('#field-caption').textContent=state.mode==='runner'?'「自分」の位置と他のランナーを確認しよう':'ランナーの配置を確認しよう';renderField(q);const box=$('#answers');box.innerHTML='';q.answers.forEach(a=>{const b=document.createElement('button');b.type='button';b.className='answer';b.textContent=a[0];b.addEventListener('click',()=>answer(a,q));box.appendChild(b)})}
 function start(mode){state.mode=mode;state.index=0;state.score=0;state.questions=currentQuestions(mode);renderQuestion();show('quiz')}
 function answer(a,q){const [label,grade,xp,explain]=a;state.xp+=xp;state.score+=xp;const key=String(q.difficulty);const stat=state.stats[key]||{attempts:0,points:0};stat.attempts+=1;stat.points+=xp;state.stats[key]=stat;localStorage.setItem('baseballIqXp',state.xp);localStorage.setItem('baseballIqMastery',JSON.stringify(state.stats));updateLevel();$('#judge').textContent=grade;$('#judge').className='judge '+(grade==='△'?'triangle':grade==='×'?'cross':'');$('#judge-title').textContent=grade==='○'?'最善の判断！':grade==='△'?'悪くない判断！':'もう一度考えよう';$('#feedback-text').textContent=explain;$('#gain').textContent=xp;show('feedback')}
