@@ -6,8 +6,8 @@
   <meta name="theme-color" content="#06284a">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta name="description" content="低学年向け野球IQ学習ゲーム">
-  <title>野球IQアカデミー Ver3.0</title>
-  <link rel="stylesheet" href="style.css?v=3.0.0">
+  <title>野球IQアカデミー Ver3.1</title>
+  <link rel="stylesheet" href="style.css?v=3.1.0">
 </head>
 <body>
   <main class="app">
@@ -15,9 +15,9 @@
     <section id="home-screen" class="screen active">
       <header class="home-header">
         <div class="level-card">
-          <strong>★ Lv.1</strong>
-          <span>見習い監督</span>
-          <small>XP <b data-xp>0</b> / 100</small>
+          <strong>★ Lv.<span data-level-number>1</span></strong>
+          <span data-level-name>体験生</span>
+          <small>XP <b data-xp>0</b> / <b data-next-xp>50</b></small>
         </div>
         <div class="header-actions">
           <button type="button" disabled aria-label="設定">⚙<span>設定</span></button>
@@ -27,12 +27,12 @@
 
       <section class="home-hero">
         <div class="title-lockup">
-          <small>Ver3.0</small>
+          <small>Ver3.1</small>
           <h1>野球<span>IQ</span>アカデミー</h1>
           <p>めざせ！名監督！</p>
           <b>FUJICON</b>
         </div>
-        <img src="assets/home-team.webp?v=3.0.0" alt="ネイビーと赤のユニフォームを着た少年野球チーム">
+        <img src="assets/home-team.webp?v=3.1.0" alt="ネイビーと赤のユニフォームを着た少年野球チーム">
       </section>
 
       <nav class="home-menu" aria-label="メインメニュー">
@@ -137,7 +137,7 @@
       </article>
 
       <figure class="field-panel">
-        <img src="assets/field-full.webp?v=3.0.0" alt="ホームベースから外野まで見える少年野球場">
+        <img src="assets/field-full.webp?v=3.1.0" alt="ホームベースから外野まで見える少年野球場">
         <figcaption id="field-caption">グラウンド全体を見て考えよう</figcaption>
       </figure>
 
@@ -147,7 +147,8 @@
     <section id="feedback-screen" class="screen feedback-screen">
       <div class="feedback-card">
         <div id="judge-mark" class="judge-mark">○</div>
-        <h2 id="judge-title">正解！</h2>
+        <h2 id="judge-title">最善の判断！</h2>
+        <p id="grade-label" class="grade-label"></p>
         <p id="explanation-text"></p>
         <div class="xp-earned">XP +<b id="earned-xp">10</b></div>
         <button id="next-button" class="action-button" type="button">次の問題へ</button>
@@ -155,7 +156,7 @@
     </section>
 
     <section id="result-screen" class="screen result-screen">
-      <img src="assets/captain.webp?v=3.0.0" alt="ガッツポーズをする少年野球選手">
+      <img src="assets/captain.webp?v=3.1.0" alt="ガッツポーズをする少年野球選手">
       <div class="result-card">
         <span>ステージクリア！</span>
         <h2>ナイス判断！</h2>
@@ -168,7 +169,7 @@
 
   </main>
 
-  <script src="questions.js?v=3.0.0"></script>
-  <script src="script.js?v=3.0.0"></script>
+  <script src="questions.js?v=3.1.0"></script>
+  <script src="script.js?v=3.1.0"></script>
 </body>
 </html>

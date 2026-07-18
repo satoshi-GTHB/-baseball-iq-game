@@ -493,3 +493,17 @@ img{display:block;max-width:100%}
   .home-menu{grid-template-columns:repeat(4,minmax(0,1fr))}
   .answer-list{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
+
+
+/* Ver3.1 grading and level system */
+.grade-label{
+  margin:0 0 12px;
+  color:var(--navy2);
+  font-weight:900;
+}
+.feedback-card.triangle .judge-mark{
+  background:#f0a41d;
+}
+.feedback-card.triangle h2{
+  color:#a96800;
+}
