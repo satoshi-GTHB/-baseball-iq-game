@@ -1,189 +1,55 @@
-(()=>{
-  "use strict";
-
-  const questions = Array.isArray(window.GAME_QUESTIONS) ? window.GAME_QUESTIONS : [];
-  const levels = Array.isArray(window.LEVELS) ? window.LEVELS : [];
-  const screens = [...document.querySelectorAll(".screen")];
-  const $ = id => document.getElementById(id);
-
-  let current = 0;
-  let sessionScore = 0;
-  let xp = Number(localStorage.getItem("baseballIqXp") || 0);
-  let answered = false;
-
-  function show(id){
-    screens.forEach(screen => screen.classList.remove("active"));
-    $(id).classList.add("active");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+const LEVELS=[
+  {name:'体験生',xp:0,school:'はじめての野球',active:true},
+  {name:'入団',xp:20,school:'低学年・基礎',active:true},
+  {name:'準レギュラー',xp:60,school:'低学年・判断入門',active:true},
+  {name:'レギュラー',xp:120,school:'低学年の到達目標',active:true},
+  {name:'オール上尾',xp:220,school:'高学年・発展',active:false},
+  {name:'コーチ',xp:350,school:'中級',active:false},
+  {name:'監督',xp:500,school:'上級',active:false},
+  {name:'NPB',xp:700,school:'高度な状況判断',active:false},
+  {name:'メジャー',xp:950,school:'確率とリスク',active:false},
+  {name:'殿堂入り',xp:1250,school:'説明・指導レベル',active:false}
+];
+const PROMOTION={1:{attempts:2,rate:.70},2:{attempts:3,rate:.75},3:{attempts:3,rate:.75}};
+const RUNNERS={NONE:[],FIRST:['FIRST'],SECOND:['SECOND'],THIRD:['THIRD'],FIRST_SECOND:['FIRST','SECOND'],FIRST_THIRD:['FIRST','THIRD'],SECOND_THIRD:['SECOND','THIRD'],LOADED:['FIRST','SECOND','THIRD']};
+const POS={FIRST:[78,58],SECOND:[51,31],THIRD:[22,58]};
+const savedStats=JSON.parse(localStorage.getItem('baseballIqMastery')||'{}');
+let state={mode:'defense',index:0,score:0,xp:Number(localStorage.getItem('baseballIqXp')||0),stats:savedStats,questions:[],level:1};
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+function show(id){$$('.screen').forEach(x=>x.classList.remove('active'));$('#'+id).classList.add('active')}
+function mastery(level){const x=state.stats[level]||{attempts:0,points:0};return {attempts:x.attempts,rate:x.attempts?x.points/(x.attempts*10):0}}
+function calculateLevel(){
+  let level=1;
+  for(let current=1;current<=3;current++){
+    const next=LEVELS[current];
+    const m=mastery(current),rule=PROMOTION[current];
+    if(state.xp>=next.xp && m.attempts>=rule.attempts && m.rate>=rule.rate) level=current+1;
+    else break;
   }
-
-  function getCurrentLevel(){
-    let result = levels[0] || { level: 1, name: "体験生", minXp: 0 };
-    for (const level of levels){
-      if (xp >= level.minXp) result = level;
-    }
-    return result;
-  }
-
-  function getNextLevel(currentLevel){
-    return levels.find(level => level.level === currentLevel.level + 1) || null;
-  }
-
-  function syncLevelUI(){
-    const currentLevel = getCurrentLevel();
-    const nextLevel = getNextLevel(currentLevel);
-
-    document.querySelectorAll("[data-xp]").forEach(node => {
-      node.textContent = String(xp);
-    });
-    document.querySelectorAll("[data-level-number]").forEach(node => {
-      node.textContent = String(currentLevel.level);
-    });
-    document.querySelectorAll("[data-level-name]").forEach(node => {
-      node.textContent = currentLevel.name;
-    });
-    document.querySelectorAll("[data-next-xp]").forEach(node => {
-      node.textContent = nextLevel ? String(nextLevel.minXp) : "MAX";
-    });
-  }
-
-
-  function renderRunners(runners){
-    const active = new Set(Array.isArray(runners) ? runners : []);
-    document.querySelectorAll(".runner-marker").forEach(marker => {
-      marker.hidden = !active.has(marker.dataset.base);
-    });
-
-    const labels = [];
-    if (active.has("first")) labels.push("1塁");
-    if (active.has("second")) labels.push("2塁");
-    if (active.has("third")) labels.push("3塁");
-
-    $("field-caption").textContent =
-      labels.length > 0
-        ? `ランナー：${labels.join("・")}`
-        : "ランナーなし";
-  }
-
-  function startGame(){
-    current = 0;
-    sessionScore = 0;
-    answered = false;
-    show("quiz-screen");
-    renderQuestion();
-  }
-
-  function renderQuestion(){
-    const item = questions[current];
-    answered = false;
-
-    $("question-counter").textContent = `${current + 1} / ${questions.length}`;
-    $("progress-bar").style.width = `${((current + 1) / questions.length) * 100}%`;
-    $("category-tag").textContent = item.category;
-    $("situation-tag").textContent = item.situation;
-    $("case-number").textContent = `ケース${current + 1}`;
-    $("question-text").textContent = item.question;
-    $("hint-text").textContent = item.hint;
-    $("hint-text").hidden = true;
-    renderRunners(item.runners);
-
-    const answerList = $("answer-list");
-    answerList.replaceChildren();
-
-    item.choices.forEach((choice, index) => {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "answer-button";
-
-      const number = document.createElement("span");
-      number.className = "answer-number";
-      number.textContent = String(index + 1);
-
-      const label = document.createElement("span");
-      label.textContent = choice.text;
-
-      button.append(number, label);
-      button.addEventListener("click", () => judge(choice));
-      answerList.appendChild(button);
-    });
-  }
-
-  function judge(choice){
-    if (answered) return;
-    answered = true;
-
-    const beforeLevel = getCurrentLevel();
-    const earned = choice.points;
-
-    sessionScore += earned;
-    xp += earned;
-    localStorage.setItem("baseballIqXp", String(xp));
-
-    const feedbackCard = document.querySelector(".feedback-card");
-    feedbackCard.classList.remove("wrong", "triangle");
-
-    if (choice.grade === "circle"){
-      $("judge-mark").textContent = "○";
-      $("judge-title").textContent = "最善の判断！";
-      $("grade-label").textContent = "高得点";
-    } else if (choice.grade === "triangle"){
-      $("judge-mark").textContent = "△";
-      $("judge-title").textContent = "間違いではない！";
-      $("grade-label").textContent = "でも、もっと良い判断があります";
-      feedbackCard.classList.add("triangle");
-    } else {
-      $("judge-mark").textContent = "×";
-      $("judge-title").textContent = "すばらしい、まちがってる！（笑）";
-      $("grade-label").textContent = "次はもっと良い判断を探そう";
-      feedbackCard.classList.add("wrong");
-    }
-
-    $("earned-xp").textContent = String(earned);
-    $("explanation-text").textContent = choice.explanation;
-    $("next-button").textContent = current === questions.length - 1 ? "結果を見る" : "次の問題へ";
-
-    syncLevelUI();
-
-    const afterLevel = getCurrentLevel();
-    if (afterLevel.level > beforeLevel.level){
-      $("grade-label").textContent += `｜レベルアップ！ ${afterLevel.name}`;
-    }
-
-    show("feedback-screen");
-  }
-
-  $("start-menu").addEventListener("click", () => show("stage-screen"));
-  $("lesson-menu").addEventListener("click", () => show("lesson-screen"));
-  $("stage-home").addEventListener("click", () => show("home-screen"));
-  $("lesson-home").addEventListener("click", () => show("home-screen"));
-  $("stage-one").addEventListener("click", startGame);
-  $("lesson-start").addEventListener("click", startGame);
-  $("quiz-stage").addEventListener("click", () => show("stage-screen"));
-  $("hint-button").addEventListener("click", () => {
-    $("hint-text").hidden = false;
-  });
-
-  $("next-button").addEventListener("click", () => {
-    if (current < questions.length - 1){
-      current += 1;
-      show("quiz-screen");
-      renderQuestion();
-      return;
-    }
-
-    $("final-score").textContent = `${sessionScore} / ${questions.length * 10}`;
-    $("result-message").textContent =
-      sessionScore === questions.length * 10
-        ? "全問で最善の判断！すばらしい野球IQです。"
-        : sessionScore >= questions.length * 7
-          ? "良い判断が増えています。△だった問題をもう一度考えよう！"
-          : "まちがいは成長のチャンス。解説を覚えて次へ進もう！";
-
-    show("result-screen");
-  });
-
-  $("retry-button").addEventListener("click", startGame);
-  $("result-home").addEventListener("click", () => show("home-screen"));
-
-  syncLevelUI();
-})();
+  return level;
+}
+function promotionText(){
+  const level=state.level;
+  if(level===4)return '低学年の目標「レギュラー」到達！ 発展編はβ版以降で追加します。';
+  const next=LEVELS[level],m=mastery(level),rule=PROMOTION[level];
+  return `次の「${next.name}」まで：XP ${Math.max(0,next.xp-state.xp)}／レベル${level}問題 ${m.attempts}/${rule.attempts}問／理解度 ${Math.round(m.rate*100)}%（目標${Math.round(rule.rate*100)}%）`;
+}
+function updateLevel(){
+  state.level=calculateLevel();
+  const info=LEVELS[state.level-1];
+  $$('[data-xp]').forEach(x=>x.textContent=state.xp);
+  $$('[data-level]').forEach(x=>x.textContent=state.level);
+  $$('[data-level-name]').forEach(x=>x.textContent=info.name);
+  const c=$('#curriculum-status');if(c)c.textContent=`現在：Lv.${state.level} ${info.name}｜${info.school}`;
+  const p=$('#promotion-status');if(p)p.textContent=promotionText();
+}
+function renderField(q){const layer=$('#runner-layer');layer.innerHTML='';RUNNERS[q.situation].forEach(base=>{const [x,y]=POS[base];const self=q.self===base;const el=document.createElement('div');el.className='runner'+(self?' self':'');el.style.left=x+'%';el.style.top=y+'%';el.innerHTML=`${self?'<span class="self-label">自分</span>':''}<i class="runner-helmet"></i><i class="runner-head"></i><i class="runner-arm"></i><i class="runner-body"></i><i class="runner-leg"></i>`;layer.appendChild(el)})}
+function currentQuestions(mode){
+  const exact=QUESTION_BANK[mode].filter(q=>q.difficulty===state.level);
+  return exact.length?exact:QUESTION_BANK[mode].filter(q=>q.difficulty<=state.level);
+}
+function renderQuestion(){const q=state.questions[state.index];$('#mode-title').textContent=state.mode==='defense'?'守備編':'ランナー編';$('#question-count').textContent=`${state.index+1} / ${state.questions.length}`;$('#situation-tag').textContent=q.label;$('#role-tag').textContent=`Lv.${q.difficulty} ${LEVELS[q.difficulty-1].name}`;$('#question-text').textContent=q.q;$('#question-note').textContent=q.note;$('#field-caption').textContent=state.mode==='runner'?'「自分」の位置と他のランナーを確認しよう':'ランナーの配置を確認しよう';renderField(q);const box=$('#answers');box.innerHTML='';q.answers.forEach(a=>{const b=document.createElement('button');b.type='button';b.className='answer';b.textContent=a[0];b.addEventListener('click',()=>answer(a,q));box.appendChild(b)})}
+function start(mode){state.mode=mode;state.index=0;state.score=0;state.questions=currentQuestions(mode);renderQuestion();show('quiz')}
+function answer(a,q){const [label,grade,xp,explain]=a;state.xp+=xp;state.score+=xp;const key=String(q.difficulty);const stat=state.stats[key]||{attempts:0,points:0};stat.attempts+=1;stat.points+=xp;state.stats[key]=stat;localStorage.setItem('baseballIqXp',state.xp);localStorage.setItem('baseballIqMastery',JSON.stringify(state.stats));updateLevel();$('#judge').textContent=grade;$('#judge').className='judge '+(grade==='△'?'triangle':grade==='×'?'cross':'');$('#judge-title').textContent=grade==='○'?'最善の判断！':grade==='△'?'悪くない判断！':'もう一度考えよう';$('#feedback-text').textContent=explain;$('#gain').textContent=xp;show('feedback')}
+function next(){state.index++;if(state.index>=state.questions.length){const max=state.questions.length*10;$('#result-score').textContent=`獲得 ${state.score} / ${max} XP`;$('#result-title').textContent=state.score>=max*.8?'このレベルを理解できている！':'同じレベルでもう一度練習しよう！';show('result')}else{renderQuestion();show('quiz')}}
+$$('[data-mode]').forEach(b=>b.addEventListener('click',()=>start(b.dataset.mode)));$('#back-home').addEventListener('click',()=>show('home'));$('#next').addEventListener('click',next);$('#retry').addEventListener('click',()=>start(state.mode));$('#result-home').addEventListener('click',()=>show('home'));updateLevel();

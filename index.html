@@ -4,188 +4,79 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#06284a">
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta name="description" content="低学年向け野球IQ学習ゲーム">
-  <title>野球IQアカデミー Ver3.2</title>
-  <link rel="stylesheet" href="style.css?v=3.2.0">
+  <title>野球IQアカデミー Ver4.0α</title>
+  <link rel="stylesheet" href="style.css?v=4.0a1">
 </head>
 <body>
-  <main class="app">
+<main class="app">
+  <section id="home" class="screen active">
+    <header class="home-head">
+      <div class="level"><b>★ Lv.<span data-level>1</span></b><span data-level-name>体験生</span><small>XP <span data-xp>0</span></small></div>
+      <span class="version">Ver4.0α.1</span>
+    </header>
+    <div class="hero">
+      <img src="assets/home-team.webp" alt="フジコンの少年野球チーム">
+      <div><p>めざせ！名監督</p><h1>野球<span>IQ</span><br>アカデミー</h1><b>FUJICON</b></div>
+    </div>
+    <section class="curriculum-box"><strong id="curriculum-status"></strong><small id="promotion-status"></small></section>
+    <div class="mode-grid">
+      <button type="button" data-mode="defense" class="mode-card"><span>🧤</span><strong>守備編</strong><small>ランナー状況を見て判断</small></button>
+      <button type="button" data-mode="runner" class="mode-card accent"><span>🏃</span><strong>ランナー編</strong><small>「自分」の走塁判断</small></button>
+      <article class="mode-card locked"><span>🏏</span><strong>バッター編</strong><small>将来追加</small></article>
+    </div>
+  </section>
 
-    <section id="home-screen" class="screen active">
-      <header class="home-header">
-        <div class="level-card">
-          <strong>★ Lv.<span data-level-number>1</span></strong>
-          <span data-level-name>体験生</span>
-          <small>XP <b data-xp>0</b> / <b data-next-xp>50</b></small>
-        </div>
-        <div class="header-actions">
-          <button type="button" disabled aria-label="設定">⚙<span>設定</span></button>
-          <button type="button" disabled aria-label="成績">🏆<span>成績</span></button>
-        </div>
-      </header>
+  <section id="quiz" class="screen">
+    <header class="topbar">
+      <button id="back-home" type="button" aria-label="ホームへ戻る">‹</button>
+      <div><strong id="mode-title">守備編</strong><small id="question-count">1 / 5</small></div>
+      <span class="xp-chip">XP <b data-xp>0</b></span>
+    </header>
 
-      <section class="home-hero">
-        <div class="title-lockup">
-          <small>Ver3.2</small>
-          <h1>野球<span>IQ</span>アカデミー</h1>
-          <p>めざせ！名監督！</p>
-          <b>FUJICON</b>
-        </div>
-        <img src="assets/home-team.webp?v=3.2.0" alt="ネイビーと赤のユニフォームを着た少年野球チーム">
-      </section>
+    <article class="question-card">
+      <div class="tags"><span id="situation-tag">ランナー1塁</span><span id="role-tag">守備</span></div>
+      <h2 id="question-text"></h2>
+      <p id="question-note"></p>
+    </article>
 
-      <nav class="home-menu" aria-label="メインメニュー">
-        <button id="start-menu" class="menu-button primary-menu" type="button">
-          <span class="menu-icon">⚾</span>
-          <span><strong>はじめる</strong><small>クイズに挑戦</small></span>
-        </button>
-        <button id="lesson-menu" class="menu-button" type="button">
-          <span class="menu-icon">📖</span>
-          <span><strong>ルールを学ぶ</strong><small>野球の基本を確認</small></span>
-        </button>
-        <button class="menu-button disabled" type="button" disabled>
-          <span class="menu-icon">👥</span>
-          <span><strong>チーム</strong><small>近日追加</small></span>
-        </button>
-        <button class="menu-button disabled" type="button" disabled>
-          <span class="menu-icon">🎯</span>
-          <span><strong>今日のミッション</strong><small>近日追加</small></span>
-        </button>
-      </nav>
-    </section>
-
-    <section id="stage-screen" class="screen">
-      <header class="topbar">
-        <button id="stage-home" class="back-button" type="button" aria-label="ホームへ戻る">‹</button>
-        <div class="topbar-title">
-          <strong>ステージ選択</strong>
-          <small>学びたいテーマを選ぼう</small>
-        </div>
-        <span class="xp-chip">★ <b data-xp>0</b></span>
-      </header>
-
-      <div class="category-tabs">
-        <button class="active" type="button">守備編</button>
-        <button type="button" disabled>走塁編</button>
-        <button type="button" disabled>攻撃編</button>
-        <button type="button" disabled>ルール編</button>
+    <section class="field-wrap" aria-label="野球場のランナー配置">
+      <div class="field" id="field">
+        <div class="outfield"></div>
+        <div class="infield"></div>
+        <span class="base home" aria-label="ホーム"></span>
+        <span class="base first" aria-label="1塁"></span>
+        <span class="base second" aria-label="2塁"></span>
+        <span class="base third" aria-label="3塁"></span>
+        <div id="runner-layer"></div>
       </div>
-
-      <div class="stage-list">
-        <button id="stage-one" class="stage-card available" type="button">
-          <span class="stage-number">ステージ1</span>
-          <strong>守備の基本</strong>
-          <span class="stage-stars">★★★</span>
-          <small>全5問｜まずアウトを取る考え方</small>
-        </button>
-        <article class="stage-card locked">
-          <span>🔒</span><strong>フォースアウト</strong><small>次回追加</small>
-        </article>
-        <article class="stage-card locked">
-          <span>🔒</span><strong>タッチアウト</strong><small>次回追加</small>
-        </article>
-      </div>
+      <p id="field-caption">ランナーの位置を見て考えよう</p>
     </section>
 
-    <section id="lesson-screen" class="screen">
-      <header class="topbar">
-        <button id="lesson-home" class="back-button" type="button" aria-label="ホームへ戻る">‹</button>
-        <div class="topbar-title">
-          <strong>ルールを学ぶ</strong>
-          <small>守備の基本</small>
-        </div>
-      </header>
+    <div id="answers" class="answers"></div>
+  </section>
 
-      <article class="lesson-content">
-        <h2>守備では、まずアウトを1つ取ろう</h2>
-        <p>ボールを捕ったら、すぐに投げるのではなく「どこなら一番確実にアウトを取れるか」を考えます。</p>
-        <div class="lesson-points">
-          <strong>低学年の合言葉</strong>
-          <span>① アウトの数を見る</span>
-          <span>② ランナーの場所を見る</span>
-          <span>③ 近くて確実なアウトを探す</span>
-          <span>④ 分からないときは仲間の声を聞く</span>
-        </div>
-        <button id="lesson-start" class="action-button" type="button">クイズで確認する</button>
-      </article>
-    </section>
+  <section id="feedback" class="screen feedback">
+    <div class="feedback-box">
+      <div id="judge" class="judge">○</div>
+      <h2 id="judge-title">最善の判断！</h2>
+      <p id="feedback-text"></p>
+      <div class="xp-gain">XP +<b id="gain">10</b></div>
+      <button id="next" type="button">次へ</button>
+    </div>
+  </section>
 
-    <section id="quiz-screen" class="screen">
-      <header class="topbar quiz-topbar">
-        <button id="quiz-stage" class="back-button" type="button" aria-label="ステージへ戻る">‹</button>
-        <div class="topbar-title">
-          <strong>ステージ1</strong>
-          <small>守備の基本</small>
-        </div>
-        <div class="progress-box">
-          <b id="question-counter">1 / 5</b>
-          <span><i id="progress-bar"></i></span>
-        </div>
-        <span class="xp-chip quiz-xp">XP <b data-xp>0</b></span>
-      </header>
-
-      <article class="question-panel">
-        <div class="question-tags">
-          <span id="category-tag">守備</span>
-          <span id="situation-tag">ノーアウト・ランナー1塁</span>
-        </div>
-        <small id="case-number">ケース1</small>
-        <h2 id="question-text">問題文</h2>
-        <button id="hint-button" class="hint-button" type="button">💡 ヒントを見る</button>
-        <p id="hint-text" class="hint-text" hidden></p>
-      </article>
-
-      <figure class="field-panel">
-        <div class="field-stage">
-          <img src="assets/field-full.webp?v=3.2.0" alt="ホームベースから外野まで見える少年野球場">
-          <div id="runner-layer" class="runner-layer" aria-label="ランナー配置">
-            <div class="runner-marker runner-first" data-base="first" hidden>
-              <span class="runner-head"></span><span class="runner-body">F</span>
-              <small>1塁</small>
-            </div>
-            <div class="runner-marker runner-second" data-base="second" hidden>
-              <span class="runner-head"></span><span class="runner-body">F</span>
-              <small>2塁</small>
-            </div>
-            <div class="runner-marker runner-third" data-base="third" hidden>
-              <span class="runner-head"></span><span class="runner-body">F</span>
-              <small>3塁</small>
-            </div>
-          </div>
-        </div>
-        <figcaption id="field-caption">グラウンド全体を見て考えよう</figcaption>
-      </figure>
-
-      <div id="answer-list" class="answer-list"></div>
-    </section>
-
-    <section id="feedback-screen" class="screen feedback-screen">
-      <div class="feedback-card">
-        <div id="judge-mark" class="judge-mark">○</div>
-        <h2 id="judge-title">最善の判断！</h2>
-        <p id="grade-label" class="grade-label"></p>
-        <p id="explanation-text"></p>
-        <div class="xp-earned">XP +<b id="earned-xp">10</b></div>
-        <button id="next-button" class="action-button" type="button">次の問題へ</button>
-      </div>
-    </section>
-
-    <section id="result-screen" class="screen result-screen">
-      <img src="assets/captain.webp?v=3.2.0" alt="ガッツポーズをする少年野球選手">
-      <div class="result-card">
-        <span>ステージクリア！</span>
-        <h2>ナイス判断！</h2>
-        <p class="result-score">正解数 <b id="final-score">0 / 5</b></p>
-        <p id="result-message"></p>
-        <button id="retry-button" class="action-button" type="button">もう一度チャレンジ</button>
-        <button id="result-home" class="secondary-button" type="button">ホームへ戻る</button>
-      </div>
-    </section>
-
-  </main>
-
-  <script src="questions.js?v=3.2.0"></script>
-  <script src="script.js?v=3.2.0"></script>
+  <section id="result" class="screen result">
+    <img src="assets/captain.webp" alt="ガッツポーズするフジコンの選手">
+    <div class="result-box">
+      <span>ステージクリア！</span>
+      <h2 id="result-title">ナイス判断！</h2>
+      <p id="result-score"></p>
+      <button id="retry" type="button">もう一度</button>
+      <button id="result-home" type="button" class="sub">ホームへ</button>
+    </div>
+  </section>
+</main>
+<script src="questions.js?v=4.0a1"></script>
+<script src="script.js?v=4.0a1"></script>
 </body>
 </html>
