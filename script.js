@@ -43,6 +43,18 @@ function updateLevel(){
   const c=$('#curriculum-status');if(c)c.textContent=`現在：Lv.${state.level} ${info.name}｜${info.school}`;
   const p=$('#promotion-status');if(p)p.textContent=promotionText();
 }
+function currentQuestions(mode){
+  const bank=(window.QUESTION_BANK||QUESTION_BANK)[mode]||[];
+  // 現在の理解レベルに合う問題だけを出題する。
+  // 同レベル問題が不足する場合でも、ボタン操作が止まらないよう直近下位レベルへフォールバックする。
+  let selected=bank.filter(q=>q.difficulty===state.level);
+  if(!selected.length){
+    for(let level=state.level-1;level>=1&&!selected.length;level--){
+      selected=bank.filter(q=>q.difficulty===level);
+    }
+  }
+  return selected.slice();
+}
 function runnerSvg(){return `
 <svg viewBox="0 0 86 94" aria-hidden="true">
   <g transform="rotate(-7 43 47)">
@@ -62,7 +74,18 @@ function runnerSvg(){return `
 </svg>`}
 function renderField(q){const layer=$('#runner-layer');layer.innerHTML='';RUNNERS[q.situation].forEach(base=>{const [x,y]=POS[base];const self=q.self===base;const el=document.createElement('div');el.className='runner'+(self?' self':'');el.style.left=x+'%';el.style.top=y+'%';el.innerHTML=`${self?'<span class="self-label">自分</span>':''}${runnerSvg()}`;layer.appendChild(el)})}
 function renderQuestion(){const q=state.questions[state.index];$('#mode-title').textContent=state.mode==='defense'?'守備編':'ランナー編';$('#question-count').textContent=`${state.index+1} / ${state.questions.length}`;$('#situation-tag').textContent=q.label;$('#role-tag').textContent=`Lv.${q.difficulty} ${LEVELS[q.difficulty-1].name}`;$('#question-text').textContent=q.q;$('#question-note').textContent=q.note;$('#field-caption').textContent=state.mode==='runner'?'「自分」の位置と他のランナーを確認しよう':'ランナーの配置を確認しよう';renderField(q);const box=$('#answers');box.innerHTML='';q.answers.forEach(a=>{const b=document.createElement('button');b.type='button';b.className='answer';b.textContent=a[0];b.addEventListener('click',()=>answer(a,q));box.appendChild(b)})}
-function start(mode){state.mode=mode;state.index=0;state.score=0;state.questions=currentQuestions(mode);renderQuestion();show('quiz')}
+function start(mode){
+  state.mode=mode;
+  state.index=0;
+  state.score=0;
+  state.questions=currentQuestions(mode);
+  if(!state.questions.length){
+    alert('このレベルの問題は準備中です。');
+    return;
+  }
+  renderQuestion();
+  show('quiz');
+}
 function answer(a,q){const [label,grade,xp,explain]=a;state.xp+=xp;state.score+=xp;const key=String(q.difficulty);const stat=state.stats[key]||{attempts:0,points:0};stat.attempts+=1;stat.points+=xp;state.stats[key]=stat;localStorage.setItem('baseballIqXp',state.xp);localStorage.setItem('baseballIqMastery',JSON.stringify(state.stats));updateLevel();$('#judge').textContent=grade;$('#judge').className='judge '+(grade==='△'?'triangle':grade==='×'?'cross':'');$('#judge-title').textContent=grade==='○'?'最善の判断！':grade==='△'?'悪くない判断！':'もう一度考えよう';$('#feedback-text').textContent=explain;$('#gain').textContent=xp;show('feedback')}
 function next(){state.index++;if(state.index>=state.questions.length){const max=state.questions.length*10;$('#result-score').textContent=`獲得 ${state.score} / ${max} XP`;$('#result-title').textContent=state.score>=max*.8?'このレベルを理解できている！':'同じレベルでもう一度練習しよう！';show('result')}else{renderQuestion();show('quiz')}}
 $$('[data-mode]').forEach(b=>b.addEventListener('click',()=>start(b.dataset.mode)));$('#back-home').addEventListener('click',()=>show('home'));$('#next').addEventListener('click',next);$('#retry').addEventListener('click',()=>start(state.mode));$('#result-home').addEventListener('click',()=>show('home'));updateLevel();
