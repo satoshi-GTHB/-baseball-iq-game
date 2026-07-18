@@ -1,22 +1,127 @@
-(()=>{"use strict";
-const q=window.GAME_QUESTIONS||[],screens=[...document.querySelectorAll(".screen")];
-let i=0,score=0,xp=0,answered=false;
-const $=id=>document.getElementById(id);
-function show(id){screens.forEach(s=>s.classList.remove("active"));$(id).classList.add("active");scrollTo({top:0,behavior:"smooth"})}
-function syncXP(){["home-xp","stage-xp","xp"].forEach(id=>{const e=$(id);if(e)e.textContent=xp})}
-function start(){i=0;score=0;answered=false;show("quiz");render()}
-function render(){answered=false;const x=q[i];$("count").textContent=`${i+1} / ${q.length}`;$("progress").style.width=`${(i+1)/q.length*100}%`;$("category").textContent=x.category;$("situation").textContent=x.situation;$("case").textContent=`ケース${i+1}`;$("question").textContent=x.question;$("hint-text").textContent=x.hint;$("hint-text").hidden=true;$("answers").replaceChildren();x.choices.forEach((c,n)=>{const b=document.createElement("button");b.className="answer";b.type="button";b.innerHTML=`<b>${n+1}</b>${c}`;b.addEventListener("click",()=>judge(n));$("answers").appendChild(b)})}
-function judge(n){if(answered)return;answered=true;const x=q[i],ok=n===x.answer;if(ok){score++;xp+=10;$("judge-mark").textContent="○";$("judge-title").textContent="正解！ ナイス判断！";$("earned").textContent="10";document.querySelector(".feedback-card").classList.remove("wrong")}else{$("judge-mark").textContent="×";$("judge-title").textContent="すばらしい、まちがってる！（笑）";$("earned").textContent="0";document.querySelector(".feedback-card").classList.add("wrong")}$("explanation").textContent=x.explanation;$("next").textContent=i===q.length-1?"結果を見る":"次の問題へ";syncXP();show("feedback")}
-$("go-stage").addEventListener("click",()=>show("stage"));
-$("go-rules").addEventListener("click",()=>show("rules"));
-$("stage-back").addEventListener("click",()=>show("home"));
-$("rules-back").addEventListener("click",()=>show("home"));
-$("stage-one").addEventListener("click",start);
-$("rules-start").addEventListener("click",start);
-$("quiz-back").addEventListener("click",()=>show("stage"));
-$("hint-btn").addEventListener("click",()=>{$("hint-text").hidden=false});
-$("next").addEventListener("click",()=>{if(i<q.length-1){i++;show("quiz");render()}else{$("final-score").textContent=`${score} / ${q.length}`;$("result-message").textContent=score===q.length?"全問正解！名監督への第一歩です。":score>=3?"いい判断が増えています。もう一度挑戦しよう！":"まちがいは成長のチャンス。解説を覚えて次へ進もう！";show("result")}});
-$("retry").addEventListener("click",start);
-$("result-home").addEventListener("click",()=>show("home"));
-syncXP();
+(()=>{
+  "use strict";
+
+  const questions=Array.isArray(window.GAME_QUESTIONS)?window.GAME_QUESTIONS:[];
+  const screens=[...document.querySelectorAll(".screen")];
+  const $=id=>document.getElementById(id);
+
+  let current=0;
+  let score=0;
+  let xp=0;
+  let answered=false;
+
+  function show(id){
+    screens.forEach(screen=>screen.classList.remove("active"));
+    $(id).classList.add("active");
+    window.scrollTo({top:0,behavior:"smooth"});
+  }
+
+  function syncXP(){
+    document.querySelectorAll("[data-xp]").forEach(node=>{
+      node.textContent=String(xp);
+    });
+  }
+
+  function startGame(){
+    current=0;
+    score=0;
+    answered=false;
+    show("quiz-screen");
+    renderQuestion();
+  }
+
+  function renderQuestion(){
+    const item=questions[current];
+    answered=false;
+
+    $("question-counter").textContent=`${current+1} / ${questions.length}`;
+    $("progress-bar").style.width=`${((current+1)/questions.length)*100}%`;
+    $("category-tag").textContent=item.category;
+    $("situation-tag").textContent=item.situation;
+    $("case-number").textContent=`ケース${current+1}`;
+    $("question-text").textContent=item.question;
+    $("hint-text").textContent=item.hint;
+    $("hint-text").hidden=true;
+
+    const answerList=$("answer-list");
+    answerList.replaceChildren();
+
+    item.choices.forEach((choice,index)=>{
+      const button=document.createElement("button");
+      button.type="button";
+      button.className="answer-button";
+
+      const number=document.createElement("span");
+      number.className="answer-number";
+      number.textContent=String(index+1);
+
+      const label=document.createElement("span");
+      label.textContent=choice;
+
+      button.append(number,label);
+      button.addEventListener("click",()=>judge(index));
+      answerList.appendChild(button);
+    });
+  }
+
+  function judge(selected){
+    if(answered)return;
+    answered=true;
+
+    const item=questions[current];
+    const correct=selected===item.answer;
+    const feedbackCard=document.querySelector(".feedback-card");
+
+    if(correct){
+      score+=1;
+      xp+=10;
+      $("judge-mark").textContent="○";
+      $("judge-title").textContent="正解！ ナイス判断！";
+      $("earned-xp").textContent="10";
+      feedbackCard.classList.remove("wrong");
+    }else{
+      $("judge-mark").textContent="×";
+      $("judge-title").textContent="すばらしい、まちがってる！（笑）";
+      $("earned-xp").textContent="0";
+      feedbackCard.classList.add("wrong");
+    }
+
+    $("explanation-text").textContent=item.explanation;
+    $("next-button").textContent=current===questions.length-1?"結果を見る":"次の問題へ";
+    syncXP();
+    show("feedback-screen");
+  }
+
+  $("start-menu").addEventListener("click",()=>show("stage-screen"));
+  $("lesson-menu").addEventListener("click",()=>show("lesson-screen"));
+  $("stage-home").addEventListener("click",()=>show("home-screen"));
+  $("lesson-home").addEventListener("click",()=>show("home-screen"));
+  $("stage-one").addEventListener("click",startGame);
+  $("lesson-start").addEventListener("click",startGame);
+  $("quiz-stage").addEventListener("click",()=>show("stage-screen"));
+  $("hint-button").addEventListener("click",()=>{$("hint-text").hidden=false});
+
+  $("next-button").addEventListener("click",()=>{
+    if(current<questions.length-1){
+      current+=1;
+      show("quiz-screen");
+      renderQuestion();
+      return;
+    }
+
+    $("final-score").textContent=`${score} / ${questions.length}`;
+    $("result-message").textContent=
+      score===questions.length
+        ?"全問正解！名監督への第一歩です。"
+        :score>=3
+          ?"いい判断が増えています。もう一度挑戦しよう！"
+          :"まちがいは成長のチャンス。解説を覚えて次へ進もう！";
+
+    show("result-screen");
+  });
+
+  $("retry-button").addEventListener("click",startGame);
+  $("result-home").addEventListener("click",()=>show("home-screen"));
+
+  syncXP();
 })();
