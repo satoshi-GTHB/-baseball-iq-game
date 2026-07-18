@@ -3,56 +3,67 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#06264a">
-  <title>野球IQアカデミー 1.0β</title>
+  <meta name="theme-color" content="#07284c">
+  <meta name="description" content="低学年向け野球IQ学習ゲーム">
+  <title>野球IQアカデミー 2.0β</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <main class="app">
 
     <section id="home" class="screen active">
-      <header class="home-top">
-        <div class="level-card">
-          <strong>★ Lv.1</strong>
-          <span>見習い監督</span>
-          <small>XP <b id="home-xp">0</b> / 100</small>
-        </div>
-        <div class="mini-actions">
-          <button type="button" disabled>⚙<span>設定</span></button>
-          <button type="button" disabled>🏆<span>成績</span></button>
-        </div>
-      </header>
+      <div class="home-visual">
+        <img src="assets/home-hero.jpg" alt="FUJICONの少年野球チーム">
+        <div class="home-overlay"></div>
 
-      <section class="home-hero">
-        <div class="home-title">
-          <span class="beta">1.0β</span>
+        <div class="home-hud">
+          <div class="level-box">
+            <strong>★ Lv.1</strong>
+            <span>見習い監督</span>
+            <small>XP <b id="home-xp">0</b> / 100</small>
+          </div>
+          <div class="hud-actions">
+            <button type="button" disabled>⚙<span>設定</span></button>
+            <button type="button" disabled>🏆<span>成績</span></button>
+          </div>
+        </div>
+
+        <div class="game-logo">
+          <span class="version">2.0β</span>
           <h1>野球<span>IQ</span>アカデミー</h1>
           <p>めざせ！名監督！</p>
+          <b>FUJICON</b>
         </div>
-        <img src="assets/home-team.jpg" alt="ネイビーと赤のユニフォームを着た少年野球チーム">
-      </section>
+      </div>
 
       <nav class="home-menu" aria-label="メインメニュー">
         <button id="go-stage" class="menu red" type="button">
-          <b>⚾ はじめる</b><span>クイズに挑戦</span>
+          <strong>⚾ はじめる</strong>
+          <span>クイズに挑戦</span>
         </button>
         <button id="go-rules" class="menu" type="button">
-          <b>📖 ルールを学ぶ</b><span>野球の基本を確認</span>
+          <strong>📖 ルールを学ぶ</strong>
+          <span>野球の基本を確認</span>
         </button>
-        <button class="menu disabled" type="button" disabled>
-          <b>👥 チーム</b><span>近日追加</span>
+        <button class="menu muted" type="button" disabled>
+          <strong>👥 チーム</strong>
+          <span>近日追加</span>
         </button>
-        <button class="menu disabled" type="button" disabled>
-          <b>🎯 今日のミッション</b><span>近日追加</span>
+        <button class="menu muted" type="button" disabled>
+          <strong>🎯 今日のミッション</strong>
+          <span>近日追加</span>
         </button>
       </nav>
     </section>
 
-    <section id="stage" class="screen">
-      <header class="bar">
+    <section id="stage" class="screen stage-screen">
+      <header class="topbar">
         <button id="stage-back" class="back" type="button">‹</button>
-        <div><strong>ステージ選択</strong><small>守備編</small></div>
-        <span class="xp-pill">★ <b id="stage-xp">0</b></span>
+        <div>
+          <strong>ステージ選択</strong>
+          <small>守備編</small>
+        </div>
+        <span class="xp-chip">★ <b id="stage-xp">0</b></span>
       </header>
 
       <div class="category-tabs">
@@ -62,45 +73,63 @@
         <button type="button" disabled>ルール編</button>
       </div>
 
-      <div class="stage-list">
+      <div class="stage-hero">
+        <img src="assets/stage-bg.jpg" alt="少年野球のステージ選択イメージ">
+      </div>
+
+      <div class="stage-cards">
         <button id="stage-one" class="stage-card open" type="button">
-          <span class="stage-no">ステージ1</span>
+          <span class="stage-label">ステージ1</span>
           <strong>守備の基本</strong>
           <span class="stars">★★★</span>
-          <small>5問・まずアウトを取る考え方</small>
+          <small>全5問・まずアウトを取る考え方</small>
         </button>
-        <div class="stage-card locked"><span>🔒</span><strong>フォースアウト</strong><small>次回追加</small></div>
-        <div class="stage-card locked"><span>🔒</span><strong>タッチアウト</strong><small>次回追加</small></div>
+        <div class="stage-card locked">
+          <span>🔒</span><strong>フォースアウト</strong><small>次回追加</small>
+        </div>
+        <div class="stage-card locked">
+          <span>🔒</span><strong>タッチアウト</strong><small>次回追加</small>
+        </div>
       </div>
     </section>
 
     <section id="rules" class="screen">
-      <header class="bar">
+      <header class="topbar">
         <button id="rules-back" class="back" type="button">‹</button>
-        <div><strong>ルールを学ぶ</strong><small>野球の基本</small></div>
+        <div><strong>ルールを学ぶ</strong><small>守備の基本</small></div>
       </header>
       <article class="lesson">
-        <h2>まずはアウトを1つ取ろう</h2>
-        <p>守備では、ボールを捕ったあとに「どこなら確実にアウトを取れるか」を考えます。</p>
-        <div class="lesson-box">
+        <h2>守備では、まずアウトを1つ取ろう</h2>
+        <p>ボールを捕ったら、すぐ投げるのではなく「どこなら一番確実にアウトを取れるか」を考えます。</p>
+        <div class="lesson-list">
           <b>低学年の合言葉</b>
-          <span>① 状況を見る</span>
-          <span>② 近くて確実なアウトを探す</span>
-          <span>③ 分からなければ声を聞く</span>
+          <span>① アウトの数を見る</span>
+          <span>② ランナーの場所を見る</span>
+          <span>③ 近くて確実なアウトを探す</span>
+          <span>④ 分からないときは仲間の声を聞く</span>
         </div>
         <button id="rules-start" class="primary" type="button">クイズで確認する</button>
       </article>
     </section>
 
     <section id="quiz" class="screen">
-      <header class="bar quiz-bar">
+      <header class="topbar quiz-topbar">
         <button id="quiz-back" class="back" type="button">‹</button>
-        <div><strong>ステージ1</strong><small>守備の基本</small></div>
-        <div class="counter"><b id="count">1 / 5</b><span class="mini-progress"><i id="progress"></i></span></div>
-        <span class="xp-pill">XP <b id="xp">0</b></span>
+        <div>
+          <strong>ステージ1</strong>
+          <small>守備の基本</small>
+        </div>
+        <div class="question-progress">
+          <b id="count">1 / 5</b>
+          <span><i id="progress"></i></span>
+        </div>
+        <span class="xp-chip">XP <b id="xp">0</b></span>
       </header>
 
-      <section class="question-layout">
+      <section class="quiz-visual">
+        <img src="assets/quiz-scene.jpg" alt="野球場で問題に挑戦する少年野球選手">
+        <div class="quiz-gradient"></div>
+
         <article class="question-card">
           <div class="tags">
             <span id="category">守備</span>
@@ -111,18 +140,13 @@
           <button id="hint-btn" class="hint" type="button">💡 ヒントを見る</button>
           <p id="hint-text" class="hint-text" hidden></p>
         </article>
-
-        <figure class="field-figure">
-          <img src="assets/field-scene.jpg" alt="少年野球のグラウンドと選手">
-          <figcaption id="field-caption">ランナーは1塁にいます</figcaption>
-        </figure>
       </section>
 
       <div id="answers" class="answers"></div>
     </section>
 
     <section id="feedback" class="screen feedback-screen">
-      <div class="feedback-panel">
+      <div class="feedback-card">
         <div id="judge-mark" class="judge-mark">○</div>
         <h2 id="judge-title">正解！</h2>
         <p id="explanation"></p>
@@ -132,10 +156,8 @@
     </section>
 
     <section id="result" class="screen result-screen">
-      <div class="result-art">
-        <img src="assets/captain.jpg" alt="ガッツポーズをする少年野球選手">
-      </div>
-      <div class="result-panel">
+      <img src="assets/home-hero.jpg" alt="FUJICON少年野球チーム">
+      <div class="result-card">
         <span>ステージクリア！</span>
         <h2>ナイス判断！</h2>
         <p class="result-score">正解数 <b id="final-score">0 / 5</b></p>
@@ -146,6 +168,7 @@
     </section>
 
   </main>
+
   <script src="questions.js"></script>
   <script src="script.js"></script>
 </body>
