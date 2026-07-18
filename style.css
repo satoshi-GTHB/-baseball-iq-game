@@ -689,3 +689,73 @@ button.stage-card{cursor:pointer}
     grid-template-columns:repeat(3,minmax(0,1fr));
   }
 }
+
+
+/* Ver2.0.2: show the complete baseball field without cropping */
+.quiz-visual{
+  display:flex;
+  flex-direction:column;
+  min-height:0;
+  overflow:visible;
+  background:#67ad43;
+}
+.quiz-visual>img{
+  position:relative;
+  inset:auto;
+  order:2;
+  display:block;
+  width:100%;
+  height:auto;
+  min-height:0;
+  aspect-ratio:1024 / 730;
+  object-fit:contain;
+  object-position:center;
+  background:#67ad43;
+}
+.quiz-gradient{
+  display:none;
+}
+.question-card{
+  position:relative;
+  left:auto;
+  right:auto;
+  top:auto;
+  order:1;
+  width:calc(100% - 20px);
+  max-height:none;
+  overflow:visible;
+  margin:10px auto;
+  padding:16px;
+  border-radius:16px;
+  background:#fff;
+}
+.answers{
+  position:relative;
+  z-index:2;
+}
+@media(max-width:480px){
+  .quiz-visual{
+    min-height:0;
+  }
+  .quiz-visual>img{
+    min-height:0;
+    aspect-ratio:1024 / 730;
+  }
+  .question-card{
+    left:auto;
+    right:auto;
+    top:auto;
+    width:calc(100% - 16px);
+    max-height:none;
+    margin:8px auto;
+  }
+}
+@media(orientation:landscape) and (max-height:520px){
+  .quiz-visual{
+    min-height:0;
+  }
+  .quiz-visual>img{
+    width:min(100%,720px);
+    margin:0 auto;
+  }
+}
