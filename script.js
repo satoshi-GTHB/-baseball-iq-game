@@ -47,6 +47,24 @@
     });
   }
 
+
+  function renderRunners(runners){
+    const active = new Set(Array.isArray(runners) ? runners : []);
+    document.querySelectorAll(".runner-marker").forEach(marker => {
+      marker.hidden = !active.has(marker.dataset.base);
+    });
+
+    const labels = [];
+    if (active.has("first")) labels.push("1塁");
+    if (active.has("second")) labels.push("2塁");
+    if (active.has("third")) labels.push("3塁");
+
+    $("field-caption").textContent =
+      labels.length > 0
+        ? `ランナー：${labels.join("・")}`
+        : "ランナーなし";
+  }
+
   function startGame(){
     current = 0;
     sessionScore = 0;
@@ -67,6 +85,7 @@
     $("question-text").textContent = item.question;
     $("hint-text").textContent = item.hint;
     $("hint-text").hidden = true;
+    renderRunners(item.runners);
 
     const answerList = $("answer-list");
     answerList.replaceChildren();

@@ -2,6 +2,7 @@ window.GAME_QUESTIONS = [
   {
     category: "守備",
     situation: "ノーアウト・ランナー1塁",
+    runners: ["first"],
     question: "内野ゴロを捕った。どこへ投げる？",
     choices: [
       {
@@ -28,6 +29,7 @@ window.GAME_QUESTIONS = [
   {
     category: "守備",
     situation: "ランナーなし",
+    runners: [],
     question: "ゴロを捕った。どこへ投げる？",
     choices: [
       {
@@ -54,6 +56,7 @@ window.GAME_QUESTIONS = [
   {
     category: "守備",
     situation: "2アウト・ランナー3塁",
+    runners: ["third"],
     question: "内野ゴロを捕った。どこへ投げる？",
     choices: [
       {
@@ -79,7 +82,8 @@ window.GAME_QUESTIONS = [
   },
   {
     category: "守備",
-    situation: "フライ",
+    situation: "フライ・ランナーなし",
+    runners: [],
     question: "自分の近くにフライが上がった。まず何をする？",
     choices: [
       {
@@ -105,7 +109,8 @@ window.GAME_QUESTIONS = [
   },
   {
     category: "守備",
-    situation: "送球後",
+    situation: "送球後・ランナー1塁",
+    runners: ["first"],
     question: "ボールを投げたあと、次に何をする？",
     choices: [
       {

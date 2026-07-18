@@ -6,8 +6,8 @@
   <meta name="theme-color" content="#06284a">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta name="description" content="低学年向け野球IQ学習ゲーム">
-  <title>野球IQアカデミー Ver3.1</title>
-  <link rel="stylesheet" href="style.css?v=3.1.0">
+  <title>野球IQアカデミー Ver3.2</title>
+  <link rel="stylesheet" href="style.css?v=3.2.0">
 </head>
 <body>
   <main class="app">
@@ -27,12 +27,12 @@
 
       <section class="home-hero">
         <div class="title-lockup">
-          <small>Ver3.1</small>
+          <small>Ver3.2</small>
           <h1>野球<span>IQ</span>アカデミー</h1>
           <p>めざせ！名監督！</p>
           <b>FUJICON</b>
         </div>
-        <img src="assets/home-team.webp?v=3.1.0" alt="ネイビーと赤のユニフォームを着た少年野球チーム">
+        <img src="assets/home-team.webp?v=3.2.0" alt="ネイビーと赤のユニフォームを着た少年野球チーム">
       </section>
 
       <nav class="home-menu" aria-label="メインメニュー">
@@ -137,7 +137,23 @@
       </article>
 
       <figure class="field-panel">
-        <img src="assets/field-full.webp?v=3.1.0" alt="ホームベースから外野まで見える少年野球場">
+        <div class="field-stage">
+          <img src="assets/field-full.webp?v=3.2.0" alt="ホームベースから外野まで見える少年野球場">
+          <div id="runner-layer" class="runner-layer" aria-label="ランナー配置">
+            <div class="runner-marker runner-first" data-base="first" hidden>
+              <span class="runner-head"></span><span class="runner-body">F</span>
+              <small>1塁</small>
+            </div>
+            <div class="runner-marker runner-second" data-base="second" hidden>
+              <span class="runner-head"></span><span class="runner-body">F</span>
+              <small>2塁</small>
+            </div>
+            <div class="runner-marker runner-third" data-base="third" hidden>
+              <span class="runner-head"></span><span class="runner-body">F</span>
+              <small>3塁</small>
+            </div>
+          </div>
+        </div>
         <figcaption id="field-caption">グラウンド全体を見て考えよう</figcaption>
       </figure>
 
@@ -156,7 +172,7 @@
     </section>
 
     <section id="result-screen" class="screen result-screen">
-      <img src="assets/captain.webp?v=3.1.0" alt="ガッツポーズをする少年野球選手">
+      <img src="assets/captain.webp?v=3.2.0" alt="ガッツポーズをする少年野球選手">
       <div class="result-card">
         <span>ステージクリア！</span>
         <h2>ナイス判断！</h2>
@@ -169,7 +185,7 @@
 
   </main>
 
-  <script src="questions.js?v=3.1.0"></script>
-  <script src="script.js?v=3.1.0"></script>
+  <script src="questions.js?v=3.2.0"></script>
+  <script src="script.js?v=3.2.0"></script>
 </body>
 </html>
