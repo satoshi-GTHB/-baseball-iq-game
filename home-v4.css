@@ -1,0 +1,18 @@
+/* Ver4.0α.4: スタート画面のみを安全に更新 */
+.hero.hero-v4{
+  min-height:0;
+  background:#06284a;
+}
+.hero.hero-v4 img{
+  display:block;
+  width:100%;
+  height:auto;
+  object-fit:contain;
+  object-position:center top;
+}
+.hero.hero-v4:after{
+  height:42px;
+}
+@media (max-width:360px){
+  .hero.hero-v4:after{height:34px}
+}
