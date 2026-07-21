@@ -1362,6 +1362,7 @@ infieldInControl.addEventListener('click',()=>{
 });
 
 touchControl.addEventListener('click',()=>{
+
   const play=state.playState.currentPlay;
 
   if(
@@ -1373,6 +1374,11 @@ touchControl.addEventListener('click',()=>{
   }
 
   play.touchSelected=true;
+
+  clearInterval(state.playState.timerId);
+state.playState.timerId=null;
+play.timeExpired=false;
+finishBasicPlay(play);
 });
 
 updateLevel();// Sprint4.1 ベースをタップすると光る
