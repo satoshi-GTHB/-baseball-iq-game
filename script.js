@@ -63,8 +63,248 @@ let state={
   sessionAnswers:[],
   level:1,
   questionStartedAt:null,
-  answering:false
+  answering:false,
+playSequence:[],
+firstPlayType:null,
+firstPlayHadUnneededTouch:false,
+playState:{
+  active:false,
+  outs:0,
+  maxOuts:2,
+  currentPlayIndex:0,
+  runnerTargets:{
+    batter:null,
+    firstRunner:null,
+    secondRunner:null,
+    thirdRunner:null
+  },
+  outRunners:[],
+  safeRunners:[],
+  nextPlayMustBeSafe:false,
+startingOuts:0,
+managerInstruction:null,
+infieldInSelected:false,
+currentPlay:null,
+timerId:null,
+playFinished:false
+}
 };
+function buildRunnerTargets(situation){
+  const occupiedBases=RUNNERS[situation] || [];
+
+  return {
+    batter:'FIRST',
+    firstRunner:occupiedBases.includes('FIRST')?'SECOND':null,
+    secondRunner:occupiedBases.includes('SECOND')?'THIRD':null,
+    thirdRunner:occupiedBases.includes('THIRD')?'HOME':null
+  };
+}
+function initializePlayState(runnerTargets={},options={}){
+  if(state.playState.timerId){
+  clearInterval(state.playState.timerId);
+  state.playState.timerId=null;
+}
+if(playTimer){
+  playTimer.textContent='2.0';
+}
+if(playStatus){
+  playStatus.textContent='';
+}
+  state.playSequence=[];
+  state.firstPlayType=null;
+  state.firstPlayHadUnneededTouch=false;
+
+  state.playState.active=true;
+  state.playState.outs=0;
+state.playState.startingOuts=Number(options.outs || 0);
+state.playState.maxOuts=
+  state.playState.startingOuts===2?1:2;
+state.playState.managerInstruction=options.instruction || null;
+state.playState.infieldInSelected=false;
+state.playState.playFinished=false;
+
+state.playState.currentPlay=null;
+  state.playState.currentPlayIndex=0;
+  state.playState.runnerTargets={
+    batter:runnerTargets.batter || null,
+    firstRunner:runnerTargets.firstRunner || null,
+    secondRunner:runnerTargets.secondRunner || null,
+    thirdRunner:runnerTargets.thirdRunner || null
+  };
+  state.playState.outRunners=[];
+  state.playState.safeRunners=[];
+  state.playState.nextPlayMustBeSafe=false;
+}
+function getRunnerHeadingTo(base){
+  const targets=state.playState.runnerTargets;
+
+  return Object.keys(targets).find(runner=>{
+    return targets[runner]===base
+      && !state.playState.outRunners.includes(runner)
+      && !state.playState.safeRunners.includes(runner);
+  }) || null;
+}
+function isForcePlay(runner){
+  const isActive=(runnerName)=>{
+    return state.playState.runnerTargets[runnerName]!==null
+      && !state.playState.outRunners.includes(runnerName);
+  };
+
+  if(runner==='batter'){
+    return true;
+  }
+
+  if(runner==='firstRunner'){
+    return isActive('batter');
+  }
+
+  if(runner==='secondRunner'){
+    return isActive('firstRunner')
+      && isActive('batter');
+  }
+
+  if(runner==='thirdRunner'){
+    return isActive('secondRunner')
+      && isActive('firstRunner')
+      && isActive('batter');
+  }
+
+  return false;
+}
+
+function getPlayAtBase(base){
+  const runner=getRunnerHeadingTo(base);
+
+  if(!runner){
+    return null;
+  }
+
+  const force=isForcePlay(runner);
+
+  return {
+  base,
+  runner,
+  isForce:force,
+  requiresTouch:!force,
+  touchSelected:false
+};
+}
+
+function getBasicPlayResult(play){
+  if(!play){
+    return null;
+  }
+
+  if(play.isForce){
+    return {
+      result:'OUT',
+      reason:play.touchSelected
+        ? 'UNNEEDED_TOUCH'
+        : 'FORCE'
+    };
+  }
+
+  if(play.touchSelected){
+    return {
+      result:'OUT',
+      reason:'TOUCH'
+    };
+  }
+
+  return {
+    result:'SAFE',
+    reason:'MISSED_TOUCH'
+  };
+}
+
+function recordRunnerOut(runner){
+  if(!runner
+  || state.playState.outRunners.includes(runner)
+  || state.playState.safeRunners.includes(runner)){
+    return false;
+  }
+
+  state.playState.outRunners.push(runner);
+  state.playState.runnerTargets[runner]=null;
+  state.playState.outs+=1;
+
+  if(state.playState.outs>=state.playState.maxOuts){
+    state.playState.active=false;
+  }
+
+  return true;
+}
+
+function finishBasicPlay(play){
+  const playResult=getBasicPlayResult(play);
+
+  if(!playResult){
+    return;
+  }
+
+  if(playResult.result==='OUT'){
+    recordRunnerOut(play.runner);
+    playStatus.textContent='アウト！';
+  }else{
+    recordRunnerSafe(play.runner);
+    playStatus.textContent='セーフ！';
+  }
+
+  recordPlayResult({
+    ...play,
+    ...playResult
+  });
+
+  state.playState.currentPlay=null;
+}
+
+function recordRunnerSafe(runner){
+  if(!runner
+    || state.playState.safeRunners.includes(runner)
+    || state.playState.outRunners.includes(runner)){
+    return false;
+  }
+
+  state.playState.safeRunners.push(runner);
+
+  return true;
+}
+function recordPlayResult(playResult){
+  state.playSequence.push(playResult);
+  state.playState.currentPlayIndex=state.playSequence.length;
+}
+
+function startPlayTimer(play){
+  if(!play || !playTimer){
+    return;
+  }
+
+  if(state.playState.timerId){
+    clearInterval(state.playState.timerId);
+  }
+
+  const startedAt=Date.now();
+
+  play.touchSelected=false;
+  play.timeExpired=false;
+  playTimer.textContent='2.0';
+
+  state.playState.timerId=setInterval(()=>{
+    const remaining=Math.max(
+      0,
+      2-(Date.now()-startedAt)/1000
+    );
+
+    playTimer.textContent=remaining.toFixed(1);
+
+    if(remaining<=0){
+      clearInterval(state.playState.timerId);
+      state.playState.timerId=null;
+      play.timeExpired=true;
+      finishBasicPlay(play);
+    }
+  },100);
+}
 
 function shuffle(items){
   const copy=items.slice();
@@ -686,8 +926,22 @@ function renderQuestion(){
       :'ランナーの配置を確認しよう';
 
   renderField(q);
+  if(state.mode==='defense'){
+  initializePlayState(
+  buildRunnerTargets(q.situation),
+  {outs:q.outs, instruction:q.instruction}
+);
+}
+const infieldInButton=$('#infield-in-button');
+const hasThirdRunner=
+  (RUNNERS[q.situation] || []).includes('THIRD');
+
+infieldInButton.hidden=
+  state.mode!=='defense' || !hasThirdRunner;
+  infieldInButton.classList.remove('is-selected');
 
   const answersBox=$('#answers');
+  answersBox.style.display=state.mode==='defense'?'none':'';
 
   answersBox.innerHTML='';
 
@@ -1086,9 +1340,53 @@ window.FUJICON_DEBUG={
   }
 };
 
+const infieldInControl=$('#infield-in-button');
+
+const touchControl=$('#touch-button');
+
+const playTimer=$('#play-timer');
+
+const playStatus=$('#play-status');
+
+infieldInControl.addEventListener('click',()=>{
+  if(
+    state.mode!=='defense'
+    || infieldInControl.hidden
+    || state.playState.playFinished
+  ){
+    return;
+  }
+
+  state.playState.infieldInSelected=true;
+  infieldInControl.classList.add('is-selected');
+});
+
+touchControl.addEventListener('click',()=>{
+  const play=state.playState.currentPlay;
+
+  if(
+    state.mode!=='defense'
+    || state.playState.playFinished
+    || !play
+  ){
+    return;
+  }
+
+  play.touchSelected=true;
+});
+
 updateLevel();// Sprint4.1 ベースをタップすると光る
 document.querySelectorAll('.field .base').forEach((base) => {
   base.addEventListener('click', () => {
+    const tappedBase=
+  base.classList.contains('home')?'HOME':
+  base.classList.contains('first')?'FIRST':
+  base.classList.contains('second')?'SECOND':
+  base.classList.contains('third')?'THIRD':
+  null;
+  const play=getPlayAtBase(tappedBase);
+  state.playState.currentPlay=play;
+  startPlayTimer(play);
     document.querySelectorAll('.field .base').forEach((item) => {
       item.classList.remove('is-selected');
     });

@@ -399,8 +399,8 @@ button {
 
 .base {
     position: absolute;
-    width: 21px;
-    height: 21px;
+    width: 30px;
+    height: 30px;
     background: linear-gradient(135deg, #fff, #e8eef4);
     border: 2px solid #a9b3bd;
     transform: rotate(45deg);
@@ -408,24 +408,34 @@ button {
     box-shadow: 0 2px 3px #0002
 }
 
+.base.is-selected {
+    background: #ffd447;
+    border-color: #ffffff;
+    box-shadow:
+        0 0 0 5px rgba(255,212,71,.45),
+        0 0 18px rgba(255,212,71,.9);
+}
+
 .home {
-    left: calc(50% - 11px);
-    bottom: 5.5%
+    left: calc(50% - 15px);
+    top:83.8%;
+    bottom:auto;
 }
 
-.first {
-    right: 17.5%;
-    top: 57%
+.first{
+    left:78.7%;
+    top:49.6%;
+    right:auto;
 }
 
-.second {
-    left: calc(50% - 11px);
-    top: 31%
+.second{
+    left: 50%;
+    top: calc(19.5% - 14px);
 }
 
-.third {
-    left: 17.5%;
-    top: 57%
+.third{
+    left:20.3%;
+    top:49.6%;
 }
 
 .runner {
@@ -434,6 +444,7 @@ button {
     height: 82px;
     transform: translate(-50%, -50%);
     z-index: 10;
+    pointer-events: none;
     filter: drop-shadow(0 4px 3px #0003)
 }
 
@@ -449,6 +460,7 @@ button {
     width: 100%;
     height: 100%;
     object-fit: contain;
+    pointer-events: none;
 }
 
 .runner.self {
@@ -624,4 +636,109 @@ button {
 .field .baseline {
 
     display: none !important;
+}
+
+/* Sprint4.3 ホームベース形状 */
+.base.home {
+    width: 25px;
+    height: 25px;
+    background: #fff;
+    border: 2px solid #a9b3bd;
+    transform: none;
+    clip-path: polygon(
+        0 0,
+        100% 0,
+        100% 55%,
+        50% 100%,
+        0 55%
+    );
+}
+
+.base.home.is-selected {
+    background: #ffd447;
+    border-color: #fff;
+    box-shadow:
+        0 0 0 5px rgba(255, 212, 71, .45),
+        0 0 18px rgba(255, 212, 71, .9);
+}
+
+.home {
+    left: calc(50% - 12.5px);
+    top: 83.2%;
+    bottom: auto;
+}
+
+.first {
+    left: 79.6%;
+    right: auto;
+    top: 48.8%;
+}
+
+.second {
+    left: calc(50% - 11px);
+    top: 19.1%;
+}
+
+.third {
+    left: 19.9%;
+    top: 48.8%;
+}
+#play-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin: 12px 0 18px;
+}
+
+#play-timer {
+    min-height: 32px;
+    font-size: 26px;
+    font-weight: 800;
+    color: #0b3764;
+}
+
+#play-action-buttons {
+    width: min(540px, 100%);
+    margin: 0 auto;
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+}
+
+#infield-in-button,
+#touch-button {
+    flex: 1;
+    min-width: 0;
+    padding: 14px 20px;
+    border: 0;
+    border-radius: 14px;
+    background: #e63946;
+    color: #fff;
+    font-size: 22px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+#infield-in-button {
+    background: #2f80ed;
+}
+
+#infield-in-button.is-selected {
+    background: #145dbf;
+    box-shadow: 0 0 0 4px rgba(47, 128, 237, 0.3);
+    transform: translateY(2px);
+}
+
+#touch-button:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+#play-status {
+    min-height: 28px;
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    text-align: center;
 }
