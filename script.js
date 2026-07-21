@@ -195,6 +195,15 @@ function getBasicPlayResult(play){
     return null;
   }
 
+if(state.playState.nextPlayMustBeSafe){
+  state.playState.nextPlayMustBeSafe=false;
+
+  return {
+    result:'SAFE',
+    reason:'TIME_LOSS'
+  };
+}
+
   if(play.isForce){
     return {
       result:'OUT',
@@ -244,7 +253,10 @@ function finishBasicPlay(play){
 
   if(playResult.result==='OUT'){
     recordRunnerOut(play.runner);
-    playStatus.textContent='アウト！';
+    playStatus.textContent=
+  state.playState.outs===2
+    ? 'ゲッツー！！'
+    : 'アウト！';
   }else{
     recordRunnerSafe(play.runner);
     playStatus.textContent='セーフ！';
@@ -271,6 +283,11 @@ function recordRunnerSafe(runner){
 }
 function recordPlayResult(playResult){
   state.playSequence.push(playResult);
+
+  if(playResult.reason==='UNNEEDED_TOUCH'){
+  state.playState.nextPlayMustBeSafe=true;
+}
+
   state.playState.currentPlayIndex=state.playSequence.length;
 }
 
@@ -1390,8 +1407,25 @@ document.querySelectorAll('.field .base').forEach((base) => {
   base.classList.contains('second')?'SECOND':
   base.classList.contains('third')?'THIRD':
   null;
+
+const currentPlay=state.playState.currentPlay;
+
+if(currentPlay){
+  if(state.playState.timerId){
+    clearInterval(state.playState.timerId);
+    state.playState.timerId=null;
+  }
+
+  finishBasicPlay(currentPlay);
+}
+
   const play=getPlayAtBase(tappedBase);
   state.playState.currentPlay=play;
+
+  if(play && play.isForce){
+  playStatus.textContent='アウト！';
+}
+
   startPlayTimer(play);
     document.querySelectorAll('.field .base').forEach((item) => {
       item.classList.remove('is-selected');
