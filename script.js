@@ -348,10 +348,10 @@ function createSession(mode){
   return result;
 }
 
-function runnerSvg(){
+function runnerSvgOld(direction='right'){
   return `
     <svg viewBox="0 0 86 94" aria-hidden="true">
-      <g transform="rotate(-7 43 47)">
+      <g transform="${direction === 'left' ? 'translate(86 0) scale(-1 1)' : ''} rotate(-7 43 47)">
         <ellipse
           cx="43"
           cy="88"
@@ -374,6 +374,17 @@ function runnerSvg(){
           stroke="#fff"
           stroke-width="2"
         />
+<text
+  x="43"
+  y="23"
+  text-anchor="middle"
+  font-size="12"
+  font-weight="900"
+  fill="#fff"
+  transform="${direction === 'left' ? 'translate(86 0) scale(-1 1)' : ''}"
+>
+  F
+</text>
 
         <circle
           cx="44"
@@ -426,6 +437,7 @@ function runnerSvg(){
           font-size="8"
           font-weight="900"
           fill="#fff"
+          transform="${direction === 'left' ? 'translate(86 0) scale(-1 1)' : ''}"
         >
           FUJICON
         </text>
@@ -481,7 +493,139 @@ function runnerSvg(){
     </svg>
   `;
 }
+function runnerSvg(direction='right'){
+  const textFix = direction === 'left'
+    ? 'translate(86 0) scale(-1 1)'
+    : '';
 
+  return `
+    <svg viewBox="0 0 86 94" aria-hidden="true">
+      <ellipse
+        cx="43"
+        cy="88"
+        rx="24"
+        ry="5"
+        fill="#06284a"
+        opacity=".16"
+      />
+
+      <g transform="${direction === 'left' ? 'translate(86 0) scale(-1 1)' : ''} rotate(-6 43 47)">
+        <path
+          d="M31 62 L23 80"
+          stroke="#fff"
+          stroke-width="10"
+          stroke-linecap="round"
+        />
+        <path
+          d="M49 63 L64 77"
+          stroke="#fff"
+          stroke-width="10"
+          stroke-linecap="round"
+        />
+
+        <path
+          d="M22 80 L12 82"
+          stroke="#06284a"
+          stroke-width="7"
+          stroke-linecap="round"
+        />
+        <path
+          d="M63 77 L75 82"
+          stroke="#06284a"
+          stroke-width="7"
+          stroke-linecap="round"
+        />
+
+        <path
+          d="M29 43 Q43 37 57 43 L55 64 Q43 72 31 64 Z"
+          fill="#0a2f67"
+          stroke="#fff"
+          stroke-width="2.5"
+          stroke-linejoin="round"
+        />
+
+        <path
+          d="M31 49 L55 49"
+          stroke="#dc2638"
+          stroke-width="5"
+        />
+
+        <text
+          x="43"
+          y="58"
+          text-anchor="middle"
+          font-size="7"
+          font-weight="900"
+          fill="#fff"
+          transform="${textFix}"
+        >
+          FUJICON
+        </text>
+
+        <path
+          d="M31 47 L18 59"
+          stroke="#f2bd93"
+          stroke-width="7"
+          stroke-linecap="round"
+        />
+        <path
+          d="M55 47 L68 38"
+          stroke="#f2bd93"
+          stroke-width="7"
+          stroke-linecap="round"
+        />
+
+        <circle
+          cx="43"
+          cy="31"
+          r="13"
+          fill="#f2bd93"
+          stroke="#06284a"
+          stroke-width="2.5"
+        />
+
+        <circle cx="39" cy="30" r="1.6" fill="#13243a" />
+        <circle cx="47" cy="30" r="1.6" fill="#13243a" />
+
+        <path
+          d="M39 35 Q43 38 47 35"
+          fill="none"
+          stroke="#8b4e32"
+          stroke-width="2"
+          stroke-linecap="round"
+        />
+
+        <path
+          d="M27 21 Q43 10 60 18 L57 31 Q43 25 29 31 Z"
+          fill="#0a2f67"
+          stroke="#fff"
+          stroke-width="2.5"
+          stroke-linejoin="round"
+        />
+
+        <path
+          d="M55 20 L72 26 Q62 31 54 28 Z"
+          fill="#0a2f67"
+          stroke="#fff"
+          stroke-width="2.5"
+          stroke-linejoin="round"
+        />
+
+        <text
+          x="43"
+          y="25"
+          text-anchor="middle"
+          font-size="12"
+          font-weight="900"
+          fill="#fff"
+          transform="${textFix}"
+        >
+          F
+        </text>
+      </g>
+    </svg>
+  `;
+}
 function renderField(q){
   const layer=$('#runner-layer');
 
@@ -504,11 +648,7 @@ function renderField(q){
     element.style.left=x+'%';
     element.style.top=y+'%';
 
-    element.innerHTML=
-      `${self
-        ?'<span class="self-label">自分</span>'
-        :''
-      }${runnerSvg()}`;
+    element.innerHTML = `${self ? '<span class="self-label">自分</span>' : ''}<img class="runner-image" src="assets/runner-${base === 'THIRD' ? 'right' : 'left'}.png" alt="">`;
 
     layer.appendChild(element);
   });
