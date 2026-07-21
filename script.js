@@ -29,9 +29,9 @@ const RUNNERS={
 };
 
 const POS={
-  FIRST:[78,58],
-  SECOND:[51,31],
-  THIRD:[22,58]
+  FIRST:[76,38],
+  SECOND:[39,25],
+  THIRD:[22,60]
 };
 
 const HISTORY_STORAGE_KEY='baseballIqAnswerHistoryV1';
@@ -946,4 +946,13 @@ window.FUJICON_DEBUG={
   }
 };
 
-updateLevel();
+updateLevel();// Sprint4.1 ベースをタップすると光る
+document.querySelectorAll('.field .base').forEach((base) => {
+  base.addEventListener('click', () => {
+    document.querySelectorAll('.field .base').forEach((item) => {
+      item.classList.remove('is-selected');
+    });
+
+    base.classList.add('is-selected');
+  });
+});
