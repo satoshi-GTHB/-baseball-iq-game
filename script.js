@@ -119,7 +119,8 @@ if(playStatus){
 state.playState.startingOuts=Number(options.outs || 0);
 state.playState.maxOuts=
   state.playState.startingOuts===2?1:2;
-state.playState.managerInstruction=options.instruction || null;
+updateOutCount();
+  state.playState.managerInstruction=options.instruction || null;
 state.playState.infieldInSelected=false;
 state.playState.playFinished=false;
 
@@ -228,20 +229,34 @@ if(state.playState.nextPlayMustBeSafe){
 
 function recordRunnerOut(runner){
   if(!runner
-  || state.playState.outRunners.includes(runner)
-  || state.playState.safeRunners.includes(runner)){
-    return false;
-  }
+|| state.playState.outRunners.includes(runner)
+|| state.playState.safeRunners.includes(runner)
+|| state.playState.outs>=state.playState.maxOuts){
+  return false;
+}
 
   state.playState.outRunners.push(runner);
   state.playState.runnerTargets[runner]=null;
   state.playState.outs+=1;
+  updateOutCount();
 
   if(state.playState.outs>=state.playState.maxOuts){
     state.playState.active=false;
   }
 
   return true;
+}
+
+function updateOutCount(){
+  if(!outCount){
+    return;
+  }
+
+  const totalOuts=
+    state.playState.startingOuts
+    + state.playState.outs;
+
+  outCount.textContent=`アウト：${totalOuts}`;
 }
 
 function finishBasicPlay(play){
@@ -1365,6 +1380,8 @@ const infieldInControl=$('#infield-in-button');
 const touchControl=$('#touch-button');
 
 const playTimer=$('#play-timer');
+
+const outCount=$('#out-count');
 
 const playStatus=$('#play-status');
 
