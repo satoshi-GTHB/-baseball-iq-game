@@ -255,7 +255,8 @@ function updateOutCount(){
   const totalOuts=
     state.playState.startingOuts
     + state.playState.outs;
-
+outLight1?.classList.toggle('is-on', totalOuts >= 1);
+outLight2?.classList.toggle('is-on', totalOuts >= 2);
   outCount.textContent=`アウト：${totalOuts}`;
 }
 
@@ -268,13 +269,25 @@ function finishBasicPlay(play){
 
   if(playResult.result==='OUT'){
     recordRunnerOut(play.runner);
-    playStatus.textContent=
-  state.playState.outs===2
-    ? 'ゲッツー！！'
-    : 'アウト！';
+    
+
+const totalOuts=
+  state.playState.startingOuts
+  + state.playState.outs;
+
+playStatus.textContent=
+  totalOuts>=3
+    ? 'チェンジ!!'
+    : state.playState.outs===2
+      ? 'ゲッツー!!'
+      : 'アウト！';
+      playStatus.classList.remove('is-safe');
+playStatus.classList.add('is-out');
   }else{
     recordRunnerSafe(play.runner);
-    playStatus.textContent='セーフ！';
+    playStatus.textContent='セーフ…';
+    playStatus.classList.remove('is-out');
+playStatus.classList.add('is-safe');
   }
 
   recordPlayResult({
@@ -1382,6 +1395,8 @@ const touchControl=$('#touch-button');
 const playTimer=$('#play-timer');
 
 const outCount=$('#out-count');
+const outLight1=$('#out-light-1');
+const outLight2=$('#out-light-2');
 
 const playStatus=$('#play-status');
 
@@ -1439,11 +1454,35 @@ if(currentPlay){
   finishBasicPlay(currentPlay);
 }
 
-  const play=getPlayAtBase(tappedBase);
+  const play=getPlayAtBase(tappedBase) || {
+  base: tappedBase,
+  runner: null,
+  isForce: false,
+  requiresTouch: false,
+  touchSelected: false
+};
   state.playState.currentPlay=play;
 
   if(play && play.isForce){
-  playStatus.textContent='アウト！';
+  const provisionalPlayOuts=
+    state.playState.outs + 1;
+
+  const provisionalTotalOuts=
+    state.playState.startingOuts
+    + provisionalPlayOuts;
+
+  playStatus.textContent=
+    provisionalTotalOuts>=3
+      ? 'チェンジ！！'
+      : provisionalPlayOuts===2
+        ? 'ゲッツー!!'
+        : 'アウト！';
+
+  playStatus.classList.remove('is-safe');
+  playStatus.classList.add('is-out');
+
+  outLight1?.classList.toggle('is-on', provisionalTotalOuts >= 1);
+  outLight2?.classList.toggle('is-on', provisionalTotalOuts >= 2);
 }
 
   startPlayTimer(play);

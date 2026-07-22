@@ -208,7 +208,7 @@ button {
 }
 
 .question-card {
-    padding: 17px 18px 12px;
+    padding: 8px 18px 6px;
     background: linear-gradient(180deg, #fffdf7, #fff7e8)
 }
 
@@ -256,6 +256,44 @@ button {
     outline: 1px solid #cfd8e1;
     box-shadow: 0 8px 22px #06284a27;
     isolation: isolate
+}
+
+#bso-display {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 20;
+  padding: 7px 9px;
+  border-radius: 9px;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  font-weight: 800;
+}
+
+.bso-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 19px;
+}
+
+.bso-label {
+  width: 14px;
+  text-align: center;
+}
+
+.bso-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #777;
+  border: 1px solid #ddd;
+}
+
+.bso-dot.is-on {
+  background: #e63946;
+  border-color: #ffb3ba;
+  box-shadow: 0 0 5px rgba(230, 57, 70, 0.8);
 }
 
 .skyline {
@@ -688,7 +726,7 @@ button {
     flex-direction: column;
     align-items: center;
     gap: 10px;
-    margin: 12px 0 18px;
+    margin: 6px 0 6px;
 }
 
 #play-timer {
@@ -710,7 +748,7 @@ button {
 #touch-button {
     flex: 1;
     min-width: 0;
-    padding: 14px 20px;
+    padding: 10px 20px;
     border: 0;
     border-radius: 14px;
     background: #e63946;
@@ -736,9 +774,34 @@ button {
 }
 
 #play-status {
-    min-height: 28px;
-    margin: 0;
-    font-size: 18px;
-    font-weight: 700;
-    text-align: center;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 25;
+  transform: translate(-50%, -50%);
+  margin: 0;
+  width: 100%;
+  font-family: "Arial Rounded MT Bold", "Yu Gothic", sans-serif;
+  font-size: 34px;
+  font-weight: 900;
+  text-align: center;
+  color: #777;
+  text-shadow:
+  -2px -2px 0 #111,
+   0   -2px 0 #111,
+   2px -2px 0 #111,
+  -2px  0   0 #111,
+   2px  0   0 #111,
+  -2px  2px 0 #111,
+   0    2px 0 #111,
+   2px  2px 0 #111;
+  pointer-events: none;
+}
+
+#play-status.is-out {
+  color: #e63946;
+}
+
+#play-status.is-safe {
+  color: #2f80ed;
 }

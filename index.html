@@ -35,12 +35,30 @@
 
     <article class="question-card">
       <div class="tags"><span id="situation-tag">ランナー1塁</span><span id="role-tag">守備</span></div>
-      <h2 id="question-text"></h2>
-      <p id="question-note"></p>
+      <h2 id="question-text" hidden></h2>
+      <p id="question-note" hidden></p>
     </article>
 
     <section class="field-wrap" aria-label="野球場のランナー配置">
       <div class="field" id="field">
+        <div id="bso-display" aria-label="ボール0、ストライク0、アウト0">
+  <div class="bso-row">
+    <span class="bso-label">B</span>
+    <span class="bso-dot"></span>
+    <span class="bso-dot"></span>
+    <span class="bso-dot"></span>
+  </div>
+  <div class="bso-row">
+    <span class="bso-label">S</span>
+    <span class="bso-dot"></span>
+    <span class="bso-dot"></span>
+  </div>
+  <div class="bso-row">
+    <span class="bso-label">O</span>
+    <span id="out-light-1" class="bso-dot"></span>
+    <span id="out-light-2" class="bso-dot"></span>
+  </div>
+</div>
         <div class="skyline"><span></span><span></span><span></span></div>
         <div class="outfield"><i></i><i></i><i></i><i></i></div>
         <div class="warning-track"></div>
@@ -53,18 +71,19 @@
         <span class="base second" aria-label="2塁"></span>
         <span class="base third" aria-label="3塁"></span>
         <div id="runner-layer"></div>
+        <p id="play-status"></p>
       </div>
-      <p id="field-caption">ランナーの位置を見て考えよう</p>
+      <p id="field-caption" hidden>ランナーの位置を見て考えよう</p>
     </section>
     <div id="play-controls">
-      <div id="out-count">アウト：0</div>
+      <div id="out-count" hidden>アウト：0</div>
   <div id="play-timer">2.0</div>
   <div id="play-action-buttons">
   <button id="infield-in-button" type="button" hidden>内野前進</button>
   <button id="touch-button" type="button">タッチ！</button>
 </div>
-  <p id="play-status"></p>
 </div>
+
 
     <div id="answers" class="answers"></div>
   </section>
