@@ -284,7 +284,10 @@ function recordRunnerSafe(runner){
 function recordPlayResult(playResult){
   state.playSequence.push(playResult);
 
-  if(playResult.reason==='UNNEEDED_TOUCH'){
+  if(
+  playResult.reason==='UNNEEDED_TOUCH'
+  || playResult.reason==='TOUCH'
+){
   state.playState.nextPlayMustBeSafe=true;
 }
 
