@@ -177,5 +177,9 @@ assert.equal(rules.scoreGrade('◎'), 3);
 assert.equal(rules.scoreGrade('○'), 2);
 assert.equal(rules.scoreGrade('△'), 1);
 assert.equal(rules.scoreGrade('×'), 0);
+assert.equal(rules.enforceOutFloor('×', 1), '△');
+assert.equal(rules.enforceOutFloor('×', 2), '△');
+assert.equal(rules.enforceOutFloor('×', 0), '×');
+assert.equal(rules.enforceOutFloor('○', 1), '○');
 
 console.log('Sprint4.5 rules tests passed');

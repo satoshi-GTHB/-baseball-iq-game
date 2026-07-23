@@ -436,6 +436,12 @@
     return POINTS_BY_GRADE[grade] ?? 0;
   }
 
+  function enforceOutFloor(grade, outsAdded) {
+    return Number(outsAdded) >= 1 && grade === '×'
+      ? '△'
+      : grade;
+  }
+
   return Object.freeze({
     BASES,
     CASES,
@@ -454,6 +460,7 @@
     evaluateActions,
     getRunnerHeadingTo,
     isForcePlay,
-    scoreGrade
+    scoreGrade,
+    enforceOutFloor
   });
 });

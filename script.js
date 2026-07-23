@@ -570,7 +570,10 @@ function defenseGrade(evaluation,q){
     grade='△';
   }
 
-  return grade;
+  return window.FUJICON_SPRINT45.enforceOutFloor(
+    grade,
+    evaluation.outsAdded
+  );
 }
 
 function defenseActionCandidates(){
