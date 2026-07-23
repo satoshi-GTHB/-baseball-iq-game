@@ -1,0 +1,178 @@
+:root {
+  --navy: #062f57;
+  --blue: #1976d2;
+  --red: #e52336;
+  --cream: #fff8ea;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: #edf6fb;
+  color: #102f4d;
+  font-family: "Yu Gothic", "Hiragino Kaku Gothic ProN", sans-serif;
+}
+
+.how-to {
+  width: min(100%, 600px);
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 0 16px calc(28px + env(safe-area-inset-bottom));
+  background: var(--cream);
+}
+
+.page-head {
+  margin: 0 -16px 16px;
+  padding: calc(18px + env(safe-area-inset-top)) 18px 20px;
+  border-bottom: 5px solid var(--red);
+  background: var(--navy);
+  color: #fff;
+  text-align: center;
+}
+
+.page-head span {
+  color: #ffd34e;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: .16em;
+}
+
+.page-head h1 {
+  margin: 4px 0 3px;
+  font-size: clamp(23px, 6vw, 30px);
+}
+
+.page-head p {
+  margin: 0;
+  font-size: 14px;
+}
+
+.page-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 16px 0;
+}
+
+.page-actions a {
+  display: grid;
+  min-height: 50px;
+  place-items: center;
+  border-radius: 14px;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 900;
+  text-align: center;
+  text-decoration: none;
+  box-shadow: 0 4px 0 #0003;
+}
+
+.page-actions a:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #0003;
+}
+
+.go-game { background: var(--blue); }
+.go-home { background: var(--red); }
+
+.guide-card {
+  margin: 12px 0;
+  padding: 16px;
+  border: 2px solid #d5e4ee;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 3px 0 #dce7ed;
+}
+
+.guide-card h2 {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0 0 10px;
+  color: var(--navy);
+  font-size: 19px;
+}
+
+.guide-card h2 b {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--red);
+  color: #fff;
+}
+
+.guide-card p,
+.guide-card li {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.75;
+}
+
+.guide-card p { margin: 7px 0; }
+.guide-card ul { margin: 0; padding-left: 22px; }
+
+.coach-notes {
+  display: grid;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.coach-notes p {
+  margin: 0;
+  padding: 9px 11px;
+  border-radius: 12px;
+  background: #eff6fb;
+}
+
+.coach-notes strong,
+.coach-notes span { display: block; }
+
+.example {
+  padding: 8px 11px;
+  border-radius: 10px;
+  background: #fff3cd;
+  color: #683d00;
+}
+
+.grades {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin: 7px 0 10px;
+}
+
+.grades span {
+  padding: 7px 3px;
+  border-radius: 10px;
+  background: #eff6fb;
+  font-size: 13px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.grades b {
+  display: block;
+  color: var(--red);
+  font-size: 24px;
+}
+
+.guide-card aside {
+  margin-top: 10px;
+  padding: 10px;
+  border-left: 4px solid #e49c00;
+  background: #fff4d5;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+.page-actions-bottom { margin-top: 18px; }
+
+@media (max-width: 390px) {
+  .page-actions { grid-template-columns: 1fr; }
+  .guide-card { padding: 14px; }
+}

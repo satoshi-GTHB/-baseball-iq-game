@@ -36,6 +36,11 @@ const POS={
 
 const HISTORY_STORAGE_KEY='baseballIqAnswerHistoryV1';
 const SESSION_SIZE=5;
+const DEFENSE_COUNT_STORAGE_KEY='baseballIqDefenseQuestionCountV1';
+const DEFENSE_CASE_FREQUENCY_KEY='baseballIqDefenseCaseFrequencyV1';
+const DEFENSE_FIELDER_FREQUENCY_KEY='baseballIqDefenseFielderFrequencyV1';
+const PROFILE_STORAGE_KEY='baseballIqProfilesV1';
+const MAX_PROFILES=5;
 
 const $=s=>document.querySelector(s);
 const $$=s=>[...document.querySelectorAll(s)];
@@ -48,23 +53,149 @@ function safeParse(value,fallback){
   }
 }
 
-const savedStats=safeParse(
-  localStorage.getItem('baseballIqMastery'),
-  {}
-);
+function createEmptyProfileData(){
+  return {
+    xp:0,
+    stats:{},
+    history:{
+      version:1,
+      answers:[]
+    },
+    caseFrequency:{},
+    fielderFrequency:{},
+    results:[]
+  };
+}
+
+function normalizeProfileData(data){
+  const empty=createEmptyProfileData();
+
+  return {
+    ...empty,
+    ...(data || {}),
+    stats:data?.stats || {},
+    history:
+      data?.history &&
+      Array.isArray(data.history.answers)
+        ?data.history
+        :empty.history,
+    caseFrequency:data?.caseFrequency || {},
+    fielderFrequency:data?.fielderFrequency || {},
+    results:Array.isArray(data?.results)
+      ?data.results
+      :[]
+  };
+}
+
+function loadProfileStore(){
+  const saved=safeParse(
+    localStorage.getItem(PROFILE_STORAGE_KEY),
+    null
+  );
+
+  if(
+    saved &&
+    saved.version===1 &&
+    Array.isArray(saved.profiles)
+  ){
+    const profiles=saved.profiles
+      .slice(0,MAX_PROFILES)
+      .map(profile=>({
+        ...profile,
+        data:normalizeProfileData(profile.data)
+      }));
+    const activeExists=profiles.some(
+      profile=>profile.id===saved.activeProfileId
+    );
+
+    return {
+      version:1,
+      legacyMigrated:Boolean(saved.legacyMigrated),
+      activeProfileId:activeExists
+        ?saved.activeProfileId
+        :(profiles[0]?.id || null),
+      profiles
+    };
+  }
+
+  return {
+    version:1,
+    legacyMigrated:false,
+    activeProfileId:null,
+    profiles:[]
+  };
+}
+
+function saveProfileStore(){
+  localStorage.setItem(
+    PROFILE_STORAGE_KEY,
+    JSON.stringify(profileStore)
+  );
+}
+
+function getActiveProfile(){
+  return profileStore.profiles.find(
+    profile=>profile.id===profileStore.activeProfileId
+  ) || null;
+}
+
+function getActiveProfileData(){
+  return getActiveProfile()?.data || null;
+}
+
+function legacyProfileData(){
+  const data=createEmptyProfileData();
+  const legacyHistory=safeParse(
+    localStorage.getItem(HISTORY_STORAGE_KEY),
+    null
+  );
+
+  data.xp=Number(
+    localStorage.getItem('baseballIqXp') || 0
+  );
+  data.stats=safeParse(
+    localStorage.getItem('baseballIqMastery'),
+    {}
+  );
+  data.history=
+    legacyHistory &&
+    Array.isArray(legacyHistory.answers)
+      ?legacyHistory
+      :data.history;
+  data.caseFrequency=safeParse(
+    localStorage.getItem(DEFENSE_CASE_FREQUENCY_KEY),
+    {}
+  );
+  data.fielderFrequency=safeParse(
+    localStorage.getItem(DEFENSE_FIELDER_FREQUENCY_KEY),
+    {}
+  );
+
+  return data;
+}
+
+let profileStore=loadProfileStore();
+const initialProfileData=
+  getActiveProfileData() ||
+  (
+    !profileStore.legacyMigrated
+      ?legacyProfileData()
+      :null
+  );
 
 let state={
   mode:'defense',
   index:0,
   score:0,
-  xp:Number(localStorage.getItem('baseballIqXp')||0),
-  stats:savedStats,
+  xp:Number(initialProfileData?.xp || 0),
+  stats:initialProfileData?.stats || {},
   questions:[],
   sessionAnswers:[],
   level:1,
   questionStartedAt:null,
   answering:false,
 playSequence:[],
+playActions:[],
 firstPlayType:null,
 firstPlayHadUnneededTouch:false,
 playState:{
@@ -86,6 +217,7 @@ managerInstruction:null,
 infieldInSelected:false,
 currentPlay:null,
 timerId:null,
+decisionTimerId:null,
 playFinished:false
 }
 };
@@ -104,13 +236,25 @@ function initializePlayState(runnerTargets={},options={}){
   clearInterval(state.playState.timerId);
   state.playState.timerId=null;
 }
+if(state.playState.decisionTimerId){
+  clearTimeout(state.playState.decisionTimerId);
+  state.playState.decisionTimerId=null;
+}
 if(playTimer){
   playTimer.textContent='2.0';
 }
 if(playStatus){
   playStatus.textContent='';
+  playStatus.classList.remove('is-out','is-safe');
+}
+document.querySelectorAll('.field .base').forEach(base=>{
+  base.classList.remove('is-selected');
+});
+if(touchControl){
+  touchControl.disabled=false;
 }
   state.playSequence=[];
+  state.playActions=[];
   state.firstPlayType=null;
   state.firstPlayHadUnneededTouch=false;
 
@@ -261,14 +405,40 @@ outLight2?.classList.toggle('is-on', totalOuts >= 2);
 }
 
 function finishBasicPlay(play){
-  const playResult=getBasicPlayResult(play);
+  const q=state.questions[state.index];
+  const action={
+    base:play.base,
+    touch:Boolean(play.touchSelected)
+  };
+  const evaluation=
+    state.mode==='defense' &&
+    q?.caseId &&
+    window.FUJICON_SPRINT45
+      ?evaluateDefenseActions(
+        q,
+        [...state.playActions, action]
+      )
+      :null;
+  const playResult=evaluation
+    ?evaluation.plays[evaluation.plays.length-1]
+    :getBasicPlayResult(play);
 
   if(!playResult){
     return;
   }
 
+  if(evaluation){
+    state.playActions.push(action);
+    state.playSequence=evaluation.plays.slice();
+    state.playState.outs=evaluation.outsAdded;
+    state.playState.active=!evaluation.inningOver;
+    updateOutCount();
+  }
+
   if(playResult.result==='OUT'){
-    recordRunnerOut(play.runner);
+    if(!evaluation){
+      recordRunnerOut(play.runner);
+    }
     
 
 const totalOuts=
@@ -284,18 +454,437 @@ playStatus.textContent=
       playStatus.classList.remove('is-safe');
 playStatus.classList.add('is-out');
   }else{
-    recordRunnerSafe(play.runner);
+    if(!evaluation){
+      recordRunnerSafe(play.runner);
+    }
     playStatus.textContent='セーフ…';
     playStatus.classList.remove('is-out');
 playStatus.classList.add('is-safe');
   }
 
-  recordPlayResult({
-    ...play,
-    ...playResult
-  });
+  if(!evaluation){
+    recordPlayResult({
+      ...play,
+      ...playResult
+    });
+  }else{
+    state.playState.currentPlayIndex=state.playSequence.length;
+  }
 
   state.playState.currentPlay=null;
+  scheduleDefenseAnswer(evaluation);
+}
+
+function evaluateDefenseActions(q,actions){
+  return window.FUJICON_SPRINT45.evaluateActions(
+    {
+      ...q,
+      defense:state.playState.infieldInSelected
+        ?'INFIELD_IN'
+        :'NORMAL'
+    },
+    actions
+  );
+}
+
+function defenseGrade(evaluation,q){
+  const plays=evaluation.plays;
+  const reasons=plays.map(play=>play.reason);
+  const isOneOutFirstThird=
+    Number(q.outs)===1 &&
+    q.situation==='FIRST_THIRD';
+  const homeTouchOutOnly=
+    isOneOutFirstThird &&
+    plays.length===1 &&
+    plays[0].base==='HOME' &&
+    plays[0].touch &&
+    plays[0].result==='OUT';
+  const riskyThrowAfterHomeOut=
+    isOneOutFirstThird &&
+    plays.length===2 &&
+    plays[0].base==='HOME' &&
+    plays[0].touch &&
+    plays[0].result==='OUT' &&
+    plays[1].base==='FIRST' &&
+    plays[1].result==='SAFE';
+  let grade;
+
+  if(homeTouchOutOnly){
+    grade='◎';
+  }else if(riskyThrowAfterHomeOut){
+    grade='△';
+  }else if(evaluation.outsAdded===0){
+    grade='×';
+  }else if(reasons.includes('UNNEEDED_TOUCH')){
+    grade='△';
+  }else if(evaluation.outsAdded>=2 || evaluation.inningOver){
+    grade='◎';
+  }else if(plays.length>=2 && plays[1].result==='SAFE'){
+    grade=plays[1].base==='SECOND' ?'△':'×';
+  }else if(
+    reasons.includes('EMPTY_BASE_THROW') ||
+    reasons.includes('MISSED_TOUCH') ||
+    reasons.includes('THIRD_TOO_LATE') ||
+    reasons.includes('HOME_TOO_LATE') ||
+    reasons.includes('LATE_EXTRA_THROW')
+  ){
+    grade='△';
+  }else{
+    grade='○';
+  }
+
+  const hasThirdRunner=
+    (RUNNERS[q.situation] || []).includes('THIRD');
+  const positioningQuestion=
+    Number(q.outs)<2 && hasThirdRunner;
+  const expectedInfieldIn=
+    q.instruction==='INFIELD_IN';
+  const acceptedFirstThirdResult=
+    isOneOutFirstThird &&
+    (
+      homeTouchOutOnly ||
+      riskyThrowAfterHomeOut ||
+      evaluation.outsAdded>=2
+    );
+
+  if(
+    positioningQuestion &&
+    !acceptedFirstThirdResult &&
+    state.playState.infieldInSelected!==expectedInfieldIn
+  ){
+    const lowerGrade={
+      '◎':'○',
+      '○':'△',
+      '△':'×',
+      '×':'×'
+    };
+
+    grade=lowerGrade[grade];
+  }
+
+  if(
+    q.instruction==='INFIELD_IN' &&
+    evaluation.runsScored>0 &&
+    (grade==='◎' || grade==='○')
+  ){
+    grade='△';
+  }
+
+  return grade;
+}
+
+function defenseActionCandidates(){
+  const bases=['FIRST','SECOND','THIRD','HOME'];
+  const actions=[];
+
+  bases.forEach(base=>{
+    actions.push({base,touch:false});
+    actions.push({base,touch:true});
+  });
+
+  return actions;
+}
+
+function describeDefenseOut(action,play){
+  const baseLabels={
+    FIRST:'1塁',
+    SECOND:'2塁',
+    THIRD:'3塁',
+    HOME:'ホーム'
+  };
+  const runnerLabels={
+    batter:'バッターランナー',
+    firstRunner:'1塁ランナー',
+    secondRunner:'2塁ランナー',
+    thirdRunner:'3塁ランナー'
+  };
+  const method=action.touch
+    ?'タッチして'
+    :'ベースを踏んで';
+  const runner=runnerLabels[play?.runner]||'ランナー';
+
+  return `${baseLabels[action.base]}で${runner}を${method}アウトにする`;
+}
+
+function findDoublePlayContinuation(q,evaluation){
+  if(
+    state.playActions.length!==1 ||
+    evaluation.outsAdded!==1 ||
+    Number(q.outs)>=2
+  ){
+    return null;
+  }
+
+  const firstAction=state.playActions[0];
+
+  for(const action of defenseActionCandidates()){
+    if(action.base===firstAction.base){
+      continue;
+    }
+
+    const nextEvaluation=evaluateDefenseActions(
+      q,
+      [firstAction,action]
+    );
+    const nextPlay=nextEvaluation.plays[1];
+
+    if(
+      nextEvaluation.outsAdded>=2 &&
+      nextPlay?.result==='OUT' &&
+      nextPlay.reason!=='UNNEEDED_TOUCH'
+    ){
+      return {action,play:nextPlay};
+    }
+  }
+
+  return null;
+}
+
+function findBestDefenseSequence(q){
+  const candidates=defenseActionCandidates();
+  const sequences=candidates.map(action=>[action]);
+
+  candidates.forEach(firstAction=>{
+    candidates.forEach(secondAction=>{
+      if(firstAction.base!==secondAction.base){
+        sequences.push([firstAction,secondAction]);
+      }
+    });
+  });
+
+  return sequences
+    .map(actions=>{
+      const evaluation=evaluateDefenseActions(q,actions);
+      const grade=defenseGrade(evaluation,q);
+      const safePlays=evaluation.plays.filter(
+        play=>play.result==='SAFE'
+      ).length;
+
+      return {
+        actions,
+        evaluation,
+        points:window.FUJICON_SPRINT45.scoreGrade(grade),
+        safePlays
+      };
+    })
+    .sort((a,b)=>{
+      return b.points-a.points ||
+        b.evaluation.outsAdded-a.evaluation.outsAdded ||
+        a.safePlays-b.safePlays ||
+        a.actions.length-b.actions.length;
+    })[0];
+}
+
+function bestDefenseAdvice(q){
+  const best=findBestDefenseSequence(q);
+
+  if(!best || !best.evaluation.plays.length){
+    return '確実にアウトを取れる塁を選ぼう。';
+  }
+
+  const first=describeDefenseOut(
+    best.actions[0],
+    best.evaluation.plays[0]
+  );
+
+  if(
+    best.evaluation.outsAdded>=2 &&
+    best.actions[1] &&
+    best.evaluation.plays[1]?.result==='OUT'
+  ){
+    const second=describeDefenseOut(
+      best.actions[1],
+      best.evaluation.plays[1]
+    );
+
+    return `この場面では、まず${first}。次に${second}とゲッツーが取れるよ。`;
+  }
+
+  return `この場面では、${first}のが確実だよ。`;
+}
+
+function defenseAdvice(evaluation,grade){
+  const reasons=evaluation.plays.map(play=>play.reason);
+  const q=state.questions[state.index];
+  const hasThirdRunner=
+    (RUNNERS[q.situation] || []).includes('THIRD');
+  const expectedInfieldIn=
+    q.instruction==='INFIELD_IN';
+  const isOneOutFirstThird=
+    Number(q.outs)===1 &&
+    q.situation==='FIRST_THIRD';
+  const homeTouchOutOnly=
+    isOneOutFirstThird &&
+    evaluation.plays.length===1 &&
+    evaluation.plays[0].base==='HOME' &&
+    evaluation.plays[0].touch &&
+    evaluation.plays[0].result==='OUT';
+  const riskyThrowAfterHomeOut=
+    isOneOutFirstThird &&
+    evaluation.plays.length===2 &&
+    evaluation.plays[0].base==='HOME' &&
+    evaluation.plays[0].touch &&
+    evaluation.plays[0].result==='OUT' &&
+    evaluation.plays[1].base==='FIRST' &&
+    evaluation.plays[1].result==='SAFE';
+  const acceptedFirstThirdResult=
+    isOneOutFirstThird &&
+    (
+      homeTouchOutOnly ||
+      riskyThrowAfterHomeOut ||
+      evaluation.outsAdded>=2
+    );
+  const positioningMiss=
+    Number(q.outs)<2 &&
+    hasThirdRunner &&
+    !acceptedFirstThirdResult &&
+    state.playState.infieldInSelected!==expectedInfieldIn;
+  const runAllowedAgainstInstruction=
+    q.instruction==='INFIELD_IN' &&
+    evaluation.runsScored>0;
+  const result=
+    evaluation.inningOver &&
+    evaluation.outsAdded>=2
+      ?'ゲッツーで2つのアウトを取り、チェンジです。'
+      :evaluation.inningOver
+      ?'3つ目のアウトでチェンジです。'
+      :evaluation.outsAdded>=2
+        ?'ゲッツーで2つのアウトを取れました。'
+        :evaluation.outsAdded===1
+          ?'アウトを1つ取れました。'
+           :'アウトを取れませんでした。';
+  let reason='確実にアウトを取れる塁を選ぶことが大切です。';
+  const doublePlayContinuation=
+    findDoublePlayContinuation(q,evaluation);
+
+  if(runAllowedAgainstInstruction){
+    reason='アウトを取っても1点が入りました。「1点もやらない!」では、ホームのランナーをアウトにしよう。';
+  }else if(positioningMiss){
+    reason=expectedInfieldIn
+      ?'1点を防ぐ場面では、内野前進を選びましょう。'
+      :'アウト優先の場面では、通常の位置で守りましょう。';
+  }else if(reasons.includes('MISSED_TOUCH')){
+    const missedPlay=evaluation.plays.find(
+      play=>play.reason==='MISSED_TOUCH'
+    );
+    const missedAction=state.playActions[
+      evaluation.plays.indexOf(missedPlay)
+    ];
+    reason=`フォースではないので、${describeDefenseOut(missedAction,missedPlay)}必要があったよ。`;
+  }else if(reasons.includes('UNNEEDED_TOUCH')){
+    const extraTouchPlay=evaluation.plays.find(
+      play=>play.reason==='UNNEEDED_TOUCH'
+    );
+    const extraTouchAction=state.playActions[
+      evaluation.plays.indexOf(extraTouchPlay)
+    ];
+    reason=`ここはフォースプレーだから、${describeDefenseOut({...extraTouchAction,touch:false},extraTouchPlay)}だけでよかったよ。`;
+  }else if(doublePlayContinuation){
+    reason=`次に${describeDefenseOut(doublePlayContinuation.action,doublePlayContinuation.play)}と、ゲッツーが取れたよ。`;
+  }else if(
+    reasons.includes('THIRD_TOO_LATE') ||
+    reasons.includes('HOME_TOO_LATE') ||
+    reasons.includes('LATE_EXTRA_THROW') ||
+    reasons.includes('EMPTY_BASE_THROW')
+  ){
+    const safePlay=evaluation.plays.find(
+      play=>play.result==='SAFE'
+    );
+    const safeIndex=evaluation.plays.indexOf(safePlay);
+    const safeAction=state.playActions[safeIndex];
+    const baseLabels={
+      FIRST:'1塁',
+      SECOND:'2塁',
+      THIRD:'3塁',
+      HOME:'ホーム'
+    };
+    reason=evaluation.outsAdded===0
+      ?`${baseLabels[safeAction?.base]||'その塁'}への送球は間に合わないよ。${bestDefenseAdvice(q)}`
+      :`${baseLabels[safeAction?.base]||'その塁'}への送球は間に合わないよ。アウトを取ったところで止めれば、ミスや進塁を防げたよ。`;
+  }else if(evaluation.outsAdded===0 || grade==='×'){
+    reason=bestDefenseAdvice(q);
+  }else if(grade==='◎'){
+    reason='状況に合った最善のプレーを選べました。';
+  }else{
+    reason=bestDefenseAdvice(q);
+  }
+
+  return `${result}\n${reason}`;
+}
+
+function defensePlayLabel(actions){
+  const labels={
+    FIRST:'1塁',
+    SECOND:'2塁',
+    THIRD:'3塁',
+    HOME:'ホーム'
+  };
+
+  return actions.map(action=>{
+    return `${labels[action.base]}${action.touch?'T':'F'}`;
+  }).join('→');
+}
+
+function finalizeDefenseAnswer(){
+  if(
+    state.mode!=='defense' ||
+    state.answering ||
+    state.playState.playFinished ||
+    state.playState.currentPlay ||
+    state.playActions.length===0
+  ){
+    return;
+  }
+
+  const q=state.questions[state.index];
+  const evaluation=
+    evaluateDefenseActions(
+      q,
+      state.playActions
+    );
+  const grade=defenseGrade(evaluation,q);
+  const points=
+    window.FUJICON_SPRINT45.scoreGrade(grade);
+
+  state.playState.playFinished=true;
+  state.playState.active=false;
+
+  if(state.playState.timerId){
+    clearInterval(state.playState.timerId);
+    state.playState.timerId=null;
+  }
+
+  if(state.playState.decisionTimerId){
+    clearTimeout(state.playState.decisionTimerId);
+    state.playState.decisionTimerId=null;
+  }
+
+  answer([
+    defensePlayLabel(state.playActions),
+    grade,
+    points,
+    defenseAdvice(evaluation,grade)
+  ],q);
+}
+
+function scheduleDefenseAnswer(evaluation){
+  if(!evaluation || state.mode!=='defense'){
+    return;
+  }
+
+  if(state.playState.decisionTimerId){
+    clearTimeout(state.playState.decisionTimerId);
+  }
+
+  const delay=
+    evaluation.inningOver || state.playActions.length>=2
+      ?700
+      :2000;
+
+  state.playState.decisionTimerId=setTimeout(()=>{
+    state.playState.decisionTimerId=null;
+    finalizeDefenseAnswer();
+  },delay);
 }
 
 function recordRunnerSafe(runner){
@@ -376,10 +965,7 @@ function show(id){
 }
 
 function loadAnswerHistory(){
-  const saved=safeParse(
-    localStorage.getItem(HISTORY_STORAGE_KEY),
-    null
-  );
+  const saved=getActiveProfileData()?.history;
 
   if(
     saved &&
@@ -396,10 +982,14 @@ function loadAnswerHistory(){
 }
 
 function saveAnswerHistory(history){
-  localStorage.setItem(
-    HISTORY_STORAGE_KEY,
-    JSON.stringify(history)
-  );
+  const data=getActiveProfileData();
+
+  if(!data){
+    return;
+  }
+
+  data.history=history;
+  saveProfileStore();
 }
 
 function getQuestionId(q){
@@ -478,7 +1068,7 @@ function recordAnswer(q,a){
     grade:grade,
     points:xp,
     result:
-      grade==='○'
+      grade==='◎' || grade==='○'
         ?'correct'
         :grade==='△'
           ?'partial'
@@ -584,6 +1174,15 @@ function updateLevel(){
 }
 
 function createSession(mode){
+  if(
+    mode==='defense' &&
+    window.FUJICON_SPRINT45
+  ){
+    return createBalancedDefenseSession(
+      getSelectedDefenseQuestionCount()
+    );
+  }
+
   const bank=QUESTION_BANK[mode]||[];
 
   const sameLevel=shuffle(
@@ -634,6 +1233,75 @@ function createSession(mode){
   }
 
   return result;
+}
+
+function getSelectedDefenseQuestionCount(){
+  const saved=Number(
+    localStorage.getItem(DEFENSE_COUNT_STORAGE_KEY)
+  );
+
+  return [10,15,20].includes(saved)
+    ? saved
+    : 15;
+}
+
+function selectLeastSeen(items,counts,count,getKey){
+  return shuffle(items)
+    .sort((a,b)=>{
+      return (counts[getKey(a)]||0)-
+        (counts[getKey(b)]||0);
+    })
+    .slice(0,count);
+}
+
+function createBalancedDefenseSession(questionCount){
+  const allQuestions=
+    window.FUJICON_SPRINT45.createDefenseSession();
+  const profileData=
+    getActiveProfileData();
+  const caseCounts=
+    profileData?.caseFrequency || {};
+  const fielderCounts=
+    profileData?.fielderFrequency || {};
+  const selected=selectLeastSeen(
+    allQuestions,
+    caseCounts,
+    questionCount,
+    question=>question.caseId
+  );
+  const fielders=
+    window.FUJICON_SPRINT45.FIELDERS;
+  const fielderPool=[
+    fielders.FIRST,
+    fielders.SECOND,
+    fielders.SHORT,
+    fielders.THIRD
+  ];
+
+  selected.forEach(question=>{
+    const fielder=selectLeastSeen(
+      fielderPool,
+      fielderCounts,
+      1,
+      value=>value
+    )[0];
+
+    question.fielder=fielder;
+    question.note=
+      `${window.FUJICON_SPRINT45.FIELDER_LABELS[fielder]}が捕球`;
+    caseCounts[question.caseId]=
+      (caseCounts[question.caseId]||0)+1;
+    fielderCounts[fielder]=
+      (fielderCounts[fielder]||0)+1;
+  });
+
+  if(profileData){
+    profileData.caseFrequency=caseCounts;
+    profileData.fielderFrequency=fielderCounts;
+    saveProfileStore();
+  }
+
+  return shuffle(selected);
 }
 
 function runnerSvgOld(direction='right'){
@@ -940,6 +1608,66 @@ function renderField(q){
 
     layer.appendChild(element);
   });
+
+  renderBattedBallDirection(q);
+  renderManagerGuidance(q);
+}
+
+function renderManagerGuidance(q){
+  const guidance=$('#manager-guidance');
+  const hasThirdRunner=
+    (RUNNERS[q.situation] || []).includes('THIRD');
+  const shouldShow=
+    state.mode==='defense' &&
+    Number(q.outs)<2 &&
+    hasThirdRunner;
+
+  guidance.hidden=!shouldShow;
+
+  if(!shouldShow){
+    return;
+  }
+
+  $('#manager-guidance-text').textContent=
+    q.instruction==='INFIELD_IN'
+      ?'1点もやらない!'
+      :'アウト優先!';
+}
+
+function renderBattedBallDirection(q){
+  const direction=$('#batted-ball-direction');
+
+  if(!direction){
+    return;
+  }
+
+  if(state.mode!=='defense' || !q.fielder){
+    direction.hidden=true;
+    return;
+  }
+
+  const positions={
+    FIRST:{x:68,y:58,label:'ファースト'},
+    SECOND:{x:60,y:43,label:'セカンド'},
+    SHORT:{x:40,y:43,label:'ショート'},
+    THIRD:{x:32,y:58,label:'サード'}
+  };
+  const position=positions[q.fielder];
+
+  if(!position){
+    direction.hidden=true;
+    return;
+  }
+
+  direction.hidden=false;
+  $('#batted-ball-line').setAttribute('x2',position.x);
+  $('#batted-ball-line').setAttribute('y2',position.y);
+  $('#batted-ball-marker').setAttribute('cx',position.x);
+  $('#batted-ball-marker').setAttribute('cy',position.y);
+
+  direction.classList.remove('is-animating');
+  void direction.getBoundingClientRect();
+  direction.classList.add('is-animating');
 }
 
 function renderQuestion(){
@@ -950,7 +1678,7 @@ function renderQuestion(){
 
   $('#mode-title').textContent=
     state.mode==='defense'
-      ?'守備編'
+      ?'内野守備編'
       :'ランナー編';
 
   $('#question-count').textContent=
@@ -960,7 +1688,9 @@ function renderQuestion(){
     q.label;
 
   $('#role-tag').textContent=
-    `Lv.${q.difficulty} ${LEVELS[q.difficulty-1].name}`;
+    q.caseId
+      ?`${q.caseId}｜${window.FUJICON_SPRINT45.FIELDER_LABELS[q.fielder]}`
+      :`Lv.${q.difficulty} ${LEVELS[q.difficulty-1].name}`;
 
   $('#question-text').textContent=
     q.q;
@@ -976,16 +1706,26 @@ function renderQuestion(){
   renderField(q);
   if(state.mode==='defense'){
   initializePlayState(
-  buildRunnerTargets(q.situation),
+  window.FUJICON_SPRINT45
+    ?window.FUJICON_SPRINT45.buildRunnerTargets(
+      q.situation,
+      q.outs
+    )
+    :buildRunnerTargets(q.situation),
   {outs:q.outs, instruction:q.instruction}
 );
 }
 const infieldInButton=$('#infield-in-button');
 const hasThirdRunner=
   (RUNNERS[q.situation] || []).includes('THIRD');
+const showInfieldInInstruction=
+  state.mode==='defense' &&
+  Number(q.outs)<2 &&
+  hasThirdRunner;
 
 infieldInButton.hidden=
-  state.mode!=='defense' || !hasThirdRunner;
+  !showInfieldInInstruction;
+  infieldInButton.disabled=false;
   infieldInButton.classList.remove('is-selected');
 
   const answersBox=$('#answers');
@@ -1009,6 +1749,13 @@ infieldInButton.hidden=
 }
 
 function start(mode){
+  if(!getActiveProfile()){
+    $('#profile-error').textContent=
+      '名前を登録して選んでください。';
+    show('home');
+    return;
+  }
+
   state.mode=mode;
   state.index=0;
   state.score=0;
@@ -1022,6 +1769,86 @@ function start(mode){
 
   renderQuestion();
   show('quiz');
+}
+
+function renderFeedbackReview(q){
+  const review=$('#feedback-review');
+
+  if(!review){
+    return;
+  }
+
+  const isDefense=
+    state.mode==='defense' && q?.caseId;
+
+  review.hidden=!isDefense;
+
+  if(!isDefense){
+    return;
+  }
+
+  const hasThirdRunner=
+    (RUNNERS[q.situation] || []).includes('THIRD');
+  const direction=
+    window.FUJICON_SPRINT45
+      ?.FIELDER_LABELS[q.fielder] || '';
+  const baseLabels={
+    FIRST:'1塁',
+    SECOND:'2塁',
+    THIRD:'3塁',
+    HOME:'ホーム'
+  };
+  const answerText=state.playActions.length
+    ?state.playActions.map((action,index)=>{
+      const touch=action.touch
+        ?'タッチあり'
+        :'タッチなし';
+
+      const orderMarks=['①','②'];
+
+      return `${orderMarks[index] || `${index+1}.`}${baseLabels[action.base]}（${touch}）`;
+    }).join('\n')
+    :'送球なし';
+
+  $('#review-outs').textContent=
+    `${Number(q.outs)}アウト`;
+  $('#review-runners').textContent=
+    q.label.replace(/^走者/,'') || 'なし';
+  $('#review-direction').textContent=
+    `${direction}方向`;
+  $('#review-answer').textContent=
+    answerText;
+
+  const instructionRow=
+    $('#review-instruction-row');
+  const defenseRow=
+    $('#review-defense-row');
+
+  instructionRow.hidden=!hasThirdRunner;
+  defenseRow.hidden=!hasThirdRunner;
+
+  if(hasThirdRunner){
+    $('#review-instruction').textContent=
+      q.instruction==='INFIELD_IN'
+        ?'「1点もやらない!」'
+        :'「アウト優先!」';
+    $('#review-defense').textContent=
+      state.playState.infieldInSelected
+        ?'内野前進を選択'
+        :'通常守備を選択';
+  }
+}
+
+function persistActiveProfileProgress(){
+  const data=getActiveProfileData();
+
+  if(!data){
+    return;
+  }
+
+  data.xp=state.xp;
+  data.stats=state.stats;
+  saveProfileStore();
 }
 
 function answer(answerData,q){
@@ -1056,17 +1883,10 @@ function answer(answerData,q){
 
   state.stats[key]=stat;
 
-  localStorage.setItem(
-    'baseballIqXp',
-    state.xp
-  );
-
-  localStorage.setItem(
-    'baseballIqMastery',
-    JSON.stringify(state.stats)
-  );
+  persistActiveProfileProgress();
 
   updateLevel();
+  renderFeedbackReview(q);
 
   $('#judge').textContent=
     grade;
@@ -1082,11 +1902,13 @@ function answer(answerData,q){
     );
 
   $('#judge-title').textContent=
-    grade==='○'
+    grade==='◎'
       ?'最善の判断！'
+      :grade==='○'
+        ?'よい判断！'
       :grade==='△'
-        ?'悪くない判断！'
-        :'素晴らしい、間違ってる（笑）';
+        ?'改善できる判断！'
+        :'もう一度考えよう！';
 
   $('#feedback-text').textContent=
     explanation;
@@ -1114,8 +1936,8 @@ function ensureCoachBox(){
   coachBox.id='coach-result';
 
   coachBox.style.cssText=`
-    margin:16px 0;
-    padding:16px;
+    margin:10px 0;
+    padding:12px;
     border-radius:18px;
     background:#f2f7fb;
     border:2px solid #d7e4ee;
@@ -1130,14 +1952,14 @@ function ensureCoachBox(){
         font-size:18px;
       "
     >
-      🧢 AI監督からひとこと
+      🧢 『トミー監督』からひとこと
     </strong>
 
     <p
       id="coach-comment"
       style="
-        line-height:1.7;
-        margin:10px 0 14px;
+        line-height:1.45;
+        margin:7px 0 10px;
       "
     ></p>
 
@@ -1205,8 +2027,15 @@ function ensureCoachBox(){
 function sessionAnalysis(){
   const answers=state.sessionAnswers;
 
+  const best=answers.filter(answer=>{
+    return answer.grade==='◎';
+  }).length;
+
   const correct=answers.filter(answer=>{
-    return answer.grade==='○';
+    return (
+      answer.grade==='◎' ||
+      answer.grade==='○'
+    );
   }).length;
 
   const partial=answers.filter(answer=>{
@@ -1214,7 +2043,7 @@ function sessionAnalysis(){
   }).length;
 
   const maxPoints=
-    answers.length*10;
+    answers.length*3;
 
   const rate=maxPoints
     ?state.score/maxPoints
@@ -1240,11 +2069,11 @@ function sessionAnalysis(){
       .sort((a,b)=>{
         const rateA=
           a[1].points/
-          (a[1].attempts*10);
+          (a[1].attempts*3);
 
         const rateB=
           b[1].points/
-          (b[1].attempts*10);
+          (b[1].attempts*3);
 
         return rateA-rateB;
       })[0];
@@ -1261,23 +2090,24 @@ function sessionAnalysis(){
 
   let comment='';
 
-  if(correct===5){
+  if(best===answers.length && answers.length){
     comment=
-      '5問すべて最善の判断！状況を見て、落ち着いて判断できています。次は、なぜその答えなのかも声に出して説明してみよう。';
+      `${answers.length}問すべて最善の判断！状況を見て、落ち着いて判断できています。次は、なぜその答えなのかも声に出して説明してみよう。`;
   }else if(rate>=.7){
     comment=
-      `${correct}問で最善の判断ができました。間違いも大切な練習です。迷った場面だけ、もう一度確認すればさらに強くなれます。`;
+      `${best}問で最善の判断ができました。間違いも大切な練習です。迷った場面だけ、もう一度確認すればさらに強くなれます。`;
   }else{
     comment=
-      `今回は${correct}問で最善の判断ができました。不正解は大歓迎！ランナーの位置と「進まなければならない塁」を順番に確認しよう。`;
+      `今回は${best}問で最善の判断ができました。不正解は大歓迎！ランナーの位置と「進まなければならない塁」を順番に確認しよう。`;
   }
 
   const recommendation=
     weakest
-      ?`「${weakest[0]}」を意識して、同じ編をもう一度5問！`
-      :'同じ編をもう一度5問！';
+      ?`「${weakest[0]}」を意識して、同じ編をもう一度${state.questions.length}問！`
+      :`同じ編をもう一度${state.questions.length}問！`;
 
   return {
+    best,
     correct,
     partial,
     rate,
@@ -1291,18 +2121,22 @@ function showResult(){
   ensureCoachBox();
 
   const max=
-    state.questions.length*10;
+    state.questions.length*3;
+  const scoreRate=
+    max ? state.score/max : 0;
+  const scorePercent=
+    Math.round(scoreRate*100);
 
   const analysis=
     sessionAnalysis();
 
   $('#result-score').textContent=
-    `獲得 ${state.score} / ${max} XP｜最善 ${analysis.correct}問・おしい ${analysis.partial}問`;
+    `獲得 ${state.score} / ${max}点（${scorePercent}%）｜よい判断 ${analysis.correct}問・おしい ${analysis.partial}問`;
 
   $('#result-title').textContent=
-    analysis.rate>=.8
+    scoreRate>=.8
       ?'ナイス判断！'
-      :analysis.rate>=.5
+      :scoreRate>=.6
         ?'あと一歩！'
         :'間違いから強くなろう！';
 
@@ -1316,7 +2150,27 @@ function showResult(){
     analysis.recommendation;
 
   $('#retry').textContent=
-    'もう一度5問';
+    `もう一度${state.questions.length}問`;
+
+  const profileData=getActiveProfileData();
+
+  if(profileData){
+    profileData.results.push({
+      playedAt:new Date().toISOString(),
+      mode:state.mode,
+      questionCount:state.questions.length,
+      score:state.score,
+      maxScore:max,
+      scorePercent
+    });
+
+    if(profileData.results.length>50){
+      profileData.results=
+        profileData.results.slice(-50);
+    }
+
+    saveProfileStore();
+  }
 
   show('result');
 }
@@ -1333,11 +2187,218 @@ function next(){
   show('quiz');
 }
 
+function syncStateFromActiveProfile(){
+  const data=getActiveProfileData();
+
+  state.xp=Number(data?.xp || 0);
+  state.stats=data?.stats || {};
+  updateLevel();
+}
+
+function hideProfileForm(){
+  $('#profile-form').hidden=true;
+  $('#profile-name').value='';
+  $('#profile-error').textContent='';
+}
+
+function renderProfiles(){
+  const list=$('#profile-list');
+  const activeProfile=getActiveProfile();
+
+  list.innerHTML='';
+
+  profileStore.profiles.forEach(profile=>{
+    const row=document.createElement('div');
+    const selectButton=document.createElement('button');
+    const deleteButton=document.createElement('button');
+
+    row.className='profile-row';
+    selectButton.type='button';
+    selectButton.className='profile-select';
+    selectButton.textContent=
+      profile.id===profileStore.activeProfileId
+        ?`✓ ${profile.name}`
+        :profile.name;
+    selectButton.classList.toggle(
+      'is-selected',
+      profile.id===profileStore.activeProfileId
+    );
+    selectButton.setAttribute(
+      'aria-pressed',
+      String(profile.id===profileStore.activeProfileId)
+    );
+    selectButton.addEventListener('click',()=>{
+      profileStore.activeProfileId=profile.id;
+      saveProfileStore();
+      syncStateFromActiveProfile();
+      renderProfiles();
+    });
+
+    deleteButton.type='button';
+    deleteButton.className='profile-delete';
+    deleteButton.textContent='削除';
+    deleteButton.setAttribute(
+      'aria-label',
+      `${profile.name}の登録と成績を削除`
+    );
+    deleteButton.addEventListener('click',()=>{
+      const approved=window.confirm(
+        `${profile.name}の登録と過去結果を削除しますか？`
+      );
+
+      if(!approved){
+        return;
+      }
+
+      profileStore.profiles=
+        profileStore.profiles.filter(
+          item=>item.id!==profile.id
+        );
+
+      if(profileStore.activeProfileId===profile.id){
+        profileStore.activeProfileId=
+          profileStore.profiles[0]?.id || null;
+      }
+
+      saveProfileStore();
+      syncStateFromActiveProfile();
+      renderProfiles();
+    });
+
+    row.append(selectButton,deleteButton);
+    list.appendChild(row);
+  });
+
+  $('#profile-count').textContent=
+    `${profileStore.profiles.length} / ${MAX_PROFILES}人`;
+  $('#profile-empty').hidden=
+    profileStore.profiles.length>0;
+  $('#show-profile-form').hidden=
+    profileStore.profiles.length>=MAX_PROFILES;
+
+  const startButton=$('[data-mode="defense"]');
+
+  if(startButton){
+    startButton.disabled=!activeProfile;
+    startButton.textContent=activeProfile
+      ?'スタート'
+      :'名前を登録してください';
+  }
+}
+
+$('#show-profile-form').addEventListener('click',()=>{
+  $('#profile-form').hidden=false;
+  $('#profile-error').textContent='';
+  $('#profile-name').focus();
+});
+
+$('#cancel-profile-form').addEventListener('click',()=>{
+  hideProfileForm();
+});
+
+$('#profile-form').addEventListener('submit',event=>{
+  event.preventDefault();
+
+  const name=$('#profile-name').value.trim();
+
+  if(!name){
+    $('#profile-error').textContent=
+      '名前を入力してください。';
+    return;
+  }
+
+  if(profileStore.profiles.length>=MAX_PROFILES){
+    $('#profile-error').textContent=
+      '登録できるのは5人までです。';
+    return;
+  }
+
+  if(
+    profileStore.profiles.some(
+      profile=>profile.name===name
+    )
+  ){
+    $('#profile-error').textContent=
+      '同じ名前が登録されています。';
+    return;
+  }
+
+  const shouldMigrateLegacy=
+    !profileStore.legacyMigrated;
+  const profile={
+    id:`p-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
+    name,
+    createdAt:new Date().toISOString(),
+    data:shouldMigrateLegacy
+      ?legacyProfileData()
+      :createEmptyProfileData()
+  };
+
+  profileStore.profiles.push(profile);
+  profileStore.legacyMigrated=true;
+  profileStore.activeProfileId=profile.id;
+  saveProfileStore();
+  hideProfileForm();
+  syncStateFromActiveProfile();
+  renderProfiles();
+});
+
+renderProfiles();
+
+if(location.hash==='#game'){
+  history.replaceState(
+    null,
+    '',
+    `${location.pathname}${location.search}`
+  );
+
+  if(getActiveProfile()){
+    start('defense');
+  }else{
+    $('#profile-form').hidden=false;
+    $('#show-profile-form').hidden=true;
+    $('#profile-error').textContent=
+      '名前を登録して選んでください。';
+    show('home');
+  }
+}
+
 $$('[data-mode]').forEach(button=>{
   button.addEventListener('click',()=>{
     start(button.dataset.mode);
   });
 });
+
+function renderDefenseQuestionCountPicker(){
+  const selected=
+    getSelectedDefenseQuestionCount();
+
+  $$('[data-question-count]').forEach(button=>{
+    const active=
+      Number(button.dataset.questionCount)===selected;
+
+    button.classList.toggle(
+      'is-selected',
+      active
+    );
+    button.setAttribute(
+      'aria-pressed',
+      String(active)
+    );
+  });
+}
+
+$$('[data-question-count]').forEach(button=>{
+  button.addEventListener('click',()=>{
+    localStorage.setItem(
+      DEFENSE_COUNT_STORAGE_KEY,
+      button.dataset.questionCount
+    );
+    renderDefenseQuestionCountPicker();
+  });
+});
+
+renderDefenseQuestionCountPicker();
 
 $('#back-home').addEventListener('click',()=>{
   show('home');
@@ -1373,7 +2434,23 @@ window.FUJICON_DEBUG={
 
   resetAll(){
     localStorage.removeItem(
+      PROFILE_STORAGE_KEY
+    );
+
+    localStorage.removeItem(
       HISTORY_STORAGE_KEY
+    );
+
+    localStorage.removeItem(
+      DEFENSE_COUNT_STORAGE_KEY
+    );
+
+    localStorage.removeItem(
+      DEFENSE_CASE_FREQUENCY_KEY
+    );
+
+    localStorage.removeItem(
+      DEFENSE_FIELDER_FREQUENCY_KEY
     );
 
     localStorage.removeItem(
@@ -1405,12 +2482,18 @@ infieldInControl.addEventListener('click',()=>{
     state.mode!=='defense'
     || infieldInControl.hidden
     || state.playState.playFinished
+    || state.playActions.length>0
+    || state.playState.currentPlay
   ){
     return;
   }
 
-  state.playState.infieldInSelected=true;
-  infieldInControl.classList.add('is-selected');
+  state.playState.infieldInSelected=
+    !state.playState.infieldInSelected;
+  infieldInControl.classList.toggle(
+    'is-selected',
+    state.playState.infieldInSelected
+  );
 });
 
 touchControl.addEventListener('click',()=>{
@@ -1436,6 +2519,19 @@ finishBasicPlay(play);
 updateLevel();// Sprint4.1 ベースをタップすると光る
 document.querySelectorAll('.field .base').forEach((base) => {
   base.addEventListener('click', () => {
+    if(
+      state.mode!=='defense' ||
+      state.answering ||
+      state.playState.playFinished
+    ){
+      return;
+    }
+
+    if(state.playState.decisionTimerId){
+      clearTimeout(state.playState.decisionTimerId);
+      state.playState.decisionTimerId=null;
+    }
+
     const tappedBase=
   base.classList.contains('home')?'HOME':
   base.classList.contains('first')?'FIRST':
@@ -1452,6 +2548,11 @@ if(currentPlay){
   }
 
   finishBasicPlay(currentPlay);
+
+  if(state.playState.decisionTimerId){
+    clearTimeout(state.playState.decisionTimerId);
+    state.playState.decisionTimerId=null;
+  }
 }
 
   const play=getPlayAtBase(tappedBase) || {
@@ -1462,28 +2563,6 @@ if(currentPlay){
   touchSelected: false
 };
   state.playState.currentPlay=play;
-
-  if(play && play.isForce){
-  const provisionalPlayOuts=
-    state.playState.outs + 1;
-
-  const provisionalTotalOuts=
-    state.playState.startingOuts
-    + provisionalPlayOuts;
-
-  playStatus.textContent=
-    provisionalTotalOuts>=3
-      ? 'チェンジ！！'
-      : provisionalPlayOuts===2
-        ? 'ゲッツー!!'
-        : 'アウト！';
-
-  playStatus.classList.remove('is-safe');
-  playStatus.classList.add('is-out');
-
-  outLight1?.classList.toggle('is-on', provisionalTotalOuts >= 1);
-  outLight2?.classList.toggle('is-on', provisionalTotalOuts >= 2);
-}
 
   startPlayTimer(play);
     document.querySelectorAll('.field .base').forEach((item) => {

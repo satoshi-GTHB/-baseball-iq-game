@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#06284a">
   <title>野球IQアカデミー Ver4.0α.4</title>
-  <link rel="stylesheet" href="style.css?v=4.0a3">
-  <link rel="stylesheet" href="home-v4.css?v=4.0a4">
+  <link rel="stylesheet" href="style.css?v=4.5a23">
+  <link rel="stylesheet" href="home-v4.css?v=4.5a1">
 </head>
 <body>
 <main class="app">
@@ -16,20 +16,59 @@
       <span class="version">Ver4.0α.4</span>
     </header>
     <div class="hero hero-v4">
-      <img src="assets/home-team-v4.0a4.webp" alt="新しいフジコン帽とグレーのズボンを着た少年野球チーム">
+      <img src="assets/home-team-sprint45-title.png" alt="野球IQアカデミー FUJICON">
     </div>
+    <section class="profile-picker" aria-labelledby="profile-picker-title">
+      <div class="profile-picker-head">
+        <strong id="profile-picker-title">プレイヤーを選ぶ</strong>
+        <small id="profile-count">0 / 5人</small>
+      </div>
+      <div id="profile-list" class="profile-list"></div>
+      <p id="profile-empty" class="profile-empty">名前を登録してゲームを始めよう。</p>
+      <button id="show-profile-form" class="show-profile-form" type="button">＋ 名前を登録</button>
+      <form id="profile-form" class="profile-form" hidden>
+        <label for="profile-name">名前</label>
+        <div>
+          <input id="profile-name" type="text" maxlength="12" autocomplete="off" placeholder="名前を入力">
+          <button type="submit">登録</button>
+          <button id="cancel-profile-form" type="button">取消</button>
+        </div>
+        <small id="profile-error" role="alert"></small>
+      </form>
+    </section>
     <section class="curriculum-box"><strong id="curriculum-status"></strong><small id="promotion-status"></small></section>
     <div class="mode-grid">
-      <button type="button" data-mode="defense" class="mode-card"><span>🧤</span><strong>守備編</strong><small>ランナー状況を見て判断</small></button>
-      <button type="button" data-mode="runner" class="mode-card accent"><span>🏃</span><strong>ランナー編</strong><small>「自分」の走塁判断</small></button>
-      <article class="mode-card locked"><span>🏏</span><strong>バッター編</strong><small>将来追加</small></article>
+      <article class="mode-card defense-mode-card">
+        <span class="mode-icon glove-icon"><img src="assets/baseball-glove.svg" alt="野球のグローブ"></span>
+        <div class="mode-title-row">
+          <strong>内野守備編</strong>
+          <a class="how-to-link" href="how-to.html">操作方法</a>
+        </div>
+        <small class="mode-description">ランナー状況を見て判断</small>
+        <div class="question-count-picker" role="group" aria-label="内野守備編の問題数を選択">
+          <button type="button" data-question-count="10">10問</button>
+          <button type="button" data-question-count="15" class="is-selected">15問</button>
+          <button type="button" data-question-count="20">20問</button>
+        </div>
+        <button type="button" data-mode="defense" class="mode-start">スタート</button>
+      </article>
+      <article class="mode-card locked">
+        <span class="mode-icon" aria-hidden="true">🏃</span>
+        <strong>ランナー編</strong>
+        <small>To be Developed</small>
+      </article>
+      <article class="mode-card locked">
+        <span class="mode-icon" aria-hidden="true">🏏</span>
+        <strong>バッター編</strong>
+        <small>To be Developed</small>
+      </article>
     </div>
   </section>
 
   <section id="quiz" class="screen">
     <header class="topbar">
       <button id="back-home" type="button" aria-label="ホームへ戻る">‹</button>
-      <div><strong id="mode-title">守備編</strong><small id="question-count">1 / 5</small></div>
+      <div><strong id="mode-title">内野守備編</strong><small id="question-count">1 / 15</small></div>
       <span class="xp-chip">XP <b data-xp>0</b></span>
     </header>
 
@@ -70,7 +109,20 @@
         <span class="base first" aria-label="1塁"></span>
         <span class="base second" aria-label="2塁"></span>
         <span class="base third" aria-label="3塁"></span>
+        <svg id="batted-ball-direction" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          <defs>
+            <marker id="batted-ball-arrowhead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z"></path>
+            </marker>
+          </defs>
+          <line id="batted-ball-line" x1="50" y1="84" x2="50" y2="50" pathLength="1"></line>
+          <circle id="batted-ball-marker" cx="50" cy="50" r="2.2"></circle>
+        </svg>
         <div id="runner-layer"></div>
+        <aside id="manager-guidance" aria-live="polite" hidden>
+          <p id="manager-guidance-text"></p>
+          <img src="assets/ai-tommy-coach.png?v=1" alt="AIトミー監督">
+        </aside>
         <p id="play-status"></p>
       </div>
       <p id="field-caption" hidden>ランナーの位置を見て考えよう</p>
@@ -90,6 +142,27 @@
 
   <section id="feedback" class="screen feedback">
     <div class="feedback-box">
+      <section id="feedback-review" class="feedback-review" aria-label="問題と回答の振り返り">
+        <strong>今回の振り返り</strong>
+        <div class="review-columns">
+          <section class="review-column">
+            <b>ケース</b>
+            <dl>
+              <div><dt>アウト</dt><dd id="review-outs"></dd></div>
+              <div id="review-instruction-row"><dt>監督の指示</dt><dd id="review-instruction"></dd></div>
+              <div><dt>ランナー</dt><dd id="review-runners"></dd></div>
+              <div><dt>打球方向</dt><dd id="review-direction"></dd></div>
+            </dl>
+          </section>
+          <section class="review-column review-response">
+            <b>回答</b>
+            <dl>
+              <div id="review-defense-row"><dt>内野守備</dt><dd id="review-defense"></dd></div>
+              <div class="review-answer"><dt>送球した塁</dt><dd id="review-answer"></dd></div>
+            </dl>
+          </section>
+        </div>
+      </section>
       <div id="judge" class="judge">○</div>
       <h2 id="judge-title">最善の判断！</h2>
       <p id="feedback-text"></p>
@@ -99,7 +172,6 @@
   </section>
 
   <section id="result" class="screen result">
-    <img src="assets/captain.webp" alt="ガッツポーズするフジコンの選手">
     <div class="result-box">
       <span>ステージクリア！</span>
       <h2 id="result-title">ナイス判断！</h2>
@@ -110,6 +182,7 @@
   </section>
 </main>
 <script src="questions.js?v=4.0a3"></script>
-<script src="script.js?v=4.3a1"></script>
+<script src="sprint45-rules.js?v=4.5a3"></script>
+<script src="script.js?v=4.5a29"></script>
 </body>
 </html>
