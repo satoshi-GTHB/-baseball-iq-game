@@ -745,8 +745,22 @@ function defenseAdvice(evaluation,grade){
   const runAllowedAgainstInstruction=
     q.instruction==='INFIELD_IN' &&
     evaluation.runsScored>0;
+  const homeSafePlay=
+    evaluation.plays.find(
+      play=>
+        play.base==='HOME' &&
+        play.result==='SAFE'
+    );
+  const homeSafeWithRun=
+    Boolean(homeSafePlay) &&
+    evaluation.runsScored>0;
   const result=
-    evaluation.inningOver &&
+    homeSafeWithRun &&
+    evaluation.outsAdded>=1
+      ?'アウトを1つ取れましたが、ホームはセーフで1点が入りました。'
+      :homeSafeWithRun
+      ?'ホームはセーフになり、1点が入りました。'
+      :evaluation.inningOver &&
     evaluation.outsAdded>=2
       ?'ゲッツーで2つのアウトを取り、チェンジです。'
       :evaluation.inningOver
@@ -776,7 +790,24 @@ function defenseAdvice(evaluation,grade){
     HOME:'ホーム'
   };
 
-  if(runAllowedAgainstInstruction){
+  if(homeSafeWithRun){
+    if(homeSafePlay.reason==='MISSED_TOUCH'){
+      reason='ホームではランナーへのタッチが必要だよ。タッチをしなかったためセーフになり、そのミスで1点が入ってしまいました。';
+    }else if(homeSafePlay.reason==='HOME_TOO_LATE'){
+      reason=
+        expectedInfieldIn &&
+        !state.playState.infieldInSelected
+          ?'内野前進を選ばなかったため、ホームへの送球が間に合わずセーフになりました。その判断ミスで1点が入ってしまいました。'
+          :'ホームへの送球が間に合わずセーフになりました。その判断ミスで1点が入ってしまいました。';
+    }else if(
+      homeSafePlay.reason==='FIRST_PLAY_TIME_LOSS' ||
+      homeSafePlay.reason==='LATE_EXTRA_THROW'
+    ){
+      reason='先に別の塁へ送球したため、ホームへの送球が間に合わずセーフになりました。その判断ミスで1点が入ってしまいました。';
+    }else{
+      reason='ホームでアウトにできずセーフになりました。そのミスで1点が入ってしまいました。';
+    }
+  }else if(runAllowedAgainstInstruction){
     reason='アウトを取っても1点が入りました。「1点もやらない!」では、ホームのランナーをアウトにしよう。';
   }else if(stationaryRunnerPlay){
     const baseLabel=

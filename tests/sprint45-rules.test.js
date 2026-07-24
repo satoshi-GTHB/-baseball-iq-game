@@ -159,6 +159,18 @@ result = rules.evaluateActions(
     situation: SITUATIONS.THIRD,
     defense: DEFENSES.INFIELD_IN
   }),
+  [action(BASES.HOME, false)]
+);
+assert.equal(result.outsAdded, 0);
+assert.equal(result.runsScored, 1);
+assert.equal(result.plays[0].result, 'SAFE');
+assert.equal(result.plays[0].reason, 'MISSED_TOUCH');
+
+result = rules.evaluateActions(
+  gameCase({
+    situation: SITUATIONS.THIRD,
+    defense: DEFENSES.INFIELD_IN
+  }),
   [action(BASES.HOME, true), action(BASES.FIRST)]
 );
 assert.equal(result.outsAdded, 1);
