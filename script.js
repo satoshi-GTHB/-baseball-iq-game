@@ -759,9 +759,32 @@ function defenseAdvice(evaluation,grade){
   let reason='確実にアウトを取れる塁を選ぶことが大切です。';
   const doublePlayContinuation=
     findDoublePlayContinuation(q,evaluation);
+  const stationaryRunnerPlay=
+    evaluation.plays.find(
+      play=>play.reason==='STATIONARY_RUNNER_THROW'
+    );
+  const stationaryRunnerIndex=
+    evaluation.plays.indexOf(stationaryRunnerPlay);
+  const stationaryRunnerAction=
+    stationaryRunnerIndex>=0
+      ?state.playActions[stationaryRunnerIndex]
+      :null;
+  const baseLabels={
+    FIRST:'1塁',
+    SECOND:'2塁',
+    THIRD:'3塁',
+    HOME:'ホーム'
+  };
 
   if(runAllowedAgainstInstruction){
     reason='アウトを取っても1点が入りました。「1点もやらない!」では、ホームのランナーをアウトにしよう。';
+  }else if(stationaryRunnerPlay){
+    const baseLabel=
+      baseLabels[stationaryRunnerAction?.base]||'その塁';
+
+    reason=stationaryRunnerAction?.touch
+      ?`進塁義務のない${baseLabel}ランナーへのタッチプレーは、ランナーを追うのでアウトが取りづらいよ。確実にアウトが取れる塁へ送球しよう。`
+      :`進塁義務のないランナーがいる${baseLabel}へ、タッチせず送球してもアウトにはならないよ。無意味な送球をせず、確実にアウトが取れる塁へ送球しよう。`;
   }else if(positioningMiss){
     reason=expectedInfieldIn
       ?'1点を防ぐ場面では、内野前進を選びましょう。'
@@ -795,12 +818,6 @@ function defenseAdvice(evaluation,grade){
     );
     const safeIndex=evaluation.plays.indexOf(safePlay);
     const safeAction=state.playActions[safeIndex];
-    const baseLabels={
-      FIRST:'1塁',
-      SECOND:'2塁',
-      THIRD:'3塁',
-      HOME:'ホーム'
-    };
     reason=evaluation.outsAdded===0
       ?`${baseLabels[safeAction?.base]||'その塁'}への送球は間に合わないよ。${bestDefenseAdvice(q)}`
       :`${baseLabels[safeAction?.base]||'その塁'}への送球は間に合わないよ。アウトを取ったところで止めれば、ミスや進塁を防げたよ。`;

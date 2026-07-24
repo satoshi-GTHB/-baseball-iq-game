@@ -100,6 +100,20 @@ assert.equal(result.outsAdded, 1);
 assert.equal(result.inningOver, false);
 assert.equal(result.runsScored, 0);
 
+result = rules.evaluateActions(oneOutSecondThird, [
+  { base: rules.BASES.SECOND, touch: false },
+  { base: rules.BASES.FIRST, touch: false }
+]);
+assert.equal(result.plays[0].result, 'SAFE');
+assert.equal(result.plays[0].reason, 'STATIONARY_RUNNER_THROW');
+assert.equal(result.plays[1].result, 'SAFE');
+
+result = rules.evaluateActions(oneOutSecondThird, [
+  { base: rules.BASES.SECOND, touch: true }
+]);
+assert.equal(result.plays[0].result, 'SAFE');
+assert.equal(result.plays[0].reason, 'STATIONARY_RUNNER_THROW');
+
 result = rules.evaluateActions(
   gameCase({
     situation: SITUATIONS.FIRST,

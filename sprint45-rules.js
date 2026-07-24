@@ -240,9 +240,24 @@
     const runner = getRunnerHeadingTo(state, action.base);
 
     if (!runner) {
+      const startingRunnerByBase = {
+        [BASES.FIRST]: 'firstRunner',
+        [BASES.SECOND]: 'secondRunner',
+        [BASES.THIRD]: 'thirdRunner'
+      };
+      const stationaryRunner =
+        startingRunnerByBase[action.base];
+      const hasStationaryRunner =
+        stationaryRunner &&
+        state.runnerTargets[stationaryRunner] === null &&
+        !state.outRunners.includes(stationaryRunner) &&
+        !state.safeRunners.includes(stationaryRunner);
+
       return {
         result: 'SAFE',
-        reason: 'EMPTY_BASE_THROW',
+        reason: hasStationaryRunner
+          ? 'STATIONARY_RUNNER_THROW'
+          : 'EMPTY_BASE_THROW',
         runner: null,
         isForce: false
       };
