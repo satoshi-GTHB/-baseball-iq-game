@@ -165,6 +165,18 @@ assert.equal(result.outsAdded, 0);
 assert.equal(result.runsScored, 1);
 assert.equal(result.plays[0].result, 'SAFE');
 assert.equal(result.plays[0].reason, 'MISSED_TOUCH');
+assert.equal(result.plays[0].isForce, false);
+
+result = rules.evaluateActions(
+  gameCase({
+    situation: SITUATIONS.LOADED,
+    defense: DEFENSES.INFIELD_IN
+  }),
+  [action(BASES.HOME, false)]
+);
+assert.equal(result.plays[0].result, 'OUT');
+assert.equal(result.plays[0].reason, 'FORCE_OUT');
+assert.equal(result.plays[0].isForce, true);
 
 result = rules.evaluateActions(
   gameCase({

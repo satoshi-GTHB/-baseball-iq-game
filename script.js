@@ -792,7 +792,7 @@ function defenseAdvice(evaluation,grade){
 
   if(homeSafeWithRun){
     if(homeSafePlay.reason==='MISSED_TOUCH'){
-      reason='ホームではランナーへのタッチが必要だよ。タッチをしなかったためセーフになり、そのミスで1点が入ってしまいました。';
+      reason='満塁ではなく、後ろの塁にランナーが詰まっていないため、ホームはフォースプレーではないよ。ベースを踏むだけではアウトにならず、3塁ランナーへのタッチが必要です。タッチをしなかったためセーフになり、そのミスで1点が入ってしまいました。';
     }else if(homeSafePlay.reason==='HOME_TOO_LATE'){
       reason=
         expectedInfieldIn &&
@@ -827,7 +827,7 @@ function defenseAdvice(evaluation,grade){
     const missedAction=state.playActions[
       evaluation.plays.indexOf(missedPlay)
     ];
-    reason=`フォースではないので、${describeDefenseOut(missedAction,missedPlay)}必要があったよ。`;
+    reason=`後ろの塁にランナーが詰まっていないため、ここはフォースプレーではないよ。ベースを踏むだけではアウトにならず、${describeDefenseOut(missedAction,missedPlay)}必要があったよ。`;
   }else if(reasons.includes('UNNEEDED_TOUCH')){
     const extraTouchPlay=evaluation.plays.find(
       play=>play.reason==='UNNEEDED_TOUCH'
