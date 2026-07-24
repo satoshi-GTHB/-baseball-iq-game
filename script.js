@@ -814,6 +814,15 @@ function defenseAdvice(evaluation,grade){
     }else{
       reason='ホームでアウトにできずセーフになりました。そのミスで1点が入ってしまいました。';
     }
+
+    if(q.instruction==='NORMAL'){
+      const strategyReason=
+        Number(q.outs)===2
+          ?'これは大きなミスです。点差がある「アウト優先!」では、1点を防ぐより、3つ目のアウトを取って試合を終わらせよう。点が入り、アウトも取れないと、点差が縮まり、ランナーが残って逆転されるピンチが続くよ。'
+          :'これは大きなミスです。「アウト優先!」は、1点を防ぐことより、アウトを確実に増やす指示です。点が入り、アウトも取れないと、点差が縮まり、ランナーが残ってピンチが広がるよ。';
+
+      reason=`${reason}\n${strategyReason}`;
+    }
   }else if(runAllowedAgainstInstruction){
     reason='アウトを取っても1点が入りました。「1点もやらない!」という指示では、ほかのアウトより、ホームへ走るランナーを止めることが大切だよ。';
   }else if(stationaryRunnerPlay){
