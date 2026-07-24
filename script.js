@@ -1693,8 +1693,70 @@ function renderField(q){
     layer.appendChild(element);
   });
 
+  renderFielders(false);
   renderBattedBallDirection(q);
   renderManagerGuidance(q);
+}
+
+const FIELDER_LAYOUTS={
+  normal:{
+    CATCHER:[50,90],
+    FIRST:[76,43],
+    SECOND:[63,27],
+    SHORT:[37,27],
+    THIRD:[24,43]
+  },
+  infieldIn:{
+    CATCHER:[50,90],
+    FIRST:[72,51],
+    SECOND:[61,34],
+    SHORT:[39,34],
+    THIRD:[28,51]
+  }
+};
+
+const FIELDER_DISPLAY=[
+  ['CATCHER','2','捕手・守備番号2'],
+  ['FIRST','3','一塁手・守備番号3'],
+  ['SECOND','4','二塁手・守備番号4'],
+  ['SHORT','6','遊撃手・守備番号6'],
+  ['THIRD','5','三塁手・守備番号5']
+];
+
+function renderFielders(infieldIn){
+  const layer=$('#fielder-layer');
+
+  if(!layer){
+    return;
+  }
+
+  if(!layer.children.length){
+    FIELDER_DISPLAY.forEach(([key,number,aria])=>{
+      const fielder=document.createElement('span');
+
+      fielder.className='field-player';
+      fielder.dataset.fielder=key;
+      fielder.setAttribute('aria-label',aria);
+      fielder.textContent=number;
+      layer.appendChild(fielder);
+    });
+  }
+
+  const layout=infieldIn
+    ?FIELDER_LAYOUTS.infieldIn
+    :FIELDER_LAYOUTS.normal;
+
+  FIELDER_DISPLAY.forEach(([key])=>{
+    const fielder=layer.querySelector(
+      `[data-fielder="${key}"]`
+    );
+    const [x,y]=layout[key];
+
+    fielder.style.left=`${x}%`;
+    fielder.style.top=`${y}%`;
+  });
+
+  layer.classList.toggle('is-infield-in',infieldIn);
 }
 
 function renderManagerGuidance(q){
@@ -1811,6 +1873,7 @@ infieldInButton.hidden=
   !showInfieldInInstruction;
   infieldInButton.disabled=false;
   infieldInButton.classList.remove('is-selected');
+  infieldInButton.setAttribute('aria-pressed','false');
 
   const answersBox=$('#answers');
   answersBox.style.display=state.mode==='defense'?'none':'';
@@ -2576,6 +2639,13 @@ infieldInControl.addEventListener('click',()=>{
     !state.playState.infieldInSelected;
   infieldInControl.classList.toggle(
     'is-selected',
+    state.playState.infieldInSelected
+  );
+  infieldInControl.setAttribute(
+    'aria-pressed',
+    String(state.playState.infieldInSelected)
+  );
+  renderFielders(
     state.playState.infieldInSelected
   );
 });

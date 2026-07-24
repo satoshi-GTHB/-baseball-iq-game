@@ -1162,6 +1162,40 @@ button {
     white-space: pre-line;
 }
 
+#fielder-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 9;
+    pointer-events: none;
+}
+
+.field-player {
+    position: absolute;
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    transform: translate(-50%,-50%);
+    border: 3px solid #fff8bd;
+    border-radius: 50%;
+    background: #ffd83d;
+    color: #102b46;
+    box-shadow: 0 3px 5px #0005,inset 0 -3px #e3a90a;
+    font-size: 15px;
+    font-weight: 900;
+    transition: left .55s ease,top .55s ease,transform .55s ease;
+}
+
+#fielder-layer.is-infield-in .field-player {
+    transform: translate(-50%,-50%) scale(1.06);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .field-player {
+        transition-duration: .01ms;
+    }
+}
+
 #batted-ball-direction {
     position: absolute;
     inset: 0;
