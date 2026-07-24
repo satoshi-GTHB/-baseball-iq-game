@@ -819,7 +819,7 @@ function defenseAdvice(evaluation,grade){
   }else if(positioningMiss){
     reason=expectedInfieldIn
       ?'1点を防ぐ場面では、内野前進を選びましょう。'
-      :'アウト優先の場面では、通常の位置で守りましょう。';
+      :'アウト優先の場面では、通常の位置で守りましょう。前進すると強い打球への反応が遅れ、外野へ抜かれたり、エラーしたりするリスクが高くなるよ。';
   }else if(reasons.includes('MISSED_TOUCH')){
     const missedPlay=evaluation.plays.find(
       play=>play.reason==='MISSED_TOUCH'
