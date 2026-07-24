@@ -682,7 +682,7 @@ function bestDefenseAdvice(q){
   const best=findBestDefenseSequence(q);
 
   if(!best || !best.evaluation.plays.length){
-    return '確実にアウトを取れる塁を選ぼう。';
+    return 'いちばんアウトにしやすい塁を選ぼう。近くて、ランナーより先にボールが届く塁を考えるとよいよ。';
   }
 
   const first=describeDefenseOut(
@@ -703,7 +703,7 @@ function bestDefenseAdvice(q){
     return `この場面では、まず${first}。次に${second}とゲッツーが取れるよ。`;
   }
 
-  return `この場面では、${first}のが確実だよ。`;
+  return `この場面では、${first}のがいちばんアウトを取りやすいよ。`;
 }
 
 function defenseAdvice(evaluation,grade){
@@ -770,7 +770,7 @@ function defenseAdvice(evaluation,grade){
         :evaluation.outsAdded===1
           ?'アウトを1つ取れました。'
            :'アウトを取れませんでした。';
-  let reason='確実にアウトを取れる塁を選ぶことが大切です。';
+  let reason='ランナーより先にボールが届く、アウトにしやすい塁を選ぼう。';
   const doublePlayContinuation=
     findDoublePlayContinuation(q,evaluation);
   const stationaryRunnerPlay=
@@ -791,7 +791,14 @@ function defenseAdvice(evaluation,grade){
   };
 
   if(homeSafeWithRun){
-    if(homeSafePlay.reason==='MISSED_TOUCH'){
+    if(
+      Number(q.outs)===2 &&
+      homeSafePlay.reason==='HOME_TOO_LATE'
+    ){
+      reason=q.situation==='LOADED'
+        ?'2アウトでは、ランナーは打ったしゅんかんに走り出します。満塁でもホームへ走るランナーは早くスタートしているので、ホーム送球は間に合いにくいよ。打ってから1塁へ走るバッターをアウトにする方がかんたんです。'
+        :'2アウトでは、ランナーは打ったしゅんかんに走り出します。ホームへ走るランナーは早くスタートしているので、ホーム送球は間に合いにくいよ。打ってから1塁へ走るバッターをアウトにする方がかんたんです。';
+    }else if(homeSafePlay.reason==='MISSED_TOUCH'){
       reason='満塁ではなく、後ろの塁にランナーが詰まっていないため、ホームはフォースプレーではないよ。ベースを踏むだけではアウトにならず、3塁ランナーへのタッチが必要です。タッチをしなかったためセーフになり、そのミスで1点が入ってしまいました。';
     }else if(homeSafePlay.reason==='HOME_TOO_LATE'){
       reason=
@@ -808,17 +815,17 @@ function defenseAdvice(evaluation,grade){
       reason='ホームでアウトにできずセーフになりました。そのミスで1点が入ってしまいました。';
     }
   }else if(runAllowedAgainstInstruction){
-    reason='アウトを取っても1点が入りました。「1点もやらない!」では、ホームのランナーをアウトにしよう。';
+    reason='アウトを取っても1点が入りました。「1点もやらない!」という指示では、ほかのアウトより、ホームへ走るランナーを止めることが大切だよ。';
   }else if(stationaryRunnerPlay){
     const baseLabel=
       baseLabels[stationaryRunnerAction?.base]||'その塁';
 
     reason=stationaryRunnerAction?.touch
-      ?`進塁義務のない${baseLabel}ランナーへのタッチプレーは、ランナーを追うのでアウトが取りづらいよ。確実にアウトが取れる塁へ送球しよう。`
-      :`進塁義務のないランナーがいる${baseLabel}へ、タッチせず送球してもアウトにはならないよ。無意味な送球をせず、確実にアウトが取れる塁へ送球しよう。`;
+      ?`${baseLabel}ランナーは次の塁へ走らなくてもよいので、タッチしようとすると追いかける時間がかかり、アウトを取りづらいよ。もっとアウトにしやすい塁へ送球しよう。`
+      :`${baseLabel}ランナーは次の塁へ走らなくてもよいので、ベースを踏むだけではアウトにならないよ。むだな送球をせず、もっとアウトにしやすい塁へ送球しよう。`;
   }else if(positioningMiss){
     reason=expectedInfieldIn
-      ?'1点を防ぐ場面では、内野前進を選びましょう。'
+      ?'「1点もやらない!」場面では、内野前進を選ぼう。ホームに近づいて守ると、送球する距離が短くなり、ホームでアウトにしやすくなるよ。'
       :'アウト優先の場面では、通常の位置で守りましょう。前進すると強い打球への反応が遅れ、外野へ抜かれたり、エラーしたりするリスクが高くなるよ。';
   }else if(reasons.includes('MISSED_TOUCH')){
     const missedPlay=evaluation.plays.find(
@@ -827,7 +834,7 @@ function defenseAdvice(evaluation,grade){
     const missedAction=state.playActions[
       evaluation.plays.indexOf(missedPlay)
     ];
-    reason=`後ろの塁にランナーが詰まっていないため、ここはフォースプレーではないよ。ベースを踏むだけではアウトにならず、${describeDefenseOut(missedAction,missedPlay)}必要があったよ。`;
+    reason=`後ろの塁にランナーが詰まっていないので、このランナーは次の塁へ走らなくてもよいよ。ベースを踏むだけではアウトにならず、${describeDefenseOut(missedAction,missedPlay)}必要があったよ。`;
   }else if(reasons.includes('UNNEEDED_TOUCH')){
     const extraTouchPlay=evaluation.plays.find(
       play=>play.reason==='UNNEEDED_TOUCH'
@@ -835,9 +842,9 @@ function defenseAdvice(evaluation,grade){
     const extraTouchAction=state.playActions[
       evaluation.plays.indexOf(extraTouchPlay)
     ];
-    reason=`ここはフォースプレーだから、${describeDefenseOut({...extraTouchAction,touch:false},extraTouchPlay)}だけでよかったよ。`;
+    reason=`後ろからランナーが来るので、このランナーは次の塁へ必ず走ります。だからタッチで追いかけなくても、${describeDefenseOut({...extraTouchAction,touch:false},extraTouchPlay)}だけでアウトにできるよ。`;
   }else if(doublePlayContinuation){
-    reason=`次に${describeDefenseOut(doublePlayContinuation.action,doublePlayContinuation.play)}と、ゲッツーが取れたよ。`;
+    reason=`1つ目のアウトのあとも、次のランナーよりボールが先に届くよ。次に${describeDefenseOut(doublePlayContinuation.action,doublePlayContinuation.play)}と、ゲッツーが取れたよ。`;
   }else if(
     reasons.includes('THIRD_TOO_LATE') ||
     reasons.includes('HOME_TOO_LATE') ||
@@ -849,13 +856,30 @@ function defenseAdvice(evaluation,grade){
     );
     const safeIndex=evaluation.plays.indexOf(safePlay);
     const safeAction=state.playActions[safeIndex];
+    const safeBase=
+      baseLabels[safeAction?.base]||'その塁';
+    let lateReason;
+
+    if(safePlay.reason==='THIRD_TOO_LATE'){
+      lateReason=`捕った場所から3塁まで遠く、ランナーはもう走り出しているので、${safeBase}への送球は間に合わないよ。`;
+    }else if(
+      safePlay.reason==='LATE_EXTRA_THROW' ||
+      safePlay.reason==='FIRST_PLAY_TIME_LOSS'
+    ){
+      lateReason=`1つ目のプレーで時間がかかり、ランナーが先に着くので、${safeBase}への次の送球は間に合わないよ。`;
+    }else if(safePlay.reason==='EMPTY_BASE_THROW'){
+      lateReason=`${safeBase}にはアウトにできるランナーがいないので、送球してもアウトは取れないよ。`;
+    }else{
+      lateReason=`ランナーがボールより先に着くので、${safeBase}への送球は間に合わないよ。`;
+    }
+
     reason=evaluation.outsAdded===0
-      ?`${baseLabels[safeAction?.base]||'その塁'}への送球は間に合わないよ。${bestDefenseAdvice(q)}`
-      :`${baseLabels[safeAction?.base]||'その塁'}への送球は間に合わないよ。アウトを取ったところで止めれば、ミスや進塁を防げたよ。`;
+      ?`${lateReason}${bestDefenseAdvice(q)}`
+      :`${lateReason}アウトを取ったところで止めれば、悪送球やランナーが先へ進むのを防げたよ。`;
   }else if(evaluation.outsAdded===0 || grade==='×'){
     reason=bestDefenseAdvice(q);
   }else if(grade==='◎'){
-    reason='状況に合った最善のプレーを選べました。';
+    reason='ランナーより先にボールが届く塁を選び、むだな送球もしなかったので、いちばんよいプレーになりました。';
   }else{
     reason=bestDefenseAdvice(q);
   }

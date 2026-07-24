@@ -199,6 +199,7 @@ result = rules.evaluateActions(
 );
 assert.equal(result.outsAdded, 0);
 assert.deepEqual(result.plays.map((play) => play.result), ['SAFE', 'SAFE']);
+assert.equal(result.plays[0].reason, 'HOME_TOO_LATE');
 
 result = rules.evaluateActions(
   gameCase({
