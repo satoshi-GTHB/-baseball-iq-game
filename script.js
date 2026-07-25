@@ -678,7 +678,7 @@ function defenseAdvice(evaluation,grade){
       ?expectedInfieldIn
         ?'最優先で確認しよう。「1点もやらない！」という監督指示に対して、最初にホーム以外の塁へ送球しています。'
         :outPriorityBaseMiss && outPriorityPositionMiss
-          ?'最優先で確認しよう。「アウト優先！」という監督指示に対して、内野前進を選び、最初にホームへ送球しています。'
+          ?'最優先で確認！「アウト優先！」という監督指示を無視して、内野前進を選び、最初にホームへ送球しています。'
           :outPriorityPositionMiss
             ?'最優先で確認しよう。「アウト優先！」という監督指示に対して、内野前進を選んでいます。'
             :'最優先で確認しよう。「アウト優先！」という監督指示に対して、最初にホームへ送球しています。'
@@ -837,9 +837,18 @@ function defenseAdvice(evaluation,grade){
     reason=bestDefenseAdvice(q);
   }
 
-  return instructionWarning
-    ?`${instructionWarning}\n${result}\n${reason}`
-    :`${result}\n${reason}`;
+  if(instructionWarning){
+    const instructionOutcome=
+      evaluation.outsAdded>=2
+        ?'ただし、アウトは2つ取れました。'
+        :evaluation.outsAdded===1
+          ?'ただし、アウトは1つ取れました。'
+          :result;
+
+    return `${instructionWarning}\n${reason}\n${instructionOutcome}`;
+  }
+
+  return `${result}\n${reason}`;
 }
 
 function defensePlayLabel(actions){
