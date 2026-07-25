@@ -638,34 +638,9 @@ function defenseAdvice(evaluation,grade){
     (RUNNERS[q.situation] || []).includes('THIRD');
   const expectedInfieldIn=
     q.instruction==='INFIELD_IN';
-  const isOneOutFirstThird=
-    Number(q.outs)===1 &&
-    q.situation==='FIRST_THIRD';
-  const homeTouchOutOnly=
-    isOneOutFirstThird &&
-    evaluation.plays.length===1 &&
-    evaluation.plays[0].base==='HOME' &&
-    evaluation.plays[0].touch &&
-    evaluation.plays[0].result==='OUT';
-  const riskyThrowAfterHomeOut=
-    isOneOutFirstThird &&
-    evaluation.plays.length===2 &&
-    evaluation.plays[0].base==='HOME' &&
-    evaluation.plays[0].touch &&
-    evaluation.plays[0].result==='OUT' &&
-    evaluation.plays[1].base==='FIRST' &&
-    evaluation.plays[1].result==='SAFE';
-  const acceptedFirstThirdResult=
-    isOneOutFirstThird &&
-    (
-      homeTouchOutOnly ||
-      riskyThrowAfterHomeOut ||
-      evaluation.outsAdded>=2
-    );
   const positioningMiss=
     Number(q.outs)<2 &&
     hasThirdRunner &&
-    !acceptedFirstThirdResult &&
     state.playState.infieldInSelected!==expectedInfieldIn;
   const runAllowedAgainstInstruction=
     q.instruction==='INFIELD_IN' &&
@@ -684,6 +659,14 @@ function defenseAdvice(evaluation,grade){
     evaluation.plays.every(
       play=>play.result==='OUT'
     );
+  const instructionWarning=
+    positioningMiss
+      ?expectedInfieldIn
+        ?'最優先で確認しよう。「1点もやらない！」という監督指示に対して、内野前進を選んでいません。'
+        :'最優先で確認しよう。「アウト優先！」という監督指示に対して、内野前進を選んでいます。'
+      :runAllowedAgainstInstruction
+        ?'最優先で確認しよう。「1点もやらない！」という監督指示に反して、ホームへの得点を許しました。'
+        :null;
   const homeSafePlay=
     evaluation.plays.find(
       play=>
@@ -766,7 +749,7 @@ function defenseAdvice(evaluation,grade){
   }else if(cleanRunPreventionAchieved){
     reason='「1点もやらない！」という監督指示どおり、ホームへ走る3塁ランナーをタッチアウトにして、得点を防げました。';
   }else if(runAllowedAgainstInstruction){
-    reason='アウトを取っても1点が入りました。「1点もやらない!」という指示では、ほかのアウトより、ホームへ走るランナーを止めることが大切だよ。';
+    reason='この場面では、ほかのアウトより、ホームへ走る3塁ランナーを止めることが大切だよ。';
   }else if(stationaryRunnerPlay){
     const baseLabel=
       baseLabels[stationaryRunnerAction?.base]||'その塁';
@@ -776,8 +759,8 @@ function defenseAdvice(evaluation,grade){
       :`${baseLabel}ランナーは次の塁へ走らなくてもよいので、ベースを踏むだけではアウトにならないよ。むだな送球をせず、もっとアウトにしやすい塁へ送球しよう。`;
   }else if(positioningMiss){
     reason=expectedInfieldIn
-      ?'「1点もやらない!」場面では、内野前進を選ぼう。ホームに近づいて守ると、送球する距離が短くなり、ホームでアウトにしやすくなるよ。'
-      :'アウト優先の場面では、通常の位置で守りましょう。前進すると強い打球への反応が遅れ、外野へ抜かれたり、エラーしたりするリスクが高くなるよ。';
+      ?'ホームに近づいて守ると、送球する距離が短くなり、ホームでアウトにしやすくなるよ。'
+      :'通常の位置で守ると、強い打球に反応しやすく、確実なアウトを取りやすくなるよ。';
   }else if(reasons.includes('MISSED_TOUCH')){
     const missedPlay=evaluation.plays.find(
       play=>play.reason==='MISSED_TOUCH'
@@ -837,7 +820,9 @@ function defenseAdvice(evaluation,grade){
     reason=bestDefenseAdvice(q);
   }
 
-  return `${result}\n${reason}`;
+  return instructionWarning
+    ?`${instructionWarning}\n${result}\n${reason}`
+    :`${result}\n${reason}`;
 }
 
 function defensePlayLabel(actions){
