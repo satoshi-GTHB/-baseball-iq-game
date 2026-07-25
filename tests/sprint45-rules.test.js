@@ -257,6 +257,37 @@ const singleOutCase = gameCase({
 
 assert.equal(rules.canGetDoublePlay(singleOutCase), false);
 
+const outPrioritySecondThirdCase = gameCase({
+  situation: SITUATIONS.SECOND_THIRD,
+  fielder: FIELDERS.FIRST
+});
+
+result = rules.evaluateActions(
+  outPrioritySecondThirdCase,
+  [action(BASES.FIRST)]
+);
+assert.equal(result.outsAdded, 1);
+assert.equal(result.runsScored, 1);
+assert.equal(
+  rules.gradeEvaluation(
+    outPrioritySecondThirdCase,
+    result,
+    { expectedDefense: DEFENSES.NORMAL }
+  ),
+  '◎'
+);
+assert.equal(
+  rules.gradeEvaluation(
+    {
+      ...outPrioritySecondThirdCase,
+      defense: DEFENSES.INFIELD_IN
+    },
+    result,
+    { expectedDefense: DEFENSES.INFIELD_IN }
+  ),
+  '○'
+);
+
 result = rules.evaluateActions(singleOutCase, [
   action(BASES.FIRST)
 ]);

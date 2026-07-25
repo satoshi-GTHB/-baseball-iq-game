@@ -1932,6 +1932,52 @@ function renderFeedbackReview(q){
   }
 }
 
+function showReviewQuestion(){
+  const q=state.questions[state.index];
+
+  if(
+    state.mode!=='defense' ||
+    !q?.caseId ||
+    !state.playState.playFinished
+  ){
+    return;
+  }
+
+  renderField(q);
+
+  const startingOuts=Number(q.outs) || 0;
+
+  outLight1?.classList.toggle(
+    'is-on',
+    startingOuts>=1
+  );
+  outLight2?.classList.toggle(
+    'is-on',
+    startingOuts>=2
+  );
+  $('#bso-display')?.setAttribute(
+    'aria-label',
+    `ボール0、ストライク0、アウト${startingOuts}`
+  );
+  if(playStatus){
+    playStatus.textContent='';
+    playStatus.classList.remove(
+      'is-out',
+      'is-safe'
+    );
+  }
+
+  $('#quiz').classList.add('is-review-preview');
+  $('#return-feedback').hidden=false;
+  show('quiz');
+}
+
+function returnToFeedback(){
+  $('#quiz').classList.remove('is-review-preview');
+  $('#return-feedback').hidden=true;
+  show('feedback');
+}
+
 function persistActiveProfileProgress(){
   const data=getActiveProfileData();
 
@@ -2499,6 +2545,14 @@ $('#back-home').addEventListener('click',()=>{
 
 $('#next').addEventListener('click',()=>{
   next();
+});
+
+$('#review-question').addEventListener('click',()=>{
+  showReviewQuestion();
+});
+
+$('#return-feedback').addEventListener('click',()=>{
+  returnToFeedback();
 });
 
 $('#retry').addEventListener('click',()=>{

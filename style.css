@@ -922,6 +922,36 @@ button {
     padding: 11px;
 }
 
+#review-question,
+#return-feedback {
+    background: var(--navy);
+}
+
+#review-question {
+    margin-bottom: 8px;
+}
+
+#return-feedback {
+    margin: 7px 14px 4px;
+    width: calc(100% - 28px);
+    border: 0;
+    border-radius: 14px;
+    padding: 11px;
+    color: #fff;
+    font-weight: 900;
+}
+
+#quiz.is-review-preview .field .base,
+#quiz.is-review-preview .base-touch-button,
+#quiz.is-review-preview #play-controls {
+    pointer-events: none;
+}
+
+#quiz.is-review-preview .base-touch-button,
+#quiz.is-review-preview #play-controls {
+    display: none;
+}
+
 .feedback button,
 .result button {
     width: 100%;

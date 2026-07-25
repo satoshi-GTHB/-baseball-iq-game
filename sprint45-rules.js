@@ -497,11 +497,14 @@
       play.result === 'SAFE' ||
       play.reason === 'UNNEEDED_TOUCH'
     ));
+    const runAllowedAgainstInstruction =
+      expectedDefense === DEFENSES.INFIELD_IN &&
+      evaluation.runsScored > 0;
 
     return Boolean(
       defenseMiss ||
       playMiss ||
-      evaluation.runsScored > 0
+      runAllowedAgainstInstruction
     );
   }
 
