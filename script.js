@@ -668,6 +668,20 @@ function defenseAdvice(evaluation,grade){
   const runAllowedAgainstInstruction=
     q.instruction==='INFIELD_IN' &&
     evaluation.runsScored>0;
+  const runPreventionAchieved=
+    q.instruction==='INFIELD_IN' &&
+    evaluation.runsScored===0 &&
+    evaluation.plays.some(
+      play=>
+        play.base==='HOME' &&
+        play.runner==='thirdRunner' &&
+        play.result==='OUT'
+    );
+  const cleanRunPreventionAchieved=
+    runPreventionAchieved &&
+    evaluation.plays.every(
+      play=>play.result==='OUT'
+    );
   const homeSafePlay=
     evaluation.plays.find(
       play=>
@@ -747,6 +761,8 @@ function defenseAdvice(evaluation,grade){
 
       reason=`${reason}\n${strategyReason}`;
     }
+  }else if(cleanRunPreventionAchieved){
+    reason='「1点もやらない！」という監督指示どおり、ホームへ走る3塁ランナーをタッチアウトにして、得点を防げました。';
   }else if(runAllowedAgainstInstruction){
     reason='アウトを取っても1点が入りました。「1点もやらない!」という指示では、ほかのアウトより、ホームへ走るランナーを止めることが大切だよ。';
   }else if(stationaryRunnerPlay){
@@ -2603,12 +2619,19 @@ function selectFieldBase(baseName,touchImmediately=false){
     return;
   }
 
+  const currentPlay=state.playState.currentPlay;
+
+  if(
+    !currentPlay &&
+    state.playActions.at(-1)?.base===baseName
+  ){
+    return;
+  }
+
   if(state.playState.decisionTimerId){
     clearTimeout(state.playState.decisionTimerId);
     state.playState.decisionTimerId=null;
   }
-
-  const currentPlay=state.playState.currentPlay;
 
   if(
     currentPlay &&

@@ -303,6 +303,47 @@ assert.equal(
   '○'
 );
 
+const runPreventionCase = gameCase({
+  outs: 1,
+  situation: SITUATIONS.FIRST_THIRD,
+  defense: DEFENSES.INFIELD_IN,
+  fielder: FIELDERS.THIRD
+});
+
+assert.equal(
+  rules.canGetDoublePlay(runPreventionCase),
+  true
+);
+
+result = rules.evaluateActions(runPreventionCase, [
+  action(BASES.HOME, true)
+]);
+assert.equal(result.plays[0].result, 'OUT');
+assert.equal(result.runsScored, 0);
+assert.equal(
+  rules.gradeEvaluation(
+    runPreventionCase,
+    result,
+    { expectedDefense: DEFENSES.INFIELD_IN }
+  ),
+  '◎'
+);
+
+result = rules.evaluateActions(runPreventionCase, [
+  action(BASES.HOME, true),
+  action(BASES.FIRST)
+]);
+assert.equal(result.plays[0].result, 'OUT');
+assert.equal(result.plays[1].result, 'SAFE');
+assert.equal(
+  rules.gradeEvaluation(
+    runPreventionCase,
+    result,
+    { expectedDefense: DEFENSES.INFIELD_IN }
+  ),
+  '○'
+);
+
 assert.equal(rules.scoreGrade('◎'), 3);
 assert.equal(rules.scoreGrade('○'), 2);
 assert.equal(rules.scoreGrade('△'), 1);

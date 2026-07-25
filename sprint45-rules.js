@@ -521,12 +521,30 @@
       return '×';
     }
 
-    const doublePlayAvailable =
-      canGetDoublePlay(gameCase);
-    let grade =
-      doublePlayAvailable
-        ? (outsAdded >= 2 ? '◎' : '○')
-        : '◎';
+    const runPreventionInstruction =
+      options.expectedDefense === DEFENSES.INFIELD_IN;
+    const homeRunnerOut = evaluation.plays.some((play) => (
+      play.base === BASES.HOME &&
+      play.runner === 'thirdRunner' &&
+      play.result === 'OUT'
+    ));
+    const runPreventionAchieved =
+      runPreventionInstruction &&
+      homeRunnerOut &&
+      evaluation.runsScored === 0;
+    let grade;
+
+    if (runPreventionAchieved) {
+      grade = '◎';
+    } else {
+      const doublePlayAvailable =
+        canGetDoublePlay(gameCase);
+
+      grade =
+        doublePlayAvailable
+          ? (outsAdded >= 2 ? '◎' : '○')
+          : '◎';
+    }
 
     if (hasPenaltyAction(gameCase, evaluation, options)) {
       grade = lowerGrade(grade);
