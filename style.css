@@ -406,6 +406,17 @@ button {
     box-shadow: 0 4px 0 #001b33;
 }
 
+.mode-link {
+    display: block;
+    text-align: center;
+    text-decoration: none;
+}
+
+.mode-link:focus-visible {
+    outline: 3px solid #f2b705;
+    outline-offset: 3px;
+}
+
 .topbar button {
     border: 0;
     background: #fff2;

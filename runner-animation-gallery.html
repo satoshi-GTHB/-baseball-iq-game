@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>フォーメーション・アカデミー</title>
+  <link rel="stylesheet" href="runner-ground-hit-prototype.css?v=5">
+  <link rel="stylesheet" href="runner-animation-gallery.css?v=6">
+</head>
+<body>
+  <main class="prototype animation-gallery">
+    <header>
+      <div>
+        <small>打球と方向から守備連係を確認</small>
+        <strong>フォーメーション・アカデミー</strong>
+      </div>
+      <a class="academy-back" href="index.html">タイトルへ戻る</a>
+    </header>
+
+    <nav class="scene-picker" aria-label="演出を選ぶ">
+      <button type="button" data-scene="single" aria-pressed="false">外野前ヒット</button>
+      <button type="button" data-scene="fly" aria-pressed="true">外野フライ</button>
+      <button type="button" data-scene="extra" aria-pressed="false">長打コース</button>
+      <button type="button" data-scene="ground" aria-pressed="false">内野ゴロ</button>
+      <button type="button" data-scene="popup" aria-pressed="false">内野フライ</button>
+      <button type="button" data-scene="liner" aria-pressed="false">ライナー</button>
+      <button type="button" data-scene="passed" aria-pressed="false">パスボール</button>
+    </nav>
+
+    <div class="direction-picker" id="direction-picker" aria-label="打球方向を選ぶ">
+      <button type="button" data-direction="left-line" aria-pressed="false">レフト線</button>
+      <button type="button" data-direction="left" aria-pressed="false">レフト</button>
+      <button type="button" data-direction="left-center" aria-pressed="false">左中間</button>
+      <button type="button" data-direction="center" aria-pressed="true">センター</button>
+      <button type="button" data-direction="right-center" aria-pressed="false">右中間</button>
+      <button type="button" data-direction="right" aria-pressed="false">ライト</button>
+      <button type="button" data-direction="right-line" aria-pressed="false">ライト線</button>
+    </div>
+
+    <section class="field-shell">
+      <div class="field gallery-field motion-v2 scene-fly direction-center" id="gallery-field" aria-label="センター方向のフライと守備連係のアニメーション">
+        <img class="field-image" src="assets/field-v1.png" alt="">
+        <button class="fielder catcher" type="button" data-player-number="2" data-position-name="キャッチャー" aria-label="キャッチャー・守備番号2を自分にする" aria-pressed="false">2</button>
+        <button class="fielder pitcher" type="button" data-player-number="1" data-position-name="ピッチャー" aria-label="ピッチャー・守備番号1を自分にする" aria-pressed="false">1</button>
+        <button class="fielder first" type="button" data-player-number="3" data-position-name="ファースト" aria-label="ファースト・守備番号3を自分にする" aria-pressed="false">3</button>
+        <button class="fielder second" type="button" data-player-number="4" data-position-name="セカンド" aria-label="セカンド・守備番号4を自分にする" aria-pressed="false">4</button>
+        <button class="fielder short" type="button" data-player-number="6" data-position-name="ショート" aria-label="ショート・守備番号6を自分にする" aria-pressed="false">6</button>
+        <button class="fielder third" type="button" data-player-number="5" data-position-name="サード" aria-label="サード・守備番号5を自分にする" aria-pressed="false">5</button>
+        <button class="fielder left" type="button" data-player-number="7" data-position-name="レフト" aria-label="レフト・守備番号7を自分にする" aria-pressed="false">7</button>
+        <button class="fielder center" type="button" data-player-number="8" data-position-name="センター" aria-label="センター・守備番号8を自分にする" aria-pressed="false">8</button>
+        <button class="fielder right" type="button" data-player-number="9" data-position-name="ライト" aria-label="ライト・守備番号9を自分にする" aria-pressed="false">9</button>
+        <p id="selected-player-status" class="selected-player-status" aria-live="polite">自分のポジションをえらぼう</p>
+
+        <div class="gallery-ball" aria-hidden="true"></div>
+        <div class="gallery-shadow" aria-hidden="true"></div>
+        <div class="speed-trail" aria-hidden="true"></div>
+        <div class="scene-dust dust-a" aria-hidden="true"></div>
+        <div class="scene-dust dust-b" aria-hidden="true"></div>
+        <div class="catch-flash" aria-hidden="true"></div>
+        <div class="miss-flash" aria-hidden="true">!</div>
+      </div>
+    </section>
+
+    <section class="gallery-controls">
+      <button id="gallery-replay" type="button">▶ フライを再生</button>
+      <p id="gallery-status" class="sr-only" aria-live="polite">フライを選択中です。</p>
+    </section>
+  </main>
+  <script src="runner-animation-gallery.js?v=4"></script>
+</body>
+</html>
