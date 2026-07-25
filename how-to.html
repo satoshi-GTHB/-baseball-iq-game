@@ -4,72 +4,203 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#06284a">
-  <title>操作方法｜野球IQアカデミー</title>
-  <link rel="stylesheet" href="how-to.css?v=1">
+  <title>ゲーム説明｜野球IQアカデミー</title>
+  <link rel="stylesheet" href="how-to.css?v=2">
 </head>
 <body>
-  <main class="how-to">
+  <main class="game-guide">
     <header class="page-head">
       <span>FUJICON</span>
-      <h1>内野守備編の操作方法</h1>
-      <p>ケースを見て、いちばんよい守備を選ぼう!</p>
+      <h1>内野守備編 ゲーム説明</h1>
+      <p>上から順に見れば、だいじょうぶ!</p>
     </header>
 
-    <nav class="page-actions" aria-label="ページ移動">
-      <a class="go-game" href="index.html#game">ゲームへ進む</a>
-      <a class="go-home" href="index.html">タイトル画面に戻る</a>
-    </nav>
+    <a class="back-home" href="index.html">← タイトル画面に戻る</a>
 
-    <section class="guide-card">
-      <h2><b>1</b> 名前と問題数を選ぶ</h2>
-      <p>タイトル画面で自分の名前を登録・選択し、<strong>10問・15問・20問</strong>から問題数を選びます。名前は1台につき5人まで登録できます。</p>
+    <section class="lesson-card">
+      <div class="lesson-title">
+        <b>1</b>
+        <div>
+          <small>はじめに見る</small>
+          <h2>今のようすを見よう</h2>
+        </div>
+      </div>
+
+      <div class="game-field lesson-field lesson-field-one" aria-label="ゲームと同じグラウンド全体で、アウト数とランナー位置を順に確認するアニメーション">
+        <img class="game-screen-capture" src="assets/infield-game-guide.png" alt="内野守備編の実際のゲーム画面">
+        <span class="demo-video-badge">デモ くり返し</span>
+        <span class="capture-focus capture-out-focus"></span>
+        <span class="capture-focus capture-runner-focus capture-runner-first"></span>
+        <span class="capture-focus capture-runner-focus capture-runner-third"></span>
+        <span class="capture-focus capture-arrow-focus"></span>
+        <span class="capture-focus capture-touch-focus ctf-home"></span>
+        <span class="capture-focus capture-touch-focus ctf-first"></span>
+        <span class="capture-focus capture-touch-focus ctf-second"></span>
+        <span class="capture-focus capture-touch-focus ctf-third"></span>
+        <div class="demo-scene-label scene-outs">① Oの赤い丸は1アウト</div>
+        <div class="demo-scene-label scene-runners">② ランナーを数える</div>
+        <div class="demo-scene-label scene-direction">③ 赤い矢印を見る</div>
+        <div class="demo-scene-label scene-touches">④ 4つのタッチを見る</div>
+      </div>
+
+      <div class="screen-points">
+        <article><b>BSO</b><p><strong>B</strong>と<strong>S</strong>の丸はグレー。<strong>O</strong>だけが赤く光るよ。Oの赤い丸の数が、今のアウトの数だよ。</p></article>
+        <article><b>ランナー</b><p>ランナーの絵がある塁を見よう。どの塁でアウトを取れるか考える手がかりだよ。</p></article>
+        <article><b>赤い矢印</b><p>打ったボールが飛んだ方向だよ。矢印の先にいる選手がボールを取るよ。</p></article>
+        <article><b>タッチ</b><p>先にベースをおすと、その塁の「タッチ」が赤くなるよ。タッチがいるときだけおそう。</p></article>
+      </div>
+
+      <p class="lead">プレーをえらぶ前に、<strong>アウトの数 → ランナーのいる塁</strong>の順に見よう。</p>
+      <ol class="check-list">
+        <li>今、何アウトか</li>
+        <li>どの塁にランナーがいるか</li>
+        <li>ボールがどの選手の方へきたか</li>
+      </ol>
+      <p class="tip">ランナーが同じでも、0アウトと2アウトでは、よいプレーがかわるよ。</p>
     </section>
 
-    <section class="guide-card">
-      <h2><b>2</b> ケースを確認する</h2>
-      <ul>
-        <li><strong>アウトカウント</strong>とランナーの位置を確認します。</li>
-        <li><strong>赤い矢印</strong>が打球方向です。</li>
-        <li>監督が出たら、吹き出しの指示も確認します。</li>
-      </ul>
-      <div class="coach-notes">
-        <p><strong>アウト優先!</strong><span>通常守備で確実なアウトを狙います。</span></p>
-        <p><strong>1点もやらない!</strong><span>「内野前進」を押すか判断します。</span></p>
+    <section class="lesson-card">
+      <div class="lesson-title">
+        <b>2</b>
+        <div>
+          <small>ボタンをおす</small>
+          <h2>送球・タッチ・ゲッツー</h2>
+        </div>
+      </div>
+
+      <div class="game-field lesson-field lesson-field-two" aria-label="ゲームと同じグラウンド全体で、2塁、タッチ、1塁の順に操作するアニメーション">
+        <img class="game-screen-capture" src="assets/infield-game-guide.png" alt="内野守備編の実際のゲーム画面">
+        <span class="demo-video-badge">デモ くり返し</span>
+        <span class="capture-ball operation-ball"></span>
+        <span class="capture-home-touch-state">タッチ</span>
+        <span class="capture-focus sequence-home"></span>
+        <span class="capture-focus sequence-second"></span>
+        <span class="capture-focus sequence-first"></span>
+        <div class="operation-caption">
+          <span>① ホームへ送球 → 赤い「タッチ」をおす → 青</span>
+          <span>② 2塁をふむ → 1塁でゲッツー</span>
+        </div>
+      </div>
+
+      <div class="operation-notes">
+        <article>
+          <h3>送球（ボールを投げる）</h3>
+          <p>アウトを取りたい<strong>ベースをおす</strong>と、そこへボールを投げるよ。ベースをふむだけでアウトになるときは、「タッチ」をおさないよ。</p>
+        </article>
+        <article>
+          <h3>タッチ</h3>
+          <p>ランナーにタッチするプレーでは、<strong>先にベースをおす</strong>よ。そのあと、赤くなった「タッチ」をおそう。</p>
+        </article>
+        <article>
+          <h3>ゲッツー</h3>
+          <p>アウトを2つ取りたいときのプレーだよ。ボールを投げる順に、<strong>ちがう2つのベース</strong>をおそう。</p>
+        </article>
       </div>
     </section>
 
-    <section class="guide-card">
-      <h2><b>3</b> ベースへ送球する</h2>
-      <p>アウトを取りたいベースをタップします。ゲッツーを狙うときは、<strong>異なる2つのベースを順番に</strong>タップできます。</p>
-      <p class="example">例：3塁をタップ → 1塁をタップ</p>
-    </section>
-
-    <section class="guide-card">
-      <h2><b>4</b> タッチが必要か判断する</h2>
-      <p>ランナーへのタッチが必要なら、ベースをタップしたあと、制限時間内に<strong>「タッチ!」</strong>を押します。フォースプレーならタッチは押しません。</p>
-    </section>
-
-    <section class="guide-card">
-      <h2><b>5</b> 判定とアドバイスを見る</h2>
-      <div class="grades" aria-label="評価と得点">
-        <span><b>◎</b>3点</span>
-        <span><b>○</b>2点</span>
-        <span><b>△</b>1点</span>
-        <span><b>×</b>0点</span>
+    <section class="lesson-card">
+      <div class="lesson-title">
+        <b>3</b>
+        <div>
+          <small>3塁ランナーがいるとき</small>
+          <h2>監督のことばを見よう</h2>
+        </div>
       </div>
-      <p>アドバイス画面には、出題されたケースと自分の回答が並びます。『トミー監督』の説明で、よかった点と次に直す点を振り返りましょう。</p>
+
+      <div class="game-field lesson-field lesson-field-three" aria-label="ゲームと同じグラウンド全体で監督の指示と内野前進を確認するアニメーション">
+        <img class="game-screen-capture" src="assets/infield-game-guide.png" alt="内野守備編の実際のゲーム画面">
+        <span class="demo-video-badge">デモ くり返し</span>
+        <span class="position-veil"></span>
+        <span class="normal-position np-first">3</span>
+        <span class="normal-position np-second">4</span>
+        <span class="normal-position np-short">6</span>
+        <span class="normal-position np-third">5</span>
+        <div class="focus-box focus-coach"><b>監督のことばを見る</b></div>
+        <div class="focus-box focus-infield-button"><b>「内野前進」をおす</b></div>
+        <span class="button-tap-demo" aria-hidden="true"></span>
+        <div class="position-change-message">4人の内野手が前へ動く!</div>
+      </div>
+
+      <div class="coach-meanings">
+        <article>
+          <h3>「アウト優先!」</h3>
+          <p><strong>通常守備</strong>のまま、いちばん取りやすいアウトを取ろう。ホームを先におしたり、「内野前進」をおしたりしないよ。</p>
+        </article>
+        <article>
+          <h3>「1点もやらない!」</h3>
+          <p>3塁ランナーをホームで止めよう。まず<strong>ホームをおす</strong>よ。通常守備ではホームから遠いので、<strong>内野前進</strong>を使うとアウトにしやすいよ。</p>
+        </article>
+      </div>
+      <p class="tip">3塁にランナーがいたら、ベースをおす前に、監督のふき出しを読もう。</p>
     </section>
 
-    <section class="guide-card">
-      <h2><b>6</b> 結果を確認する</h2>
-      <p>全問が終わると、今回の得点と理解度が表示されます。結果は選んだ名前ごとに、この端末のブラウザへ保存されます。</p>
-      <aside>シークレットモードの使用やブラウザデータの削除を行うと、保存した名前や結果が消えることがあります。</aside>
+    <section class="lesson-card">
+      <div class="lesson-title">
+        <b>4</b>
+        <div>
+          <small>じょうずになるしくみ</small>
+          <h2>点数とレベルアップ</h2>
+        </div>
+      </div>
+
+      <div class="grade-guide" aria-label="評価ごとの獲得ポイント">
+        <span class="grade-best"><b>◎</b><strong>3点</strong><small>100点満点!</small></span>
+        <span><b>○</b><strong>2点</strong><small>OK!</small></span>
+        <span><b>△</b><strong>1点</strong><small>おしい!</small></span>
+        <span><b>×</b><strong>0点</strong><small>復習しよう</small></span>
+      </div>
+
+      <p class="lead">問題に答えると、点数と同じだけ<strong>XP</strong>がたまるよ。XPは、がんばった分だけふえる「けいけんち」だよ。</p>
+      <p class="lead"><strong>理解度</strong>は、「ぜんぶ◎だったときの点」のうち、どれだけ取れたかをあらわすよ。ぜんぶ◎なら100%!</p>
+
+      <div class="level-demo" aria-label="XPと理解度が増えてレベルアップするアニメーション">
+        <div class="level-names">
+          <span>体験生</span>
+          <strong>入団!</strong>
+        </div>
+        <div class="xp-meter"><i></i></div>
+        <div class="level-checks">
+          <span>XP 20</span>
+          <span>2問以上</span>
+          <span>理解度70%</span>
+        </div>
+      </div>
+
+      <div class="promotion-table" aria-label="レベルアップの条件">
+        <div><b>体験生 → 入団</b><span>XPを20ためる・2問以上とく・理解度70%以上</span></div>
+        <div><b>入団 → 準レギュラー</b><span>XPを60ためる・レベル2を3問以上とく・理解度75%以上</span></div>
+        <div><b>準レギュラー → レギュラー</b><span>XPを120ためる・レベル3を3問以上とく・理解度75%以上</span></div>
+      </div>
+
+      <h3 class="level-list-title">レベルはぜんぶで10こ!</h3>
+      <div class="ten-levels" aria-label="体験生から殿堂入りまでの10段階">
+        <span class="available-level"><b>1</b>体験生<small>XP 0</small></span>
+        <span class="available-level"><b>2</b>入団<small>XP 20</small></span>
+        <span class="available-level"><b>3</b>準レギュラー<small>XP 60</small></span>
+        <span class="available-level"><b>4</b>レギュラー<small>XP 120</small></span>
+        <span><b>5</b>オール上尾<small>XP 220</small></span>
+        <span><b>6</b>コーチ<small>XP 350</small></span>
+        <span><b>7</b>監督<small>XP 500</small></span>
+        <span><b>8</b>NPB<small>XP 700</small></span>
+        <span><b>9</b>メジャー<small>XP 950</small></span>
+        <span class="hall-level"><b>10</b>殿堂入り<small>XP 1250</small></span>
+      </div>
+      <div class="game-purpose">
+        <h3>どんなゲーム?</h3>
+        <p>アウトの数、ランナー、打球の方向、監督のことばを見て、<strong>守備位置とボールを送る塁</strong>を決めるゲームだよ。ベースや「タッチ」を正しい順におして、アウトを取ろう。</p>
+        <h3>どうしたらレベルが上がる?</h3>
+        <p>よいプレーほどXPがたくさんもらえるよ。<strong>必要な問題数に答える・XPをためる・目標の理解度をこえる</strong>の3つがそろうとレベルアップ! ひとつずつ正しいアウトをふやして、レベル10「殿堂入り」をめざそう。</p>
+      </div>
+
+      <p class="tip">XP、問題の数、理解度の3つがそろうとレベルアップ! ◎や○をふやそう。</p>
     </section>
 
-    <nav class="page-actions page-actions-bottom" aria-label="ページ移動">
-      <a class="go-game" href="index.html#game">ゲームへ進む</a>
-      <a class="go-home" href="index.html">タイトル画面に戻る</a>
-    </nav>
+    <section class="ready-card">
+      <span>じゅんびOK!</span>
+      <h2>① → ② → ③ の順でやってみよう!</h2>
+      <p>アウトとランナーを見て、ベースをおそう。3塁ランナーがいたら、監督のことばもわすれずに。レギュラー、オール上尾、監督、そして殿堂入りを目指してがんばろう!</p>
+      <a class="go-game" href="index.html#game">内野守備編へ進む</a>
+    </section>
   </main>
 </body>
 </html>

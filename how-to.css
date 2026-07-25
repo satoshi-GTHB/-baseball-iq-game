@@ -2,28 +2,30 @@
   --navy: #062f57;
   --blue: #1976d2;
   --red: #e52336;
+  --yellow: #ffd34e;
   --cream: #fff8ea;
+  --line: #d5e4ee;
 }
 
 * { box-sizing: border-box; }
 
 body {
   margin: 0;
-  background: #edf6fb;
+  background: #dcecf5;
   color: #102f4d;
   font-family: "Yu Gothic", "Hiragino Kaku Gothic ProN", sans-serif;
 }
 
-.how-to {
-  width: min(100%, 600px);
+.game-guide {
+  width: min(100%, 620px);
   min-height: 100vh;
   margin: 0 auto;
-  padding: 0 16px calc(28px + env(safe-area-inset-bottom));
+  padding: 0 14px calc(30px + env(safe-area-inset-bottom));
   background: var(--cream);
 }
 
 .page-head {
-  margin: 0 -16px 16px;
+  margin: 0 -14px 12px;
   padding: calc(18px + env(safe-area-inset-top)) 18px 20px;
   border-bottom: 5px solid var(--red);
   background: var(--navy);
@@ -32,147 +34,2151 @@ body {
 }
 
 .page-head span {
-  color: #ffd34e;
+  color: var(--yellow);
   font-size: 13px;
   font-weight: 900;
   letter-spacing: .16em;
 }
 
 .page-head h1 {
-  margin: 4px 0 3px;
-  font-size: clamp(23px, 6vw, 30px);
+  margin: 4px 0;
+  font-size: clamp(23px, 6vw, 31px);
 }
 
 .page-head p {
   margin: 0;
   font-size: 14px;
+  font-weight: 700;
 }
 
-.page-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin: 16px 0;
-}
-
-.page-actions a {
-  display: grid;
-  min-height: 50px;
-  place-items: center;
-  border-radius: 14px;
-  color: #fff;
-  font-size: 15px;
+.back-home {
+  display: inline-block;
+  margin: 2px 0 9px;
+  color: var(--navy);
+  font-size: 14px;
   font-weight: 900;
-  text-align: center;
-  text-decoration: none;
-  box-shadow: 0 4px 0 #0003;
 }
 
-.page-actions a:active {
-  transform: translateY(3px);
-  box-shadow: 0 1px 0 #0003;
-}
-
-.go-game { background: var(--blue); }
-.go-home { background: var(--red); }
-
-.guide-card {
+.lesson-card,
+.ready-card {
   margin: 12px 0;
   padding: 16px;
-  border: 2px solid #d5e4ee;
-  border-radius: 18px;
+  border: 2px solid var(--line);
+  border-radius: 20px;
   background: #fff;
-  box-shadow: 0 3px 0 #dce7ed;
+  box-shadow: 0 4px 0 #cadce7;
 }
 
-.guide-card h2 {
+.lesson-title {
   display: flex;
   align-items: center;
-  gap: 9px;
-  margin: 0 0 10px;
-  color: var(--navy);
-  font-size: 19px;
+  gap: 10px;
+  margin-bottom: 12px;
 }
 
-.guide-card h2 b {
+.lesson-title>b {
   display: grid;
-  width: 30px;
-  height: 30px;
+  width: 38px;
+  height: 38px;
   flex: 0 0 auto;
   place-items: center;
   border-radius: 50%;
   background: var(--red);
   color: #fff;
+  font-size: 22px;
 }
 
-.guide-card p,
-.guide-card li {
-  font-size: 15px;
-  font-weight: 600;
-  line-height: 1.75;
+.lesson-title small {
+  color: #55708a;
+  font-weight: 900;
 }
 
-.guide-card p { margin: 7px 0; }
-.guide-card ul { margin: 0; padding-left: 22px; }
-
-.coach-notes {
-  display: grid;
-  gap: 7px;
-  margin-top: 10px;
-}
-
-.coach-notes p {
+.lesson-title h2 {
   margin: 0;
-  padding: 9px 11px;
-  border-radius: 12px;
-  background: #eff6fb;
+  color: var(--navy);
+  font-size: 21px;
 }
 
-.coach-notes strong,
-.coach-notes span { display: block; }
-
-.example {
-  padding: 8px 11px;
-  border-radius: 10px;
-  background: #fff3cd;
-  color: #683d00;
+.lead,
+.lesson-card li,
+.operation-notes p,
+.coach-meanings p,
+.ready-card p {
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.7;
 }
 
-.grades {
+.lead { margin: 12px 0 7px; }
+
+.situation-demo {
+  position: relative;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 6px;
-  margin: 7px 0 10px;
+  grid-template-columns: 115px 1fr;
+  align-items: center;
+  gap: 8px 14px;
+  min-height: 210px;
+  padding: 13px;
+  overflow: hidden;
+  border-radius: 16px;
+  background: linear-gradient(#bde7ff 0 32%, #5c9f4d 32% 100%);
 }
 
-.grades span {
-  padding: 7px 3px;
+.demo-label {
+  position: relative;
+  z-index: 2;
+  padding: 7px 9px;
   border-radius: 10px;
-  background: #eff6fb;
+  background: #fff;
+  color: var(--navy);
   font-size: 13px;
+  font-weight: 900;
+  text-align: center;
+  box-shadow: 0 2px 0 #0002;
+}
+
+.label-outs { animation: labelFocus 6s infinite; }
+.label-runners { animation: labelFocus 6s 2.5s infinite; }
+
+.mini-bso {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 11px;
+  border-radius: 11px;
+  background: #062f57dd;
+  color: #fff;
+}
+
+.mini-bso span { font-weight: 900; }
+.mini-bso i {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #3d4e60;
+}
+
+.mini-bso i:first-of-type {
+  animation: outLight 6s infinite;
+}
+
+.mini-diamond {
+  position: relative;
+  width: 116px;
+  height: 116px;
+  margin: 0 auto;
+  transform: rotate(45deg);
+  border: 3px solid #f2d69c;
+  background: #b77a43;
+}
+
+.mini-base {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  background: #fff;
+  border: 1px solid #555;
+}
+
+.mini-base.home { right: -8px; bottom: -8px; }
+.mini-base.first { right: -8px; top: -8px; }
+.mini-base.second { left: -8px; top: -8px; }
+.mini-base.third { left: -8px; bottom: -8px; }
+
+.mini-runner {
+  position: absolute;
+  display: grid;
+  width: 31px;
+  height: 31px;
+  place-items: center;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: var(--red);
+  color: #fff;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 900;
+  transform: rotate(-45deg);
+  opacity: .45;
+  animation: runnerFocus 6s 2.5s infinite;
+}
+
+.runner-second { left: -17px; top: -17px; }
+.runner-third { left: -17px; bottom: -17px; }
+
+.check-list {
+  margin: 6px 0 10px;
+  padding-left: 26px;
+}
+
+.check-list li::marker {
+  color: var(--red);
+  font-weight: 900;
+}
+
+.tip {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border-left: 5px solid #e49c00;
+  background: #fff3cb;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.6;
+}
+
+.play-demo {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 7px;
+  padding: 13px;
+  border-radius: 16px;
+  background: #eef6fb;
+  text-align: center;
+}
+
+.play-step {
+  grid-column: span 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.play-step span {
+  display: grid;
+  width: 23px;
+  height: 23px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--navy);
+  color: #fff;
+  font-weight: 900;
+}
+
+.tap-field {
+  position: relative;
+  height: 72px;
+  border-radius: 12px;
+  background: #6da85b;
+}
+
+.tap-base {
+  position: absolute;
+  right: 13px;
+  top: 18px;
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  transform: rotate(45deg);
+  border: 3px solid #fff;
+  background: #fff;
+  color: var(--navy);
+  font-size: 0;
+  animation: baseTap 4s infinite;
+}
+
+.demo-ball {
+  position: absolute;
+  left: 13px;
+  top: 32px;
+  width: 12px;
+  height: 12px;
+  border: 2px solid #b11724;
+  border-radius: 50%;
+  background: #fff;
+  animation: throwBall 4s infinite;
+}
+
+.play-arrow {
+  grid-row: 2;
+  grid-column: 2;
+  color: var(--red);
+  font-size: 25px;
+  font-weight: 900;
+}
+
+.demo-touch {
+  grid-column: 3;
+  width: 78px;
+  height: 44px;
+  justify-self: center;
+  border: 0;
+  border-radius: 99px;
+  background: #aaa;
+  color: #fff;
+  font-weight: 900;
+  pointer-events: none;
+  animation: touchButton 4s infinite;
+}
+
+.operation-notes,
+.coach-meanings {
+  display: grid;
+  gap: 8px;
+  margin-top: 11px;
+}
+
+.operation-notes article,
+.coach-meanings article {
+  padding: 11px 12px;
+  border-radius: 13px;
+  background: #f2f7fb;
+}
+
+.operation-notes h3,
+.coach-meanings h3 {
+  margin: 0;
+  color: var(--navy);
+  font-size: 17px;
+}
+
+.operation-notes p,
+.coach-meanings p { margin: 4px 0 0; }
+
+.double-play-demo {
+  position: relative;
+  height: 72px;
+  margin-top: 7px;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #6da85b;
+}
+
+.dp-base {
+  position: absolute;
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  transform: rotate(45deg);
+  background: #fff;
+  color: var(--navy);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.dp-second { left: 33%; top: 10px; }
+.dp-first { right: 12%; bottom: 8px; }
+
+.dp-ball {
+  position: absolute;
+  left: 12%;
+  top: 37px;
+  width: 11px;
+  height: 11px;
+  border: 2px solid #b11724;
+  border-radius: 50%;
+  background: #fff;
+  animation: doublePlayBall 4.5s infinite;
+}
+
+.double-play-demo b {
+  position: absolute;
+  right: 8px;
+  top: 7px;
+  padding: 3px 7px;
+  border-radius: 8px;
+  background: #062f57dd;
+  color: #fff;
+  font-size: 12px;
+}
+
+.coach-demo {
+  display: grid;
+  grid-template-columns: 82px 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 16px;
+  background: linear-gradient(#bde7ff, #eaf7ff);
+}
+
+.coach-demo img {
+  width: 82px;
+  height: 82px;
+  object-fit: contain;
+}
+
+.coach-bubble {
+  position: relative;
+  min-height: 54px;
+  border: 3px solid var(--navy);
+  border-radius: 16px;
+  background: #fff;
+}
+
+.coach-bubble::before {
+  content: "";
+  position: absolute;
+  left: -12px;
+  top: 20px;
+  width: 18px;
+  height: 18px;
+  transform: rotate(45deg);
+  border-left: 3px solid var(--navy);
+  border-bottom: 3px solid var(--navy);
+  background: #fff;
+}
+
+.coach-bubble strong {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 7px;
+  color: var(--navy);
+  font-size: 18px;
+  text-align: center;
+}
+
+.instruction-out { animation: instructionOut 7s infinite; }
+.instruction-run { animation: instructionRun 7s infinite; }
+
+.position-demo {
+  position: relative;
+  grid-column: 1/-1;
+  height: 126px;
+  overflow: hidden;
+  border-radius: 14px;
+  background: #6da85b;
+}
+
+.position-demo::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 22px;
+  width: 78px;
+  height: 78px;
+  transform: translateX(-50%) rotate(45deg);
+  border: 3px solid #f2d69c;
+  background: #b77a43;
+}
+
+.position-demo>i {
+  position: absolute;
+  left: calc(50% - 13px);
+  bottom: 5px;
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  transform: rotate(45deg);
+  background: #fff;
+  color: var(--navy);
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.defender {
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  width: 27px;
+  height: 27px;
+  place-items: center;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: var(--yellow);
+  color: var(--navy);
+  font-weight: 900;
+  animation: infieldShift 7s infinite;
+}
+
+.d1 { left: 69%; top: 37px; --dx: -8px; --dy: 16px; }
+.d2 { left: 56%; top: 18px; --dx: -3px; --dy: 17px; }
+.d3 { left: 36%; top: 18px; --dx: 3px; --dy: 17px; }
+.d4 { left: 23%; top: 37px; --dx: 8px; --dy: 16px; }
+
+.game-field {
+  position: relative;
+  aspect-ratio: 1/1;
+  overflow: hidden;
+  border: 5px solid #fff;
+  border-radius: 22px;
+  outline: 2px solid #c8d8e2;
+  background: #5c9f4d;
+  box-shadow: 0 5px 14px #062f5730;
+  isolation: isolate;
+}
+
+.field-sky {
+  position: absolute;
+  inset: 0 0 84% 0;
+  background: linear-gradient(#a5ddff, #dff4ff);
+}
+
+.field-dirt {
+  position: absolute;
+  left: 50%;
+  top: 31%;
+  width: 54%;
+  height: 54%;
+  transform: translateX(-50%) rotate(45deg);
+  border: 3px solid #f4dfa9;
+  background: #b87c45;
+  box-shadow: 0 0 0 18px #75ae5f;
+}
+
+.field-bso {
+  position: absolute;
+  z-index: 5;
+  left: 4%;
+  top: 4%;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 8px;
+  border-radius: 9px;
+  background: #062f57e8;
+  color: #fff;
+}
+
+.field-bso b { font-size: 12px; }
+.field-bso i {
+  width: 13px;
+  height: 13px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #445569;
+}
+
+.field-bso i:first-of-type {
+  background: var(--red);
+}
+
+.demo-video-badge {
+  position: absolute;
+  z-index: 8;
+  right: 3%;
+  top: 3%;
+  padding: 5px 8px;
+  border-radius: 99px;
+  background: #fff;
+  color: var(--navy);
+  font-size: 10px;
+  font-weight: 900;
+  box-shadow: 0 2px 0 #0002;
+}
+
+.demo-video-badge::before {
+  content: "▶";
+  margin-right: 4px;
+  color: var(--red);
+}
+
+.field-base {
+  position: absolute;
+  z-index: 3;
+  width: 7%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%) rotate(45deg);
+  border: 2px solid #777;
+  background: #fff;
+}
+
+.base-home { left: 50%; top: 88%; }
+.base-first { left: 77%; top: 59%; }
+.base-second { left: 50%; top: 31%; }
+.base-third { left: 23%; top: 59%; }
+
+.field-player,
+.field-runner {
+  position: absolute;
+  z-index: 4;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-weight: 900;
+  transform: translate(-50%, -50%);
+}
+
+.field-player {
+  width: 9%;
+  aspect-ratio: 1;
+  border: 2px solid #fff;
+  background: var(--yellow);
+  color: var(--navy);
+  font-size: clamp(10px, 3.4vw, 15px);
+}
+
+.fp1 { left: 72%; top: 49%; --move-x: -5%; --move-y: 9%; }
+.fp2 { left: 61%; top: 36%; --move-x: -2%; --move-y: 10%; }
+.fp3 { left: 39%; top: 36%; --move-x: 2%; --move-y: 10%; }
+.fp4 { left: 28%; top: 49%; --move-x: 5%; --move-y: 9%; }
+.fpc { left: 50%; top: 94%; }
+
+.field-runner {
+  width: 10%;
+  aspect-ratio: 1;
+  border: 3px solid #fff;
+  background: var(--red);
+  color: #fff;
+  font-size: clamp(9px, 3vw, 13px);
+}
+
+.field-runner-first { left: 82%; top: 59%; }
+.field-runner-second { left: 50%; top: 24%; }
+.field-runner-third { left: 17%; top: 59%; }
+
+.focus-box {
+  position: absolute;
+  z-index: 7;
+  border: 4px solid var(--yellow);
+  border-radius: 13px;
+  box-shadow: 0 0 0 4px #062f57aa, 0 0 20px var(--yellow);
+  pointer-events: none;
+}
+
+.focus-box b {
+  position: absolute;
+  left: 0;
+  bottom: -34px;
+  width: max-content;
+  max-width: 185px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  background: var(--navy);
+  color: #fff;
+  font-size: 12px;
+}
+
+.focus-outs {
+  left: 2%;
+  top: 2%;
+  width: 31%;
+  height: 18%;
+  animation: focusOutsVideo 7s infinite;
+}
+
+.focus-runners {
+  left: 8%;
+  top: 18%;
+  width: 84%;
+  height: 58%;
+  animation: focusRunnersVideo 7s infinite;
+}
+
+.focus-runners b {
+  left: 50%;
+  bottom: -31px;
+  transform: translateX(-50%);
+}
+
+.field-ball {
+  position: absolute;
+  z-index: 9;
+  left: 50%;
+  top: 81%;
+  width: 5%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border: 2px solid #b11724;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 5px #0005;
+}
+
+.lesson-field-two .base-second {
+  animation: secondBaseVideo 8s infinite;
+}
+
+.lesson-field-two .base-first {
+  animation: firstBaseVideo 8s infinite;
+}
+
+.operation-ball {
+  animation: operationBallVideo 8s infinite;
+}
+
+.field-touch {
+  position: absolute;
+  z-index: 8;
+  left: 50%;
+  top: 18%;
+  width: 22%;
+  min-width: 66px;
+  transform: translateX(-50%);
+  border: 0;
+  border-radius: 99px;
+  padding: 7px 4px;
+  background: #999;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 900;
+  pointer-events: none;
+  animation: touchVideo 8s infinite;
+}
+
+.operation-caption {
+  position: absolute;
+  z-index: 8;
+  left: 50%;
+  bottom: 3%;
+  width: 88%;
+  transform: translateX(-50%);
+  padding: 7px;
+  border-radius: 9px;
+  background: #062f57e8;
+  color: #fff;
+  font-size: 12px;
   font-weight: 900;
   text-align: center;
 }
 
-.grades b {
-  display: block;
-  color: var(--red);
-  font-size: 24px;
+.field-coach {
+  position: absolute;
+  z-index: 7;
+  left: 3%;
+  top: 19%;
+  display: flex;
+  align-items: center;
+  width: 64%;
 }
 
-.guide-card aside {
-  margin-top: 10px;
-  padding: 10px;
-  border-left: 4px solid #e49c00;
-  background: #fff4d5;
+.field-coach img {
+  width: 28%;
+  min-width: 52px;
+}
+
+.field-coach-bubble {
+  position: relative;
+  flex: 1;
+  min-height: 48px;
+  margin-left: 4px;
+  border: 3px solid var(--navy);
+  border-radius: 13px;
+  background: #fff;
+}
+
+.field-coach-bubble strong {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--navy);
+  font-size: clamp(12px, 3.8vw, 17px);
+  text-align: center;
+}
+
+.focus-coach {
+  left: 1%;
+  top: 16%;
+  width: 69%;
+  height: 31%;
+  animation: coachFocusVideo 7s infinite;
+}
+
+.focus-coach b {
+  left: 4px;
+  bottom: -31px;
+}
+
+.infield-demo-button {
+  position: absolute;
+  z-index: 8;
+  right: 4%;
+  bottom: 4%;
+  width: 37%;
+  border: 3px solid #fff;
+  border-radius: 12px;
+  padding: 10px 3px;
+  background: var(--red);
+  color: #fff;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 900;
+  pointer-events: none;
+  animation: infieldButtonVideo 7s infinite;
+}
+
+.shifting-player {
+  animation: fullFieldShiftVideo 7s infinite;
+}
+
+.level-list-title {
+  margin: 16px 0 8px;
+  color: var(--navy);
+  font-size: 18px;
+  text-align: center;
+}
+
+.ten-levels {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 7px;
+}
+
+.ten-levels span {
+  display: grid;
+  grid-template-columns: 29px 1fr;
+  align-items: center;
+  min-height: 48px;
+  padding: 7px;
+  border: 2px solid #dde6ec;
+  border-radius: 11px;
+  background: #f3f6f8;
+  color: #4f6477;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.ten-levels b {
+  grid-row: 1/3;
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 50%;
+  background: #788897;
+  color: #fff;
+}
+
+.ten-levels small {
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.ten-levels .available-level {
+  border-color: #8fc4e5;
+  background: #edf8ff;
+  color: var(--navy);
+}
+
+.ten-levels .available-level b { background: var(--blue); }
+
+.ten-levels .hall-level {
+  border-color: #e0b83d;
+  background: #fff5be;
+  color: #593e00;
+}
+
+.ten-levels .hall-level b {
+  background: #d89b00;
+}
+
+.future-note {
+  margin: 9px 0 0;
+  padding: 9px 11px;
+  border-radius: 10px;
+  background: #edf1f4;
+  color: #4b6073;
+  font-size: 12px;
+  font-weight: 800;
   line-height: 1.6;
 }
 
-.page-actions-bottom { margin-top: 18px; }
+.grade-guide {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 7px;
+}
+
+.grade-guide span {
+  display: grid;
+  gap: 2px;
+  padding: 9px 3px;
+  border: 2px solid #dce8ef;
+  border-radius: 13px;
+  background: #f4f8fb;
+  text-align: center;
+}
+
+.grade-guide b {
+  color: var(--red);
+  font-size: 27px;
+  line-height: 1;
+}
+
+.grade-guide strong { font-size: 14px; }
+.grade-guide small {
+  color: #60778c;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.grade-guide .grade-best {
+  border-color: #8fd19e;
+  background: #edfaef;
+  animation: bestGrade 4s infinite;
+}
+
+.level-demo {
+  margin-top: 11px;
+  padding: 13px;
+  border-radius: 15px;
+  background: var(--navy);
+  color: #fff;
+}
+
+.level-names {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 900;
+}
+
+.level-names strong {
+  color: var(--yellow);
+  animation: promotionPop 4s infinite;
+}
+
+.xp-meter {
+  height: 18px;
+  margin: 9px 0;
+  overflow: hidden;
+  border: 2px solid #fff;
+  border-radius: 99px;
+  background: #ffffff2b;
+}
+
+.xp-meter i {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform-origin: left;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #35b9ff, var(--yellow));
+  animation: xpFill 4s infinite;
+}
+
+.level-checks {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px;
+}
+
+.level-checks span {
+  padding: 5px 3px;
+  border-radius: 8px;
+  background: #ffffff17;
+  font-size: 11px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.promotion-table {
+  display: grid;
+  gap: 7px;
+  margin-top: 11px;
+}
+
+.promotion-table div {
+  display: grid;
+  gap: 3px;
+  padding: 9px 11px;
+  border-left: 5px solid var(--blue);
+  border-radius: 9px;
+  background: #eff6fb;
+}
+
+.promotion-table b {
+  color: var(--navy);
+  font-size: 14px;
+}
+
+.promotion-table span {
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.ready-card {
+  padding: 20px 16px;
+  border-color: var(--navy);
+  background: var(--navy);
+  color: #fff;
+  text-align: center;
+}
+
+.ready-card>span {
+  color: var(--yellow);
+  font-weight: 900;
+}
+
+.ready-card h2 {
+  margin: 5px 0;
+  font-size: 21px;
+}
+
+.ready-card p { margin: 6px 0 14px; }
+
+.go-game {
+  display: grid;
+  min-height: 58px;
+  place-items: center;
+  border-radius: 15px;
+  background: var(--red);
+  color: #fff;
+  font-size: 18px;
+  font-weight: 900;
+  text-decoration: none;
+  box-shadow: 0 5px 0 #8f1320;
+}
+
+.go-game:active {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 #8f1320;
+}
+
+@keyframes labelFocus {
+  0%, 38%, 100% { transform: scale(1); background: #fff; }
+  8%, 28% { transform: scale(1.06); background: #fff0a6; }
+}
+
+@keyframes outLight {
+  0%, 38%, 100% { background: #3d4e60; box-shadow: none; }
+  8%, 28% { background: #e52336; box-shadow: 0 0 12px #e52336; }
+}
+
+@keyframes runnerFocus {
+  0%, 40%, 88%, 100% { opacity: .45; transform: rotate(-45deg) scale(1); }
+  50%, 78% { opacity: 1; transform: rotate(-45deg) scale(1.12); box-shadow: 0 0 15px #fff; }
+}
+
+@keyframes baseTap {
+  0%, 24%, 100% { border-color: #fff; box-shadow: none; }
+  30%, 65% { border-color: var(--red); box-shadow: 0 0 14px var(--red); }
+}
+
+@keyframes throwBall {
+  0%, 15% { left: 13px; top: 32px; }
+  40%, 100% { left: calc(100% - 34px); top: 29px; }
+}
+
+@keyframes touchButton {
+  0%, 34%, 100% { background: #aaa; transform: scale(1); }
+  42%, 64% { background: var(--red); transform: scale(1.08); }
+  70%, 90% { background: var(--blue); transform: scale(1); }
+}
+
+@keyframes doublePlayBall {
+  0%, 12% { left: 12%; top: 37px; }
+  36%, 48% { left: 37%; top: 20px; }
+  72%, 100% { left: 80%; top: 49px; }
+}
+
+@keyframes instructionOut {
+  0%, 42% { opacity: 1; }
+  48%, 94% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes instructionRun {
+  0%, 42% { opacity: 0; }
+  48%, 94% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes infieldShift {
+  0%, 42%, 100% { transform: translate(0, 0); }
+  52%, 90% { transform: translate(var(--dx), var(--dy)); }
+}
+
+@keyframes bestGrade {
+  0%, 100% { transform: scale(1); box-shadow: none; }
+  45%, 70% { transform: scale(1.04); box-shadow: 0 0 13px #55b66c88; }
+}
+
+@keyframes xpFill {
+  0% { transform: scaleX(.08); }
+  70%, 100% { transform: scaleX(1); }
+}
+
+@keyframes promotionPop {
+  0%, 62% { opacity: .25; transform: scale(.8); }
+  72%, 92% { opacity: 1; transform: scale(1.12); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes focusOutsVideo {
+  0%, 38% { opacity: 1; transform: scale(1); }
+  44%, 100% { opacity: 0; transform: scale(.96); }
+}
+
+@keyframes focusRunnersVideo {
+  0%, 38% { opacity: 0; transform: scale(.96); }
+  48%, 90% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; }
+}
+
+@keyframes secondBaseVideo {
+  0%, 14%, 100% { box-shadow: none; transform: translate(-50%, -50%) rotate(45deg) scale(1); }
+  20%, 39% { box-shadow: 0 0 18px 8px var(--red); transform: translate(-50%, -50%) rotate(45deg) scale(1.35); }
+}
+
+@keyframes firstBaseVideo {
+  0%, 62%, 100% { box-shadow: none; transform: translate(-50%, -50%) rotate(45deg) scale(1); }
+  68%, 88% { box-shadow: 0 0 18px 8px var(--blue); transform: translate(-50%, -50%) rotate(45deg) scale(1.35); }
+}
+
+@keyframes operationBallVideo {
+  0%, 10% { left: 50%; top: 81%; }
+  28%, 45% { left: 50%; top: 31%; }
+  72%, 100% { left: 77%; top: 59%; }
+}
+
+@keyframes touchVideo {
+  0%, 27%, 100% { background: #999; transform: translateX(-50%) scale(1); }
+  32%, 46% { background: var(--red); transform: translateX(-50%) scale(1.16); box-shadow: 0 0 15px var(--red); }
+  50%, 62% { background: var(--blue); transform: translateX(-50%) scale(1); }
+}
+
+@keyframes coachFocusVideo {
+  0%, 43% { opacity: 1; transform: scale(1); }
+  50%, 100% { opacity: 0; transform: scale(.97); }
+}
+
+@keyframes infieldButtonVideo {
+  0%, 43%, 100% { transform: scale(1); background: var(--red); }
+  52%, 72% { transform: scale(1.14); background: var(--blue); box-shadow: 0 0 18px var(--blue); }
+}
+
+@keyframes fullFieldShiftVideo {
+  0%, 48%, 100% { margin-left: 0; margin-top: 0; }
+  58%, 88% { margin-left: var(--move-x); margin-top: var(--move-y); }
+}
+
+/* 実際のゲーム画面に合わせた全体グラウンド */
+.game-field {
+  background:
+    repeating-linear-gradient(
+      90deg,
+      #4b9b37 0 8%,
+      #57a843 8% 16%
+    );
+}
+
+.field-sky { display: none; }
+
+.field-dirt {
+  left: 5%;
+  top: 8%;
+  width: 90%;
+  height: 67%;
+  transform: none;
+  border: 0;
+  border-radius: 50% 50% 42% 42%;
+  background: #b77b43;
+  box-shadow: none;
+}
+
+.field-dirt::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 17%;
+  width: 60%;
+  aspect-ratio: 1;
+  transform: translateX(-50%) rotate(45deg);
+  border: 4px solid #fff;
+  background: #4f9f3e;
+}
+
+.field-dirt::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 10%;
+  width: 13%;
+  aspect-ratio: 1;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background:
+    linear-gradient(#fff, #fff) center/42% 9% no-repeat,
+    #b77b43;
+  box-shadow: 0 0 0 16px #b77b43;
+}
+
+.field-bso {
+  display: grid;
+  gap: 3px;
+  padding: 6px 9px;
+  border-radius: 9px;
+  background: #092b16e8;
+}
+
+.field-bso span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.field-bso b {
+  width: 14px;
+  font-size: 13px;
+}
+
+.field-bso i {
+  width: 10px;
+  height: 10px;
+  border: 1px solid #fff;
+  background: #858585;
+}
+
+.field-bso i.out-on {
+  background: var(--red);
+  box-shadow: 0 0 7px var(--red);
+}
+
+.base-home { left: 50%; top: 85%; }
+.base-first { left: 78%; top: 52%; }
+.base-second { left: 50%; top: 21%; }
+.base-third { left: 22%; top: 52%; }
+
+.fp1 { left: 76%; top: 44%; --move-x: -6%; --move-y: 10%; }
+.fp2 { left: 63%; top: 28%; --move-x: -3%; --move-y: 11%; }
+.fp3 { left: 37%; top: 28%; --move-x: 3%; --move-y: 11%; }
+.fp4 { left: 24%; top: 44%; --move-x: 6%; --move-y: 10%; }
+.fpc { left: 50%; top: 92%; }
+
+.field-runner {
+  width: 18%;
+  height: 21%;
+  transform: translate(-50%, -50%);
+  border: 0;
+  border-radius: 0;
+  background-color: transparent;
+  background-image: url("assets/runner-left.png");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  color: transparent;
+  font-size: 0;
+}
+
+.field-runner-first { left: 83%; top: 47%; }
+.field-runner-second { left: 43%; top: 24%; }
+.field-runner-third {
+  left: 17%;
+  top: 47%;
+  background-image: url("assets/runner-right.png");
+}
+
+.field-touch {
+  width: auto;
+  min-width: 54px;
+  padding: 5px 9px;
+  border: 2px solid #fff;
+  background: #7d8792;
+  font-size: 10px;
+  animation: none;
+}
+
+.touch-home-demo {
+  left: 39%;
+  top: 78%;
+  transform: none;
+}
+
+.touch-first-demo {
+  left: auto;
+  right: 1%;
+  top: 48%;
+  transform: none;
+}
+
+.touch-second-demo {
+  left: 50%;
+  top: 6%;
+  transform: translateX(-50%);
+}
+
+.touch-third-demo {
+  left: 1%;
+  top: 48%;
+  transform: none;
+}
+
+.lesson-field-two .active-touch-demo {
+  animation: touchVideo 8s infinite;
+}
+
+.field-hit-arrow {
+  position: absolute;
+  z-index: 5;
+  left: 50%;
+  top: 41%;
+  width: 7%;
+  height: 43%;
+  transform: translateX(-50%) rotate(var(--arrow-angle));
+  transform-origin: 50% 100%;
+  border-radius: 99px 99px 0 0;
+  background: #b92332;
+  clip-path: polygon(50% 0, 100% 18%, 75% 18%, 75% 100%, 25% 100%, 25% 18%, 0 18%);
+}
+
+.field-hit-arrow i {
+  position: absolute;
+  left: 50%;
+  top: 5%;
+  width: 36%;
+  aspect-ratio: 1;
+  transform: translateX(-50%);
+  border: 2px solid #b92332;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.arrow-first { --arrow-angle: 28deg; }
+.arrow-second { --arrow-angle: 0deg; }
+.arrow-third { --arrow-angle: -28deg; }
+
+.lesson-field-two .field-hit-arrow {
+  opacity: .45;
+}
+
+.screen-points {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 7px;
+  margin-top: 11px;
+}
+
+.screen-points article {
+  padding: 9px 10px;
+  border-radius: 12px;
+  background: #eff6fb;
+}
+
+.screen-points article>b {
+  display: inline-block;
+  padding: 3px 7px;
+  border-radius: 7px;
+  background: var(--navy);
+  color: #fff;
+  font-size: 13px;
+}
+
+.screen-points p {
+  margin: 5px 0 0;
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.55;
+}
+
+.focus-outs {
+  left: 1%;
+  top: 1%;
+  width: 35%;
+  height: 28%;
+  animation: focusOutsGame 12s infinite;
+}
+
+.focus-runners {
+  left: 5%;
+  top: 13%;
+  width: 90%;
+  height: 49%;
+  animation: focusRunnersGame 12s infinite;
+}
+
+.focus-direction {
+  left: 30%;
+  top: 28%;
+  width: 40%;
+  height: 59%;
+  animation: focusDirectionGame 12s infinite;
+}
+
+.focus-direction b {
+  left: 50%;
+  bottom: -31px;
+  transform: translateX(-50%);
+}
+
+.focus-touches {
+  left: 0;
+  top: 2%;
+  width: 100%;
+  height: 83%;
+  animation: focusTouchesGame 12s infinite;
+}
+
+.focus-touches b {
+  left: 50%;
+  bottom: -31px;
+  transform: translateX(-50%);
+}
+
+.lesson-field-one .field-hit-arrow,
+.lesson-field-one .field-touch {
+  animation: fieldObjectPulse 12s infinite;
+}
+
+@keyframes focusOutsGame {
+  0%, 20% { opacity: 1; transform: scale(1); }
+  24%, 100% { opacity: 0; transform: scale(.97); }
+}
+
+@keyframes focusRunnersGame {
+  0%, 23% { opacity: 0; transform: scale(.97); }
+  27%, 45% { opacity: 1; transform: scale(1); }
+  49%, 100% { opacity: 0; }
+}
+
+@keyframes focusDirectionGame {
+  0%, 48% { opacity: 0; transform: scale(.97); }
+  52%, 70% { opacity: 1; transform: scale(1); }
+  74%, 100% { opacity: 0; }
+}
+
+@keyframes focusTouchesGame {
+  0%, 73% { opacity: 0; transform: scale(.97); }
+  77%, 95% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; }
+}
+
+@keyframes fieldObjectPulse {
+  0%, 48%, 74%, 100% { filter: none; }
+  52%, 70% { filter: drop-shadow(0 0 7px var(--red)); }
+  78%, 95% { filter: drop-shadow(0 0 8px var(--yellow)); }
+}
+
+/* デモの位置・強調範囲を実ゲームにそろえる */
+.game-field::before,
+.game-field::after {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  left: 49.5%;
+  top: 51%;
+  width: 3px;
+  height: 39%;
+  transform-origin: 50% 100%;
+  background: #fff;
+}
+
+.game-field::before { transform: rotate(43deg); }
+.game-field::after { transform: rotate(-43deg); }
+
+.field-bso span i:first-of-type {
+  background: #858585;
+  box-shadow: none;
+}
+
+.field-bso span i.out-on {
+  background: var(--red);
+  box-shadow: 0 0 7px var(--red);
+}
+
+.field-base {
+  width: 8%;
+}
+
+.base-home {
+  left: 50%;
+  top: 86%;
+  width: 10%;
+  height: 8%;
+  aspect-ratio: auto;
+  transform: translate(-50%, -50%);
+  clip-path: polygon(0 0, 100% 0, 100% 55%, 50% 100%, 0 55%);
+}
+
+.base-first { left: 78%; top: 52%; }
+.base-second { left: 50%; top: 20%; }
+.base-third { left: 22%; top: 52%; }
+
+.focus-outs {
+  left: 3%;
+  top: 19%;
+  width: 30%;
+  height: 8%;
+  border-width: 3px;
+}
+
+.focus-outs b {
+  left: 0;
+  bottom: -31px;
+}
+
+.runner-focus {
+  position: absolute;
+  z-index: 7;
+  width: 20%;
+  height: 23%;
+  transform: translate(-50%, -50%);
+  border: 4px solid var(--yellow);
+  border-radius: 12px;
+  box-shadow: 0 0 12px var(--yellow);
+  opacity: 0;
+  animation: runnerOnlyFocus 12s infinite;
+  pointer-events: none;
+}
+
+.runner-focus-second { left: 43%; top: 24%; }
+.runner-focus-third { left: 17%; top: 47%; }
+
+.demo-scene-label {
+  position: absolute;
+  z-index: 9;
+  left: 50%;
+  bottom: 2%;
+  width: max-content;
+  max-width: 90%;
+  transform: translateX(-50%);
+  padding: 6px 9px;
+  border-radius: 8px;
+  background: var(--navy);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 900;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.scene-runners { animation: runnerLabelFocus 12s infinite; }
+.scene-direction { animation: directionLabelFocus 12s infinite; }
+.scene-touches { animation: touchLabelFocus 12s infinite; }
+
+.lesson-field-one .field-hit-arrow {
+  animation: arrowOnlyFocus 12s infinite;
+}
+
+.lesson-field-one .field-touch {
+  animation: touchOnlyFocus 12s infinite;
+}
+
+.lesson-field-two .field-runner-first { left: 83%; top: 47%; }
+.lesson-field-two .field-runner-third { left: 17%; top: 47%; }
+
+.lesson-field-two .base-home {
+  animation: homeBaseSequence 12s infinite;
+}
+
+.lesson-field-two .base-second {
+  animation: secondBaseSequence 12s infinite;
+}
+
+.lesson-field-two .base-first {
+  animation: firstBaseSequence 12s infinite;
+}
+
+.lesson-field-two .operation-ball {
+  animation: operationBallSequence 12s infinite;
+}
+
+.lesson-field-two .active-home-touch-demo {
+  animation: homeTouchSequence 12s infinite;
+}
+
+.operation-caption {
+  min-height: 31px;
+}
+
+.operation-caption span {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 5px;
+}
+
+.operation-caption span:first-child {
+  animation: homeCaptionSequence 12s infinite;
+}
+
+.operation-caption span:last-child {
+  animation: doubleCaptionSequence 12s infinite;
+}
+
+.lesson-field-three .fp1 { left: 84%; top: 43%; --move-x: -8%; --move-y: 3%; }
+.lesson-field-three .fp2 { left: 67%; top: 22%; --move-x: -4%; --move-y: 7%; }
+.lesson-field-three .fp3 { left: 33%; top: 22%; --move-x: 4%; --move-y: 7%; }
+.lesson-field-three .fp4 { left: 16%; top: 43%; --move-x: 8%; --move-y: 3%; }
+
+.lesson-field-three .field-coach {
+  left: auto;
+  right: 2%;
+  top: auto;
+  bottom: 14%;
+  width: 63%;
+  flex-direction: row-reverse;
+}
+
+.lesson-field-three .field-coach img {
+  width: 31%;
+  min-width: 50px;
+}
+
+.lesson-field-three .field-coach-bubble {
+  margin: 0 4px 0 0;
+}
+
+.lesson-field-three .infield-demo-button {
+  left: 3%;
+  right: auto;
+  bottom: 3%;
+  width: 34%;
+}
+
+.lesson-field-three .focus-coach {
+  left: 58%;
+  top: 58%;
+  width: 29%;
+  height: 8.5%;
+}
+
+.lesson-field-three .focus-coach b {
+  left: auto;
+  right: 0;
+}
+
+@keyframes runnerOnlyFocus {
+  0%, 23%, 49%, 100% { opacity: 0; transform: translate(-50%, -50%) scale(.9); }
+  27%, 45% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes runnerLabelFocus {
+  0%, 23%, 49%, 100% { opacity: 0; }
+  27%, 45% { opacity: 1; }
+}
+
+@keyframes directionLabelFocus {
+  0%, 48%, 74%, 100% { opacity: 0; }
+  52%, 70% { opacity: 1; }
+}
+
+@keyframes touchLabelFocus {
+  0%, 73%, 100% { opacity: 0; }
+  77%, 96% { opacity: 1; }
+}
+
+@keyframes arrowOnlyFocus {
+  0%, 48%, 74%, 100% { filter: none; }
+  52%, 70% { filter: drop-shadow(0 0 3px var(--yellow)) drop-shadow(0 0 7px var(--yellow)); }
+}
+
+@keyframes touchOnlyFocus {
+  0%, 73%, 100% { border-color: #fff; box-shadow: none; }
+  77%, 96% { border-color: var(--yellow); box-shadow: 0 0 10px 3px var(--yellow); }
+}
+
+@keyframes homeBaseSequence {
+  0%, 7%, 36%, 100% { filter: none; }
+  12%, 31% { filter: drop-shadow(0 0 9px var(--red)); }
+}
+
+@keyframes secondBaseSequence {
+  0%, 44%, 68%, 100% { box-shadow: none; transform: translate(-50%, -50%) rotate(45deg) scale(1); }
+  49%, 63% { box-shadow: 0 0 16px 7px var(--blue); transform: translate(-50%, -50%) rotate(45deg) scale(1.25); }
+}
+
+@keyframes firstBaseSequence {
+  0%, 67%, 100% { box-shadow: none; transform: translate(-50%, -50%) rotate(45deg) scale(1); }
+  73%, 91% { box-shadow: 0 0 16px 7px var(--blue); transform: translate(-50%, -50%) rotate(45deg) scale(1.25); }
+}
+
+@keyframes operationBallSequence {
+  0%, 5% { left: 24%; top: 44%; }
+  22%, 34% { left: 50%; top: 86%; }
+  40%, 44% { left: 37%; top: 28%; }
+  58%, 68% { left: 50%; top: 20%; }
+  82%, 100% { left: 78%; top: 52%; }
+}
+
+@keyframes homeTouchSequence {
+  0%, 13%, 36%, 100% { background: #7d8792; transform: none; box-shadow: none; }
+  17%, 27% { background: var(--red); transform: scale(1.12); box-shadow: 0 0 12px var(--red); }
+  28%, 34% { background: var(--blue); transform: scale(1); }
+}
+
+@keyframes homeCaptionSequence {
+  0%, 36% { opacity: 1; }
+  42%, 100% { opacity: 0; }
+}
+
+@keyframes doubleCaptionSequence {
+  0%, 39% { opacity: 0; }
+  45%, 100% { opacity: 1; }
+}
 
 @media (max-width: 390px) {
-  .page-actions { grid-template-columns: 1fr; }
-  .guide-card { padding: 14px; }
+  .lesson-card { padding: 14px; }
+  .situation-demo { grid-template-columns: 102px 1fr; }
+  .play-demo { padding: 10px; }
+  .play-step { font-size: 11px; }
+  .demo-touch { width: 68px; }
+  .grade-guide { gap: 4px; }
+  .grade-guide small { font-size: 9px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+  }
+
+  .instruction-out { opacity: 1; }
+  .instruction-run { display: none; }
+}
+
+/* The lessons use the real game capture as their common field.
+   Only the teaching highlights and demo actions are drawn above it. */
+.lesson-field {
+  aspect-ratio: 600 / 736;
+  background: #0a3157;
+  overflow: hidden;
+}
+
+.lesson-field::before,
+.lesson-field::after {
+  display: none;
+}
+
+.game-screen-capture {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  pointer-events: none;
+}
+
+.demo-video-badge {
+  z-index: 12;
+}
+
+.capture-focus {
+  position: absolute;
+  z-index: 8;
+  box-sizing: border-box;
+  border: 4px solid var(--yellow);
+  border-radius: 11px;
+  box-shadow: 0 0 0 2px rgba(8, 45, 77, .65), 0 0 13px 4px var(--yellow);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.capture-out-focus {
+  left: 7.5%;
+  top: 11.2%;
+  width: 15%;
+  height: 4.8%;
+  animation: captureOutFocus 12s infinite;
+}
+
+.capture-runner-focus {
+  animation: captureRunnerFocus 12s infinite;
+}
+
+.capture-runner-first {
+  left: 66%;
+  top: 21.5%;
+  width: 15%;
+  height: 17%;
+}
+
+.capture-runner-third {
+  left: 17%;
+  top: 38.5%;
+  width: 15%;
+  height: 15%;
+}
+
+.capture-arrow-focus {
+  left: 47.5%;
+  top: 31.5%;
+  width: 17.5%;
+  height: 35%;
+  border: 4px solid var(--yellow);
+  border-radius: 10px;
+  background: transparent;
+  box-shadow: 0 0 0 2px rgba(8, 45, 77, .65), 0 0 13px 4px var(--yellow);
+  filter: none;
+  animation: captureArrowFocus 12s infinite;
+}
+
+.capture-touch-focus {
+  animation: captureTouchFocus 12s infinite;
+}
+
+.ctf-home { left: 34.5%; top: 60.5%; width: 15.5%; height: 7.2%; }
+.ctf-first { left: 79.5%; top: 36.5%; width: 15%; height: 6.8%; }
+.ctf-second { left: 43.5%; top: 7.1%; width: 14%; height: 6.8%; }
+.ctf-third { left: 7.8%; top: 36.5%; width: 14.5%; height: 6.8%; }
+
+.scene-outs { animation: captureOutLabel 12s infinite; }
+.scene-runners { animation: captureRunnerLabel 12s infinite; }
+.scene-direction { animation: captureArrowLabel 12s infinite; }
+.scene-touches { animation: captureTouchLabel 12s infinite; }
+
+.lesson-field-one .demo-scene-label {
+  bottom: auto;
+  width: max-content;
+  max-width: 52%;
+  transform: none;
+}
+
+.lesson-field-one .scene-outs { left: 23%; top: 11%; }
+.lesson-field-one .scene-runners { left: 34%; top: 34%; }
+.lesson-field-one .scene-direction { left: 24%; top: 47%; }
+.lesson-field-one .scene-touches { left: 24%; top: 54%; }
+
+.capture-ball {
+  position: absolute;
+  z-index: 10;
+  width: 4.2%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border: 3px solid #e32636;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, .5);
+}
+
+.lesson-field-two .operation-ball {
+  animation: captureBallSequence 12s infinite;
+}
+
+.capture-home-touch-state {
+  position: absolute;
+  z-index: 10;
+  left: 35.2%;
+  top: 61.1%;
+  display: grid;
+  place-items: center;
+  width: 14.5%;
+  height: 5.8%;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  background: #7d8792;
+  color: #fff;
+  font-size: clamp(10px, 2.7vw, 16px);
+  font-weight: 900;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, .4);
+  animation: captureHomeTouchState 12s infinite;
+}
+
+.sequence-home {
+  left: 33.8%;
+  top: 60%;
+  width: 23%;
+  height: 9%;
+  animation: sequenceHomeFocus 12s infinite;
+}
+
+.sequence-second {
+  left: 43.7%;
+  top: 13.5%;
+  width: 14%;
+  height: 10%;
+  animation: sequenceSecondFocus 12s infinite;
+}
+
+.sequence-first {
+  left: 71.5%;
+  top: 33%;
+  width: 13.5%;
+  height: 12%;
+  animation: sequenceFirstFocus 12s infinite;
+}
+
+.lesson-field-two .operation-caption {
+  position: absolute;
+  inset: 0;
+  width: auto;
+  min-height: 0;
+  transform: none;
+  padding: 0;
+  background: transparent;
+  z-index: 12;
+  pointer-events: none;
+}
+
+.lesson-field-two .operation-caption span {
+  inset: auto;
+  width: max-content;
+  max-width: 68%;
+  padding: 6px 9px;
+  border-radius: 8px;
+  background: var(--navy);
+  color: #fff;
+}
+
+.lesson-field-two .operation-caption span:first-child {
+  left: 17%;
+  top: 51%;
+}
+
+.lesson-field-two .operation-caption span:last-child {
+  left: 27%;
+  top: 25%;
+}
+
+.game-purpose {
+  margin-top: 14px;
+  padding: 13px;
+  border: 2px solid #cfe0ec;
+  border-radius: 14px;
+  background: #f4f9fd;
+}
+
+.game-purpose h3 {
+  margin: 0 0 4px;
+  color: var(--navy);
+  font-size: 17px;
+}
+
+.game-purpose h3:not(:first-child) {
+  margin-top: 12px;
+}
+
+.game-purpose p {
+  margin: 0;
+  line-height: 1.75;
+}
+
+.position-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: rgba(5, 34, 59, .25);
+  animation: revealInfieldCapture 12s infinite;
+  pointer-events: none;
+}
+
+.normal-position {
+  position: absolute;
+  z-index: 7;
+  display: grid;
+  place-items: center;
+  width: 8%;
+  aspect-ratio: 1;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: #ffd52f;
+  color: #0a3157;
+  font-size: clamp(13px, 3.6vw, 22px);
+  font-weight: 900;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, .35);
+  transform: translate(-50%, -50%);
+  animation: captureInfieldMove 12s infinite;
+}
+
+.lesson-field-three .np-first {
+  left: var(--start-left);
+  top: var(--start-top);
+  --start-left: 86%;
+  --start-top: 35%;
+  --target-left: 74%;
+  --target-top: 34%;
+}
+
+.lesson-field-three .np-second {
+  left: var(--start-left);
+  top: var(--start-top);
+  --start-left: 69%;
+  --start-top: 13%;
+  --target-left: 62%;
+  --target-top: 21%;
+}
+
+.lesson-field-three .np-short {
+  left: var(--start-left);
+  top: var(--start-top);
+  --start-left: 31%;
+  --start-top: 13%;
+  --target-left: 38%;
+  --target-top: 21%;
+}
+
+.lesson-field-three .np-third {
+  left: var(--start-left);
+  top: var(--start-top);
+  --start-left: 14%;
+  --start-top: 35%;
+  --target-left: 26%;
+  --target-top: 34%;
+}
+
+.lesson-field-three .field-coach,
+.lesson-field-three .infield-demo-button,
+.lesson-field-three .focus-coach {
+  z-index: 11;
+  animation: captureCoachStep 12s infinite;
+}
+
+.focus-infield-button {
+  left: 1%;
+  top: 86.3%;
+  z-index: 11;
+  width: 98%;
+  height: 12.5%;
+  opacity: 0;
+  animation: captureButtonStep 12s infinite;
+}
+
+.focus-infield-button b {
+  left: 3%;
+  top: -34px;
+  bottom: auto;
+}
+
+.button-tap-demo {
+  position: absolute;
+  z-index: 12;
+  left: 50%;
+  top: 92%;
+  width: 10%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border: 4px solid #fff;
+  border-radius: 50%;
+  background: rgba(255, 213, 47, .65);
+  opacity: 0;
+  animation: captureButtonTap 12s infinite;
+}
+
+.position-change-message {
+  position: absolute;
+  z-index: 12;
+  left: 50%;
+  top: 27%;
+  width: max-content;
+  max-width: 72%;
+  transform: translateX(-50%);
+  padding: 6px 9px;
+  border-radius: 8px;
+  background: var(--navy);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 900;
+  opacity: 0;
+  animation: capturePositionMessage 12s infinite;
+}
+
+@keyframes captureOutFocus {
+  0%, 22%, 100% { opacity: 0; }
+  3%, 19% { opacity: 1; }
+}
+
+@keyframes captureRunnerFocus {
+  0%, 23%, 49%, 100% { opacity: 0; }
+  27%, 45% { opacity: 1; }
+}
+
+@keyframes captureArrowFocus {
+  0%, 48%, 74%, 100% { opacity: 0; }
+  52%, 70% { opacity: 1; }
+}
+
+@keyframes captureTouchFocus {
+  0%, 73%, 100% { opacity: 0; }
+  77%, 96% { opacity: 1; }
+}
+
+@keyframes captureOutLabel {
+  0%, 22%, 100% { opacity: 0; }
+  3%, 19% { opacity: 1; }
+}
+
+@keyframes captureRunnerLabel {
+  0%, 23%, 49%, 100% { opacity: 0; }
+  27%, 45% { opacity: 1; }
+}
+
+@keyframes captureArrowLabel {
+  0%, 48%, 74%, 100% { opacity: 0; }
+  52%, 70% { opacity: 1; }
+}
+
+@keyframes captureTouchLabel {
+  0%, 73%, 100% { opacity: 0; }
+  77%, 96% { opacity: 1; }
+}
+
+@keyframes captureBallSequence {
+  0%, 4% { left: 27%; top: 34%; }
+  20%, 35% { left: 50%; top: 64%; }
+  40%, 44% { left: 38%; top: 22%; }
+  58%, 68% { left: 50%; top: 17%; }
+  83%, 100% { left: 75%; top: 39%; }
+}
+
+@keyframes sequenceHomeFocus {
+  0%, 5%, 38%, 100% { opacity: 0; }
+  12%, 34% { opacity: 1; }
+}
+
+@keyframes captureHomeTouchState {
+  0%, 16%, 37%, 100% {
+    background: #7d8792;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, .4);
+    transform: scale(1);
+  }
+  20%, 25% {
+    background: var(--red);
+    box-shadow: 0 0 12px 4px rgba(227, 38, 54, .75);
+    transform: scale(1.08);
+  }
+  29%, 34% {
+    background: var(--blue);
+    box-shadow: 0 0 12px 4px rgba(29, 112, 184, .7);
+    transform: scale(1.08);
+  }
+}
+
+@keyframes sequenceSecondFocus {
+  0%, 44%, 70%, 100% { opacity: 0; }
+  51%, 66% { opacity: 1; }
+}
+
+@keyframes sequenceFirstFocus {
+  0%, 69%, 100% { opacity: 0; }
+  76%, 96% { opacity: 1; }
+}
+
+@keyframes revealInfieldCapture {
+  0%, 52% { opacity: 1; }
+  64%, 100% { opacity: 0; }
+}
+
+@keyframes captureInfieldMove {
+  0%, 52% {
+    opacity: 1;
+    left: var(--start-left);
+    top: var(--start-top);
+    transform: translate(-50%, -50%);
+  }
+  66%, 82% {
+    opacity: 1;
+    left: var(--target-left);
+    top: var(--target-top);
+    transform: translate(-50%, -50%);
+  }
+  90%, 100% {
+    opacity: 0;
+    left: var(--target-left);
+    top: var(--target-top);
+    transform: translate(-50%, -50%);
+  }
+}
+
+@keyframes captureCoachStep {
+  0%, 4%, 29%, 100% { opacity: 0; }
+  8%, 25% { opacity: 1; }
+}
+
+@keyframes captureButtonStep {
+  0%, 28%, 55%, 100% { opacity: 0; }
+  33%, 51% { opacity: 1; }
+}
+
+@keyframes captureButtonTap {
+  0%, 39%, 55%, 100% { opacity: 0; transform: translate(-50%, -50%) scale(.6); }
+  43% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
+  49% { opacity: .25; transform: translate(-50%, -50%) scale(.75); }
+}
+
+@keyframes capturePositionMessage {
+  0%, 54%, 90%, 100% { opacity: 0; }
+  62%, 86% { opacity: 1; }
 }

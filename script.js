@@ -1140,7 +1140,7 @@ function mastery(level){
   return {
     attempts:data.attempts,
     rate:data.attempts
-      ?data.points/(data.attempts*10)
+      ?data.points/(data.attempts*3)
       :0
   };
 }
