@@ -1976,12 +1976,12 @@ function answer(answerData,q){
 
   $('#judge-title').textContent=
     grade==='◎'
-      ?'最善の判断！'
+      ?'100点満点！'
       :grade==='○'
-        ?'よい判断！'
+        ?'OK！もう一つ上があるぞ！'
       :grade==='△'
-        ?'改善できる判断！'
-        :'もう一度考えよう！';
+        ?'おしい！'
+        :'残念、ここでおぼえよう！';
 
   $('#feedback-text').textContent=
     explanation;
