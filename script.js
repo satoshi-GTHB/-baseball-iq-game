@@ -276,6 +276,7 @@ state.playState.currentPlay=null;
   state.playState.outRunners=[];
   state.playState.safeRunners=[];
   state.playState.nextPlayMustBeSafe=false;
+  updateBaseTouchButtons();
 }
 function getRunnerHeadingTo(base){
   const targets=state.playState.runnerTargets;
@@ -469,6 +470,7 @@ playStatus.classList.add('is-safe');
   }
 
   state.playState.currentPlay=null;
+  updateBaseTouchButtons();
   scheduleDefenseAnswer(evaluation);
 }
 
@@ -2607,6 +2609,31 @@ function fieldBaseElement(baseName){
   ) || null;
 }
 
+function updateBaseTouchButtons(){
+  const currentBase=
+    state.playState.currentPlay?.base || null;
+  const touchedBases=new Set(
+    state.playActions
+      .filter(action=>action.touch)
+      .map(action=>action.base)
+  );
+
+  document.querySelectorAll('.base-touch-button').forEach(button=>{
+    const baseName=button.dataset.touchBase;
+    const used=touchedBases.has(baseName);
+    const ready=
+      !used &&
+      currentBase===baseName &&
+      !state.playState.playFinished &&
+      state.playActions.length<2;
+
+    button.disabled=!ready;
+    button.classList.toggle('is-ready',ready);
+    button.classList.toggle('is-used',used);
+    button.setAttribute('aria-pressed',String(used));
+  });
+}
+
 function selectFieldBase(baseName,touchImmediately=false){
   if(
     state.mode!=='defense' ||
@@ -2622,15 +2649,21 @@ function selectFieldBase(baseName,touchImmediately=false){
   const currentPlay=state.playState.currentPlay;
 
   if(
-    !currentPlay &&
-    state.playActions.at(-1)?.base===baseName
+    touchImmediately &&
+    (
+      !currentPlay ||
+      currentPlay.base!==baseName
+    )
   ){
     return;
   }
 
-  if(state.playState.decisionTimerId){
-    clearTimeout(state.playState.decisionTimerId);
-    state.playState.decisionTimerId=null;
+  if(
+    currentPlay &&
+    currentPlay.base===baseName &&
+    !touchImmediately
+  ){
+    return;
   }
 
   if(
@@ -2647,6 +2680,18 @@ function selectFieldBase(baseName,touchImmediately=false){
     currentPlay.timeExpired=false;
     finishBasicPlay(currentPlay);
     return;
+  }
+
+  if(
+    !currentPlay &&
+    state.playActions.at(-1)?.base===baseName
+  ){
+    return;
+  }
+
+  if(state.playState.decisionTimerId){
+    clearTimeout(state.playState.decisionTimerId);
+    state.playState.decisionTimerId=null;
   }
 
   if(currentPlay){
@@ -2679,14 +2724,7 @@ function selectFieldBase(baseName,touchImmediately=false){
   state.playState.currentPlay=play;
   fieldBases.forEach(base=>base.classList.remove('is-selected'));
   selectedBase?.classList.add('is-selected');
-
-  if(touchImmediately){
-    play.touchSelected=true;
-    play.timeExpired=false;
-    finishBasicPlay(play);
-    return;
-  }
-
+  updateBaseTouchButtons();
   startPlayTimer(play);
 }
 
@@ -2699,6 +2737,11 @@ fieldBases.forEach(base=>{
 document.querySelectorAll('.base-touch-button').forEach(button=>{
   button.addEventListener('click',event=>{
     event.stopPropagation();
+
+    if(button.disabled){
+      return;
+    }
+
     selectFieldBase(
       button.dataset.touchBase,
       true

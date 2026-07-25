@@ -1082,7 +1082,7 @@ button {
     padding: 4px 7px;
     border: 2px solid #fff;
     border-radius: 999px;
-    background: #e63946;
+    background: #7d8792;
     color: #fff;
     box-shadow: 0 2px 7px rgba(8, 36, 61, .35);
     font-size: 12px;
@@ -1095,6 +1095,14 @@ button {
 
 .base-touch-button:active {
     transform: translate(-50%, -50%) scale(.94);
+}
+
+.base-touch-button.is-ready {
+    background: #e63946;
+}
+
+.base-touch-button.is-used {
+    background: #2f80ed;
 }
 
 .base-touch-button.touch-home {
@@ -1118,7 +1126,6 @@ button {
 }
 
 .base-touch-button:disabled {
-    opacity: .4;
     cursor: default;
 }
 
