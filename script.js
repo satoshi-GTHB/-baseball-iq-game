@@ -642,9 +642,23 @@ function defenseAdvice(evaluation,grade){
     Number(q.outs)<2 &&
     hasThirdRunner &&
     state.playState.infieldInSelected!==expectedInfieldIn;
-  const runAllowedAgainstInstruction=
-    q.instruction==='INFIELD_IN' &&
-    evaluation.runsScored>0;
+  const firstActionBase=
+    state.playActions[0]?.base || null;
+  const outPriorityBaseMiss=
+    !expectedInfieldIn &&
+    firstActionBase==='HOME';
+  const outPriorityPositionMiss=
+    !expectedInfieldIn &&
+    state.playState.infieldInSelected;
+  const instructionActionMiss=
+    Boolean(firstActionBase) &&
+    (
+      expectedInfieldIn
+        ?hasThirdRunner &&
+          firstActionBase!=='HOME'
+        :outPriorityBaseMiss ||
+          outPriorityPositionMiss
+    );
   const runPreventionAchieved=
     q.instruction==='INFIELD_IN' &&
     evaluation.runsScored===0 &&
@@ -660,13 +674,15 @@ function defenseAdvice(evaluation,grade){
       play=>play.result==='OUT'
     );
   const instructionWarning=
-    positioningMiss
+    instructionActionMiss
       ?expectedInfieldIn
-        ?'最優先で確認しよう。「1点もやらない！」という監督指示に対して、内野前進を選んでいません。'
-        :'最優先で確認しよう。「アウト優先！」という監督指示に対して、内野前進を選んでいます。'
-      :runAllowedAgainstInstruction
-        ?'最優先で確認しよう。「1点もやらない！」という監督指示に反して、ホームへの得点を許しました。'
-        :null;
+        ?'最優先で確認しよう。「1点もやらない！」という監督指示に対して、最初にホーム以外の塁へ送球しています。'
+        :outPriorityBaseMiss && outPriorityPositionMiss
+          ?'最優先で確認しよう。「アウト優先！」という監督指示に対して、内野前進を選び、最初にホームへ送球しています。'
+          :outPriorityPositionMiss
+            ?'最優先で確認しよう。「アウト優先！」という監督指示に対して、内野前進を選んでいます。'
+            :'最優先で確認しよう。「アウト優先！」という監督指示に対して、最初にホームへ送球しています。'
+      :null;
   const homeSafePlay=
     evaluation.plays.find(
       play=>
@@ -724,9 +740,8 @@ function defenseAdvice(evaluation,grade){
       reason='満塁ではなく、後ろの塁にランナーが詰まっていないため、ホームはフォースプレーではないよ。ベースを踏むだけではアウトにならず、3塁ランナーへのタッチが必要です。タッチをしなかったためセーフになり、そのミスで1点が入ってしまいました。';
     }else if(homeSafePlay.reason==='HOME_TOO_LATE'){
       reason=
-        expectedInfieldIn &&
         !state.playState.infieldInSelected
-          ?'内野前進を選ばなかったため、ホームへの送球が間に合わずセーフになりました。その判断ミスで1点が入ってしまいました。'
+          ?'通常守備ではホームから遠いため、ホームへの送球が間に合わずセーフになりました。内野前進ではなかったことがセーフの直接の原因です。'
           :'ホームへの送球が間に合わずセーフになりました。その判断ミスで1点が入ってしまいました。';
     }else if(
       homeSafePlay.reason==='FIRST_PLAY_TIME_LOSS' ||
@@ -748,8 +763,10 @@ function defenseAdvice(evaluation,grade){
     }
   }else if(cleanRunPreventionAchieved){
     reason='「1点もやらない！」という監督指示どおり、ホームへ走る3塁ランナーをタッチアウトにして、得点を防げました。';
-  }else if(runAllowedAgainstInstruction){
-    reason='この場面では、ほかのアウトより、ホームへ走る3塁ランナーを止めることが大切だよ。';
+  }else if(instructionActionMiss){
+    reason=expectedInfieldIn
+      ?'この場面では、ほかのアウトより、ホームへ走る3塁ランナーを止めることが大切だよ。'
+      :'この場面では、ホームのランナーより、確実にアウトにしやすい塁を優先しよう。';
   }else if(stationaryRunnerPlay){
     const baseLabel=
       baseLabels[stationaryRunnerAction?.base]||'その塁';
