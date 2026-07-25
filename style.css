@@ -393,6 +393,50 @@ button {
     height: 46px;
 }
 
+.fujicon-cap-icon {
+    position: relative;
+    align-self: center;
+    width: 50px;
+    height: 35px;
+    border: 3px solid #a91f2d;
+    border-radius: 48% 52% 18% 18% / 75% 75% 25% 25%;
+    background: linear-gradient(145deg, #17273b, #07111f 72%);
+    box-shadow: inset 0 -4px #020711, 0 3px 4px #00152d55;
+}
+
+.fujicon-cap-icon::after {
+    content: "";
+    position: absolute;
+    right: -10px;
+    bottom: -5px;
+    width: 29px;
+    height: 9px;
+    border: 2px solid #a91f2d;
+    border-left: 0;
+    border-radius: 0 80% 70% 0;
+    background: #07111f;
+    transform: rotate(7deg);
+}
+
+.fujicon-cap-icon i {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    height: 100%;
+    color: #fff;
+    font-family: Georgia, serif;
+    font-size: 25px;
+    font-style: italic;
+    font-weight: 900;
+    line-height: 1;
+    text-shadow:
+        -1px -1px #b82632,
+        1px -1px #b82632,
+        -1px 1px #b82632,
+        1px 1px #b82632;
+}
+
 .mode-start {
     grid-column: 1/-1;
     margin-top: 10px;
