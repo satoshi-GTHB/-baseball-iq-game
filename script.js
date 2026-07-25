@@ -2685,6 +2685,22 @@ function selectFieldBase(baseName,touchImmediately=false){
 
   const currentPlay=state.playState.currentPlay;
 
+  if(
+    currentPlay &&
+    currentPlay.base===baseName &&
+    touchImmediately
+  ){
+    if(state.playState.timerId){
+      clearInterval(state.playState.timerId);
+      state.playState.timerId=null;
+    }
+
+    currentPlay.touchSelected=true;
+    currentPlay.timeExpired=false;
+    finishBasicPlay(currentPlay);
+    return;
+  }
+
   if(currentPlay){
     if(state.playState.timerId){
       clearInterval(state.playState.timerId);
