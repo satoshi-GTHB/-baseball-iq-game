@@ -453,6 +453,88 @@
     return tags;
   }
 
+  function createActionCandidates() {
+    const bases = [
+      BASES.FIRST,
+      BASES.SECOND,
+      BASES.THIRD,
+      BASES.HOME
+    ];
+    const actions = [];
+
+    bases.forEach((base) => {
+      actions.push({ base, touch: false });
+      actions.push({ base, touch: true });
+    });
+
+    return actions;
+  }
+
+  function canGetDoublePlay(gameCase) {
+    if (Number(gameCase.outs) >= 2) {
+      return false;
+    }
+
+    const candidates = createActionCandidates();
+
+    return candidates.some((firstAction) => (
+      candidates.some((secondAction) => (
+        firstAction.base !== secondAction.base &&
+        evaluateActions(
+          gameCase,
+          [firstAction, secondAction]
+        ).outsAdded >= 2
+      ))
+    ));
+  }
+
+  function hasPenaltyAction(gameCase, evaluation, options = {}) {
+    const expectedDefense = options.expectedDefense || null;
+    const defenseMiss =
+      expectedDefense &&
+      gameCase.defense !== expectedDefense;
+    const playMiss = evaluation.plays.some((play) => (
+      play.result === 'SAFE' ||
+      play.reason === 'UNNEEDED_TOUCH'
+    ));
+
+    return Boolean(
+      defenseMiss ||
+      playMiss ||
+      evaluation.runsScored > 0
+    );
+  }
+
+  function lowerGrade(grade) {
+    return {
+      '◎': '○',
+      '○': '△',
+      '△': '×',
+      '×': '×'
+    }[grade] || '×';
+  }
+
+  function gradeEvaluation(gameCase, evaluation, options = {}) {
+    const outsAdded = Number(evaluation.outsAdded) || 0;
+
+    if (outsAdded === 0) {
+      return '×';
+    }
+
+    const doublePlayAvailable =
+      canGetDoublePlay(gameCase);
+    let grade =
+      doublePlayAvailable
+        ? (outsAdded >= 2 ? '◎' : '○')
+        : '◎';
+
+    if (hasPenaltyAction(gameCase, evaluation, options)) {
+      grade = lowerGrade(grade);
+    }
+
+    return grade;
+  }
+
   function scoreGrade(grade) {
     return POINTS_BY_GRADE[grade] ?? 0;
   }
@@ -474,12 +556,15 @@
     SITUATIONS,
     SITUATION_LABELS,
     buildRunnerTargets,
+    canGetDoublePlay,
     createBalancedSession,
     createCases,
     createDefenseSession,
     createPlayState,
     evaluateActions,
+    gradeEvaluation,
     getRunnerHeadingTo,
+    hasPenaltyAction,
     isForcePlay,
     scoreGrade,
     enforceOutFloor

@@ -485,92 +485,17 @@ function evaluateDefenseActions(q,actions){
 }
 
 function defenseGrade(evaluation,q){
-  const plays=evaluation.plays;
-  const reasons=plays.map(play=>play.reason);
-  const isOneOutFirstThird=
-    Number(q.outs)===1 &&
-    q.situation==='FIRST_THIRD';
-  const homeTouchOutOnly=
-    isOneOutFirstThird &&
-    plays.length===1 &&
-    plays[0].base==='HOME' &&
-    plays[0].touch &&
-    plays[0].result==='OUT';
-  const riskyThrowAfterHomeOut=
-    isOneOutFirstThird &&
-    plays.length===2 &&
-    plays[0].base==='HOME' &&
-    plays[0].touch &&
-    plays[0].result==='OUT' &&
-    plays[1].base==='FIRST' &&
-    plays[1].result==='SAFE';
-  let grade;
-
-  if(homeTouchOutOnly){
-    grade='◎';
-  }else if(riskyThrowAfterHomeOut){
-    grade='△';
-  }else if(evaluation.outsAdded===0){
-    grade='×';
-  }else if(reasons.includes('UNNEEDED_TOUCH')){
-    grade='△';
-  }else if(evaluation.outsAdded>=2 || evaluation.inningOver){
-    grade='◎';
-  }else if(plays.length>=2 && plays[1].result==='SAFE'){
-    grade=plays[1].base==='SECOND' ?'△':'×';
-  }else if(
-    reasons.includes('EMPTY_BASE_THROW') ||
-    reasons.includes('MISSED_TOUCH') ||
-    reasons.includes('THIRD_TOO_LATE') ||
-    reasons.includes('HOME_TOO_LATE') ||
-    reasons.includes('FORCE_AFTER_TOUCH') ||
-    reasons.includes('LATE_EXTRA_THROW')
-  ){
-    grade='△';
-  }else{
-    grade='○';
-  }
-
-  const hasThirdRunner=
-    (RUNNERS[q.situation] || []).includes('THIRD');
-  const positioningQuestion=
-    Number(q.outs)<2 && hasThirdRunner;
-  const expectedInfieldIn=
-    q.instruction==='INFIELD_IN';
-  const acceptedFirstThirdResult=
-    isOneOutFirstThird &&
-    (
-      homeTouchOutOnly ||
-      riskyThrowAfterHomeOut ||
-      evaluation.outsAdded>=2
-    );
-
-  if(
-    positioningQuestion &&
-    !acceptedFirstThirdResult &&
-    state.playState.infieldInSelected!==expectedInfieldIn
-  ){
-    const lowerGrade={
-      '◎':'○',
-      '○':'△',
-      '△':'×',
-      '×':'×'
-    };
-
-    grade=lowerGrade[grade];
-  }
-
-  if(
-    q.instruction==='INFIELD_IN' &&
-    evaluation.runsScored>0 &&
-    (grade==='◎' || grade==='○')
-  ){
-    grade='△';
-  }
-
-  return window.FUJICON_SPRINT45.enforceOutFloor(
-    grade,
-    evaluation.outsAdded
+  return window.FUJICON_SPRINT45.gradeEvaluation(
+    {
+      ...q,
+      defense:state.playState.infieldInSelected
+        ?'INFIELD_IN'
+        :'NORMAL'
+    },
+    evaluation,
+    {
+      expectedDefense:q.instruction
+    }
   );
 }
 

@@ -216,6 +216,93 @@ result = rules.evaluateActions(
 assert.equal(result.outsAdded, 0);
 assert.equal(result.plays[0].reason, 'EMPTY_BASE_THROW');
 
+const doublePlayCase = gameCase({
+  situation: SITUATIONS.FIRST,
+  fielder: FIELDERS.SECOND
+});
+
+assert.equal(rules.canGetDoublePlay(doublePlayCase), true);
+
+result = rules.evaluateActions(doublePlayCase, [
+  action(BASES.SECOND),
+  action(BASES.FIRST)
+]);
+assert.equal(
+  rules.gradeEvaluation(doublePlayCase, result),
+  '◎'
+);
+
+result = rules.evaluateActions(doublePlayCase, [
+  action(BASES.SECOND)
+]);
+assert.equal(
+  rules.gradeEvaluation(doublePlayCase, result),
+  '○'
+);
+
+result = rules.evaluateActions(doublePlayCase, [
+  action(BASES.SECOND),
+  action(BASES.THIRD)
+]);
+assert.equal(result.outsAdded, 1);
+assert.equal(result.plays[1].result, 'SAFE');
+assert.equal(
+  rules.gradeEvaluation(doublePlayCase, result),
+  '△'
+);
+
+const singleOutCase = gameCase({
+  situation: SITUATIONS.NONE
+});
+
+assert.equal(rules.canGetDoublePlay(singleOutCase), false);
+
+result = rules.evaluateActions(singleOutCase, [
+  action(BASES.FIRST)
+]);
+assert.equal(
+  rules.gradeEvaluation(singleOutCase, result),
+  '◎'
+);
+
+result = rules.evaluateActions(singleOutCase, [
+  action(BASES.FIRST),
+  action(BASES.SECOND)
+]);
+assert.equal(result.outsAdded, 1);
+assert.equal(result.plays[1].result, 'SAFE');
+assert.equal(
+  rules.gradeEvaluation(singleOutCase, result),
+  '○'
+);
+
+result = rules.evaluateActions(singleOutCase, [
+  action(BASES.SECOND)
+]);
+assert.equal(
+  rules.gradeEvaluation(singleOutCase, result),
+  '×'
+);
+
+result = rules.evaluateActions(
+  gameCase({
+    situation: SITUATIONS.THIRD,
+    defense: DEFENSES.NORMAL
+  }),
+  [action(BASES.FIRST)]
+);
+assert.equal(
+  rules.gradeEvaluation(
+    gameCase({
+      situation: SITUATIONS.THIRD,
+      defense: DEFENSES.NORMAL
+    }),
+    result,
+    { expectedDefense: DEFENSES.INFIELD_IN }
+  ),
+  '○'
+);
+
 assert.equal(rules.scoreGrade('◎'), 3);
 assert.equal(rules.scoreGrade('○'), 2);
 assert.equal(rules.scoreGrade('△'), 1);
