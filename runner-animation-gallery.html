@@ -17,16 +17,18 @@
       <a class="academy-back" href="index.html">タイトルへ戻る</a>
     </header>
 
-    <nav class="scene-picker" aria-label="演出を選ぶ">
+    <p class="picker-heading">どんな打球？</p>
+    <nav class="scene-picker" aria-label="打球を選ぶ">
       <button type="button" data-scene="single" aria-pressed="false">外野前ヒット</button>
       <button type="button" data-scene="fly" aria-pressed="true">外野フライ</button>
-      <button type="button" data-scene="extra" aria-pressed="false">長打コース</button>
+      <button type="button" data-scene="extra" aria-pressed="false">長打</button>
       <button type="button" data-scene="ground" aria-pressed="false">内野ゴロ</button>
       <button type="button" data-scene="popup" aria-pressed="false">内野フライ</button>
       <button type="button" data-scene="liner" aria-pressed="false">ライナー</button>
       <button type="button" data-scene="passed" aria-pressed="false">パスボール</button>
     </nav>
 
+    <p class="picker-heading direction-heading" id="direction-heading">どの方向？</p>
     <div class="direction-picker" id="direction-picker" aria-label="打球方向を選ぶ">
       <button type="button" data-direction="left-line" aria-pressed="false">レフト線</button>
       <button type="button" data-direction="left" aria-pressed="false">レフト</button>

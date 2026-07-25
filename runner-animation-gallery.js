@@ -3,6 +3,7 @@ const galleryReplay = document.querySelector('#gallery-replay');
 const galleryStatus = document.querySelector('#gallery-status');
 const sceneButtons = [...document.querySelectorAll('[data-scene]')];
 const directionPicker = document.querySelector('#direction-picker');
+const directionHeading = document.querySelector('#direction-heading');
 const directionButtons = [...document.querySelectorAll('[data-direction]')];
 const selectedPlayerStatus = document.querySelector('#selected-player-status');
 
@@ -27,7 +28,7 @@ const SCENES = Object.freeze({
   fly: { label: '外野フライ', duration: 3650, directions: 'outfield' },
   popup: { label: '内野フライ', duration: 2600, directions: 'infield' },
   liner: { label: 'ライナー', duration: 1900, directions: 'infield' },
-  extra: { label: '長打コース', duration: 3150, directions: 'outfield' },
+  extra: { label: '長打', duration: 3150, directions: 'outfield' },
   single: { label: '外野前ヒット', duration: 3100, directions: 'gaps' },
   passed: { label: 'パスボール', duration: 2100, directions: null },
   ground: { label: '内野ゴロ', duration: 2700, directions: 'infield' },
@@ -268,6 +269,7 @@ function displayLabel() {
 function renderDirectionPicker() {
   const setName = SCENES[selectedScene].directions;
   directionPicker.hidden = !setName;
+  directionHeading.hidden = !setName;
   if (!setName) return;
 
   const options = DIRECTION_SETS[setName];

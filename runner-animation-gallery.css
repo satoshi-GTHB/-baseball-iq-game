@@ -18,11 +18,22 @@
   outline-offset: 3px;
 }
 
+.picker-heading {
+  margin: 9px 12px 2px;
+  color: #102b46;
+  font-size: 14px;
+  font-weight: 1000;
+}
+
+.direction-heading {
+  margin-top: 5px;
+}
+
 .scene-picker {
   display: grid;
   grid-template-columns: repeat(8, minmax(0, 1fr));
   gap: 5px;
-  padding: 9px 10px 8px;
+  padding: 4px 10px 8px;
 }
 
 .scene-picker button {
@@ -58,7 +69,7 @@
   display: grid;
   grid-template-columns: repeat(8, minmax(0, 1fr));
   gap: 5px;
-  margin: -2px 10px 8px;
+  margin: 3px 10px 8px;
   padding: 6px;
   border-radius: 12px;
   background: #e8f0f6;
