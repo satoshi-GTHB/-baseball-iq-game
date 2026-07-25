@@ -1073,6 +1073,55 @@ button {
     left: 21.3%;
     top: 51%;
 }
+
+.base-touch-button {
+    position: absolute;
+    z-index: 18;
+    min-width: 52px;
+    min-height: 28px;
+    padding: 4px 7px;
+    border: 2px solid #fff;
+    border-radius: 999px;
+    background: #e63946;
+    color: #fff;
+    box-shadow: 0 2px 7px rgba(8, 36, 61, .35);
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1;
+    white-space: nowrap;
+    cursor: pointer;
+    transform: translate(-50%, -50%);
+}
+
+.base-touch-button:active {
+    transform: translate(-50%, -50%) scale(.94);
+}
+
+.base-touch-button.touch-home {
+    left: 40%;
+    top: 83%;
+}
+
+.base-touch-button.touch-first {
+    left: 89%;
+    top: 51%;
+}
+
+.base-touch-button.touch-second {
+    left: 50%;
+    top: 12%;
+}
+
+.base-touch-button.touch-third {
+    left: 11%;
+    top: 51%;
+}
+
+.base-touch-button:disabled {
+    opacity: .4;
+    cursor: default;
+}
+
 #play-controls {
     display: flex;
     flex-direction: column;
@@ -1096,33 +1145,25 @@ button {
     gap: 12px;
 }
 
-#infield-in-button,
-#touch-button {
+#infield-in-button {
     flex: 1;
+    width: 100%;
     min-width: 0;
-    padding: 10px 20px;
+    min-height: 62px;
+    padding: 15px 24px;
     border: 0;
-    border-radius: 14px;
-    background: #e63946;
+    border-radius: 16px;
+    background: #2f80ed;
     color: #fff;
-    font-size: 22px;
+    font-size: 25px;
     font-weight: 800;
     cursor: pointer;
-}
-
-#infield-in-button {
-    background: #2f80ed;
 }
 
 #infield-in-button.is-selected {
     background: #145dbf;
     box-shadow: 0 0 0 4px rgba(47, 128, 237, 0.3);
     transform: translateY(2px);
-}
-
-#touch-button:disabled {
-    opacity: 0.4;
-    cursor: default;
 }
 
 #play-status {

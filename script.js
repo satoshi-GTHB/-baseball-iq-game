@@ -250,9 +250,6 @@ if(playStatus){
 document.querySelectorAll('.field .base').forEach(base=>{
   base.classList.remove('is-selected');
 });
-if(touchControl){
-  touchControl.disabled=false;
-}
   state.playSequence=[];
   state.playActions=[];
   state.firstPlayType=null;
@@ -2618,8 +2615,6 @@ window.FUJICON_DEBUG={
 
 const infieldInControl=$('#infield-in-button');
 
-const touchControl=$('#touch-button');
-
 const playTimer=$('#play-timer');
 
 const outCount=$('#out-count');
@@ -2654,79 +2649,95 @@ infieldInControl.addEventListener('click',()=>{
   );
 });
 
-touchControl.addEventListener('click',()=>{
+updateLevel();// Sprint4.1 ベースをタップすると光る
+const fieldBases=[...document.querySelectorAll('.field .base')];
 
-  const play=state.playState.currentPlay;
+function fieldBaseName(base){
+  return base.classList.contains('home')?'HOME':
+    base.classList.contains('first')?'FIRST':
+    base.classList.contains('second')?'SECOND':
+    base.classList.contains('third')?'THIRD':
+    null;
+}
 
+function fieldBaseElement(baseName){
+  return fieldBases.find(
+    base=>fieldBaseName(base)===baseName
+  ) || null;
+}
+
+function selectFieldBase(baseName,touchImmediately=false){
   if(
-    state.mode!=='defense'
-    || state.playState.playFinished
-    || !play
+    state.mode!=='defense' ||
+    state.answering ||
+    state.playState.playFinished ||
+    !state.playState.active ||
+    state.playActions.length>=2 ||
+    !baseName
   ){
     return;
   }
-
-  play.touchSelected=true;
-
-  clearInterval(state.playState.timerId);
-state.playState.timerId=null;
-play.timeExpired=false;
-finishBasicPlay(play);
-});
-
-updateLevel();// Sprint4.1 ベースをタップすると光る
-document.querySelectorAll('.field .base').forEach((base) => {
-  base.addEventListener('click', () => {
-    if(
-      state.mode!=='defense' ||
-      state.answering ||
-      state.playState.playFinished
-    ){
-      return;
-    }
-
-    if(state.playState.decisionTimerId){
-      clearTimeout(state.playState.decisionTimerId);
-      state.playState.decisionTimerId=null;
-    }
-
-    const tappedBase=
-  base.classList.contains('home')?'HOME':
-  base.classList.contains('first')?'FIRST':
-  base.classList.contains('second')?'SECOND':
-  base.classList.contains('third')?'THIRD':
-  null;
-
-const currentPlay=state.playState.currentPlay;
-
-if(currentPlay){
-  if(state.playState.timerId){
-    clearInterval(state.playState.timerId);
-    state.playState.timerId=null;
-  }
-
-  finishBasicPlay(currentPlay);
 
   if(state.playState.decisionTimerId){
     clearTimeout(state.playState.decisionTimerId);
     state.playState.decisionTimerId=null;
   }
-}
 
-  const play=getPlayAtBase(tappedBase) || {
-  base: tappedBase,
-  runner: null,
-  isForce: false,
-  requiresTouch: false,
-  touchSelected: false
-};
+  const currentPlay=state.playState.currentPlay;
+
+  if(currentPlay){
+    if(state.playState.timerId){
+      clearInterval(state.playState.timerId);
+      state.playState.timerId=null;
+    }
+
+    finishBasicPlay(currentPlay);
+
+    if(state.playState.decisionTimerId){
+      clearTimeout(state.playState.decisionTimerId);
+      state.playState.decisionTimerId=null;
+    }
+  }
+
+  if(state.playState.playFinished){
+    return;
+  }
+
+  const play=getPlayAtBase(baseName) || {
+    base:baseName,
+    runner:null,
+    isForce:false,
+    requiresTouch:false,
+    touchSelected:false
+  };
+  const selectedBase=fieldBaseElement(baseName);
+
   state.playState.currentPlay=play;
+  fieldBases.forEach(base=>base.classList.remove('is-selected'));
+  selectedBase?.classList.add('is-selected');
+
+  if(touchImmediately){
+    play.touchSelected=true;
+    play.timeExpired=false;
+    finishBasicPlay(play);
+    return;
+  }
 
   startPlayTimer(play);
-    document.querySelectorAll('.field .base').forEach((item) => {
-      item.classList.remove('is-selected');
-    });
+}
 
-    base.classList.add('is-selected');
+fieldBases.forEach(base=>{
+  base.addEventListener('click',()=>{
+    selectFieldBase(fieldBaseName(base));
+  });
+});
+
+document.querySelectorAll('.base-touch-button').forEach(button=>{
+  button.addEventListener('click',event=>{
+    event.stopPropagation();
+    selectFieldBase(
+      button.dataset.touchBase,
+      true
+    );
   });
 });
