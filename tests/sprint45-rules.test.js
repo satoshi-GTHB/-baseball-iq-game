@@ -71,7 +71,7 @@ result = rules.evaluateActions(oneOutFirstThird, [
 ]);
 assert.equal(result.plays[0].result, 'OUT');
 assert.equal(result.plays[1].result, 'SAFE');
-assert.equal(result.plays[1].reason, 'LATE_EXTRA_THROW');
+assert.equal(result.plays[1].reason, 'FORCE_AFTER_TOUCH');
 assert.equal(result.runsScored, 0);
 
 result = rules.evaluateActions(oneOutFirstThird, [
@@ -96,6 +96,7 @@ result = rules.evaluateActions(oneOutSecondThird, [
 ]);
 assert.equal(result.plays[0].result, 'OUT');
 assert.equal(result.plays[1].result, 'SAFE');
+assert.equal(result.plays[1].reason, 'FORCE_AFTER_TOUCH');
 assert.equal(result.outsAdded, 1);
 assert.equal(result.inningOver, false);
 assert.equal(result.runsScored, 0);
@@ -132,7 +133,10 @@ result = rules.evaluateActions(
   }),
   [action(BASES.THIRD, true), action(BASES.FIRST)]
 );
-assert.equal(result.outsAdded, 2);
+assert.equal(result.outsAdded, 1);
+assert.equal(result.plays[0].reason, 'TOUCH_OUT');
+assert.equal(result.plays[1].result, 'SAFE');
+assert.equal(result.plays[1].reason, 'FORCE_AFTER_TOUCH');
 
 result = rules.evaluateActions(
   gameCase({

@@ -526,6 +526,7 @@ function defenseGrade(evaluation,q){
     reasons.includes('MISSED_TOUCH') ||
     reasons.includes('THIRD_TOO_LATE') ||
     reasons.includes('HOME_TOO_LATE') ||
+    reasons.includes('FORCE_AFTER_TOUCH') ||
     reasons.includes('LATE_EXTRA_THROW')
   ){
     grade='△';
@@ -808,6 +809,7 @@ function defenseAdvice(evaluation,grade){
           :'ホームへの送球が間に合わずセーフになりました。その判断ミスで1点が入ってしまいました。';
     }else if(
       homeSafePlay.reason==='FIRST_PLAY_TIME_LOSS' ||
+      homeSafePlay.reason==='FORCE_AFTER_TOUCH' ||
       homeSafePlay.reason==='LATE_EXTRA_THROW'
     ){
       reason='先に別の塁へ送球したため、ホームへの送球が間に合わずセーフになりました。その判断ミスで1点が入ってしまいました。';
@@ -857,6 +859,7 @@ function defenseAdvice(evaluation,grade){
   }else if(
     reasons.includes('THIRD_TOO_LATE') ||
     reasons.includes('HOME_TOO_LATE') ||
+    reasons.includes('FORCE_AFTER_TOUCH') ||
     reasons.includes('LATE_EXTRA_THROW') ||
     reasons.includes('EMPTY_BASE_THROW')
   ){
@@ -873,6 +876,7 @@ function defenseAdvice(evaluation,grade){
       lateReason=`捕った場所から3塁まで遠く、ランナーはもう走り出しているので、${safeBase}への送球は間に合わないよ。`;
     }else if(
       safePlay.reason==='LATE_EXTRA_THROW' ||
+      safePlay.reason==='FORCE_AFTER_TOUCH' ||
       safePlay.reason==='FIRST_PLAY_TIME_LOSS'
     ){
       lateReason=`1つ目のプレーで時間がかかり、ランナーが先に着くので、${safeBase}への次の送球は間に合わないよ。`;

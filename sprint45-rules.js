@@ -355,6 +355,12 @@
         result = 'SAFE';
         reason = 'FIRST_PLAY_TIME_LOSS';
       } else if (
+        firstPlay.reason === 'TOUCH_OUT' &&
+        technique.isForce
+      ) {
+        result = 'SAFE';
+        reason = 'FORCE_AFTER_TOUCH';
+      } else if (
         result === 'OUT' &&
         !secondPlayCanArrive(state, firstPlay, action)
       ) {
