@@ -345,11 +345,11 @@ button {
 
 .how-to-link {
     flex: 0 0 auto;
-    border: 2px solid var(--navy);
+    border: 2px solid #2f80ed;
     border-radius: 999px;
     padding: 6px 10px;
-    background: #fff;
-    color: var(--navy);
+    background: #2f80ed;
+    color: #fff;
     font-size: 13px;
     font-weight: 900;
     line-height: 1;
