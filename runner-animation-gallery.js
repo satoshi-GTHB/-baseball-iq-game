@@ -25,11 +25,11 @@ const catchFlash = galleryField.querySelector('.catch-flash');
 const missFlash = galleryField.querySelector('.miss-flash');
 
 const SCENES = Object.freeze({
-  fly: { label: '外野フライ', duration: 3650, directions: 'outfield' },
+  fly: { label: '外野フライ', duration: 4200, directions: 'outfield' },
   popup: { label: '内野フライ', duration: 2600, directions: 'infield' },
   liner: { label: 'ライナー', duration: 1900, directions: 'infield' },
-  extra: { label: '長打', duration: 3150, directions: 'outfield' },
-  single: { label: '外野前ヒット', duration: 3100, directions: 'gaps' },
+  extra: { label: '長打', duration: 3650, directions: 'outfield' },
+  single: { label: '外野前ヒット', duration: 3400, directions: 'gaps' },
   passed: { label: 'パスボール', duration: 2100, directions: null },
   ground: { label: '内野ゴロ', duration: 2700, directions: 'infield' },
   error: { label: 'エラー', duration: 2400, directions: 'infield' }
@@ -369,6 +369,10 @@ function playBallFlight(target, duration, peakScale = 1.7) {
 function playOutfieldFly() {
   const play = OUTFIELD_PLAYS[selectedDirection];
   const catchTime = 2250;
+  const cutReceiveDelay = catchTime + 180;
+  const cutReceiveDuration = 650;
+  const cutHoldDuration = 450;
+  const cutThrowDuration = 500;
 
   playBallFlight(play.target, catchTime);
   move(fielders[play.primary], positionOf(play.primary), play.target, 1350, 650);
@@ -389,7 +393,23 @@ function playOutfieldFly() {
       { left: pct(play.target[0]), top: pct(play.target[1]), opacity: 1, transform: 'scale(.78)' },
       { left: pct(play.cutPoint[0]), top: pct(play.cutPoint[1]), opacity: 1, transform: 'scale(.72)' }
     ],
-    { duration: 650, delay: catchTime + 180, easing: 'linear' }
+    { duration: cutReceiveDuration, delay: cutReceiveDelay, easing: 'linear' }
+  );
+  playCatchFlash(
+    play.cutPoint,
+    cutReceiveDelay + cutReceiveDuration - 100
+  );
+  animate(
+    ball,
+    [
+      { left: pct(play.cutPoint[0]), top: pct(play.cutPoint[1]), opacity: 1, transform: 'scale(.72)' },
+      { left: '50%', top: '30%', opacity: 1, transform: 'scale(.72)' }
+    ],
+    {
+      duration: cutThrowDuration,
+      delay: cutReceiveDelay + cutReceiveDuration + cutHoldDuration,
+      easing: 'linear'
+    }
   );
 }
 
@@ -436,6 +456,9 @@ function playOutfieldLiner(isExtra = false) {
 
   if (isExtra) {
     const pickupTime = duration + 330;
+    const cutReceiveDelay = pickupTime + 100;
+    const cutReceiveDuration = 650;
+    const cutHoldDuration = 450;
     playCatchFlash(target, pickupTime - 120);
     animate(
       ball,
@@ -446,14 +469,32 @@ function playOutfieldLiner(isExtra = false) {
         },
         {
           left: pct(cutPoint[0]), top: pct(cutPoint[1]),
-          opacity: 1, transform: 'scale(.72)', offset: .62
+          opacity: 1, transform: 'scale(.72)'
+        }
+      ],
+      { duration: cutReceiveDuration, delay: cutReceiveDelay, easing: 'linear' }
+    );
+    playCatchFlash(
+      cutPoint,
+      cutReceiveDelay + cutReceiveDuration - 100
+    );
+    animate(
+      ball,
+      [
+        {
+          left: pct(cutPoint[0]), top: pct(cutPoint[1]),
+          opacity: 1, transform: 'scale(.72)'
         },
         {
           left: '50%', top: '30%',
           opacity: 1, transform: 'scale(.72)'
         }
       ],
-      { duration: 1050, delay: pickupTime + 100, easing: 'linear' }
+      {
+        duration: 500,
+        delay: cutReceiveDelay + cutReceiveDuration + cutHoldDuration,
+        easing: 'linear'
+      }
     );
   } else {
     playCatchFlash(target, duration - 100);
@@ -519,8 +560,9 @@ function playOutfieldSingle() {
   playCatchFlash(play.target, fieldTime - 100);
   const cutReceiveDelay = fieldTime + 180;
   const cutReceiveDuration = 650;
-  const cutReturnDelay = cutReceiveDelay + cutReceiveDuration;
-  const cutHome = positionOf(play.cut);
+  const cutHoldDuration = 450;
+  const cutThrowDelay =
+    cutReceiveDelay + cutReceiveDuration + cutHoldDuration;
   animate(
     ball,
     [
@@ -535,13 +577,9 @@ function playOutfieldSingle() {
     ],
     { duration: cutReceiveDuration, delay: cutReceiveDelay, easing: 'linear' }
   );
-  move(
-    fielders[play.cut],
+  playCatchFlash(
     play.cutPoint,
-    cutHome,
-    700,
-    cutReturnDelay,
-    'ease-in-out'
+    cutReceiveDelay + cutReceiveDuration - 100
   );
   animate(
     ball,
@@ -551,11 +589,11 @@ function playOutfieldSingle() {
         opacity: 1, transform: 'scale(.58)'
       },
       {
-        left: pct(cutHome[0]), top: pct(cutHome[1]),
+        left: '50%', top: '30%',
         opacity: 1, transform: 'scale(.58)'
       }
     ],
-    { duration: 700, delay: cutReturnDelay, easing: 'ease-in-out' }
+    { duration: 500, delay: cutThrowDelay, easing: 'linear' }
   );
 }
 
