@@ -1796,19 +1796,9 @@ body {
   animation: captureArrowFocus 12s infinite;
 }
 
-.capture-touch-focus {
-  animation: captureTouchFocus 12s infinite;
-}
-
-.ctf-home { left: 34.5%; top: 60.5%; width: 15.5%; height: 7.2%; }
-.ctf-first { left: 79.5%; top: 36.5%; width: 15%; height: 6.8%; }
-.ctf-second { left: 43.5%; top: 7.1%; width: 14%; height: 6.8%; }
-.ctf-third { left: 7.8%; top: 36.5%; width: 14.5%; height: 6.8%; }
-
 .scene-outs { animation: captureOutLabel 12s infinite; }
 .scene-runners { animation: captureRunnerLabel 12s infinite; }
 .scene-direction { animation: captureArrowLabel 12s infinite; }
-.scene-touches { animation: captureTouchLabel 12s infinite; }
 
 .lesson-field-one .demo-scene-label {
   bottom: auto;
@@ -1820,7 +1810,6 @@ body {
 .lesson-field-one .scene-outs { left: 23%; top: 11%; }
 .lesson-field-one .scene-runners { left: 34%; top: 34%; }
 .lesson-field-one .scene-direction { left: 24%; top: 47%; }
-.lesson-field-one .scene-touches { left: 24%; top: 54%; }
 
 .capture-ball {
   position: absolute;
@@ -2056,43 +2045,33 @@ body {
 }
 
 @keyframes captureOutFocus {
-  0%, 22%, 100% { opacity: 0; }
-  3%, 19% { opacity: 1; }
+  0%, 32%, 100% { opacity: 0; }
+  3%, 28% { opacity: 1; }
 }
 
 @keyframes captureRunnerFocus {
-  0%, 23%, 49%, 100% { opacity: 0; }
-  27%, 45% { opacity: 1; }
+  0%, 31%, 65%, 100% { opacity: 0; }
+  35%, 61% { opacity: 1; }
 }
 
 @keyframes captureArrowFocus {
-  0%, 48%, 74%, 100% { opacity: 0; }
-  52%, 70% { opacity: 1; }
-}
-
-@keyframes captureTouchFocus {
-  0%, 73%, 100% { opacity: 0; }
-  77%, 96% { opacity: 1; }
+  0%, 64%, 100% { opacity: 0; }
+  68%, 96% { opacity: 1; }
 }
 
 @keyframes captureOutLabel {
-  0%, 22%, 100% { opacity: 0; }
-  3%, 19% { opacity: 1; }
+  0%, 32%, 100% { opacity: 0; }
+  3%, 28% { opacity: 1; }
 }
 
 @keyframes captureRunnerLabel {
-  0%, 23%, 49%, 100% { opacity: 0; }
-  27%, 45% { opacity: 1; }
+  0%, 31%, 65%, 100% { opacity: 0; }
+  35%, 61% { opacity: 1; }
 }
 
 @keyframes captureArrowLabel {
-  0%, 48%, 74%, 100% { opacity: 0; }
-  52%, 70% { opacity: 1; }
-}
-
-@keyframes captureTouchLabel {
-  0%, 73%, 100% { opacity: 0; }
-  77%, 96% { opacity: 1; }
+  0%, 64%, 100% { opacity: 0; }
+  68%, 96% { opacity: 1; }
 }
 
 @keyframes captureBallSequence {
