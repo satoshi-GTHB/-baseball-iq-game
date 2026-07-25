@@ -2597,15 +2597,29 @@ function fieldBaseElement(baseName){
 function updateBaseTouchButtons(){
   const currentBase=
     state.playState.currentPlay?.base || null;
-  const touchedBases=new Set(
-    state.playActions
-      .filter(action=>action.touch)
-      .map(action=>action.base)
-  );
+  const touchResults=new Map();
+
+  state.playActions.forEach((action,index)=>{
+    if(!action.touch){
+      return;
+    }
+
+    touchResults.set(
+      action.base,
+      state.playSequence[index]?.reason || null
+    );
+  });
 
   document.querySelectorAll('.base-touch-button').forEach(button=>{
     const baseName=button.dataset.touchBase;
-    const used=touchedBases.has(baseName);
+    const touchReason=touchResults.get(baseName);
+    const used=touchResults.has(baseName);
+    const correctTouch=
+      used &&
+      touchReason==='TOUCH_OUT';
+    const unneededTouch=
+      used &&
+      !correctTouch;
     const ready=
       !used &&
       currentBase===baseName &&
@@ -2614,7 +2628,14 @@ function updateBaseTouchButtons(){
 
     button.disabled=!ready;
     button.classList.toggle('is-ready',ready);
-    button.classList.toggle('is-used',used);
+    button.classList.toggle(
+      'is-correct-touch',
+      correctTouch
+    );
+    button.classList.toggle(
+      'is-unneeded-touch',
+      unneededTouch
+    );
     button.setAttribute('aria-pressed',String(used));
   });
 }

@@ -1101,8 +1101,13 @@ button {
     background: #e63946;
 }
 
-.base-touch-button.is-used {
+.base-touch-button.is-correct-touch {
     background: #2f80ed;
+}
+
+.base-touch-button.is-unneeded-touch {
+    background: #f2c94c;
+    color: #17324d;
 }
 
 .base-touch-button.touch-home {
