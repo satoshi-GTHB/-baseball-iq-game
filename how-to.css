@@ -1024,6 +1024,12 @@ body {
   box-shadow: 0 2px 0 #8f1320;
 }
 
+.go-game.go-game-secondary {
+  margin-top: 10px;
+  background: #2f80ed;
+  box-shadow: 0 5px 0 #145dbf;
+}
+
 @keyframes labelFocus {
   0%, 38%, 100% { transform: scale(1); background: #fff; }
   8%, 28% { transform: scale(1.06); background: #fff0a6; }

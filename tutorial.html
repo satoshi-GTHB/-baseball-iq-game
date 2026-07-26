@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>内野守備編 操作チュートリアル</title>
+  <link rel="stylesheet" href="style.css?v=4.0a5">
+  <link rel="stylesheet" href="tutorial.css?v=6">
+</head>
+<body>
+  <main class="tutorial-app">
+    <header class="tutorial-header">
+      <a href="how-to.html" aria-label="ゲーム説明へ戻る">‹</a>
+      <div><strong>操作チュートリアル</strong><small id="tutorial-progress">1 / 5</small></div>
+      <span>れんしゅう</span>
+    </header>
+    <section class="field-wrap tutorial-field-wrap" aria-label="チュートリアルの野球場">
+      <div class="field" id="tutorial-field">
+        <div id="bso-display" aria-label="アウトカウント">
+          <div class="bso-row"><span class="bso-label">B</span><span class="bso-dot"></span><span class="bso-dot"></span><span class="bso-dot"></span></div>
+          <div class="bso-row"><span class="bso-label">S</span><span class="bso-dot"></span><span class="bso-dot"></span></div>
+          <div class="bso-row"><span class="bso-label">O</span><span id="out-light-1" class="bso-dot"></span><span id="out-light-2" class="bso-dot"></span></div>
+        </div>
+        <article class="tutorial-case">
+          <span id="tutorial-outs"></span>
+          <span id="tutorial-runners"></span>
+          <strong id="tutorial-instruction"></strong>
+          <span id="tutorial-hit"></span>
+        </article>
+        <section class="tutorial-guide" aria-live="polite">
+          <b id="guide-title">まず、今のようすを見よう</b>
+          <p id="guide-text"></p>
+        </section>
+        <div class="skyline"><span></span><span></span><span></span></div>
+        <div class="outfield"><i></i><i></i><i></i><i></i></div>
+        <div class="warning-track"></div><div class="infield"></div><div class="mound"></div>
+        <div class="baseline baseline-first"></div><div class="baseline baseline-third"></div>
+        <button class="base tutorial-base home" data-base="HOME" aria-label="ホームへ送球"></button>
+        <button class="base tutorial-base first" data-base="FIRST" aria-label="1塁へ送球"></button>
+        <button class="base tutorial-base second" data-base="SECOND" aria-label="2塁へ送球"></button>
+        <button class="base tutorial-base third" data-base="THIRD" aria-label="3塁へ送球"></button>
+        <span id="tutorial-home-guide-ring" aria-hidden="true"></span>
+        <button class="base-touch-button touch-home" type="button" data-touch="HOME" disabled>タッチ</button>
+        <button class="base-touch-button touch-first" type="button" data-touch="FIRST" disabled>タッチ</button>
+        <button class="base-touch-button touch-second" type="button" data-touch="SECOND" disabled>タッチ</button>
+        <button class="base-touch-button touch-third" type="button" data-touch="THIRD" disabled>タッチ</button>
+        <div id="tutorial-fielder-layer"></div>
+        <svg id="tutorial-hit-arrow" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          <defs><marker id="tutorial-arrowhead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0 L10 5 L0 10z"></path></marker></defs>
+          <line x1="50" y1="84" x2="50" y2="50"></line><circle cx="50" cy="50" r="2.2"></circle>
+        </svg>
+        <div id="tutorial-runner-layer"></div>
+        <aside id="tutorial-manager" hidden><p id="tutorial-manager-text"></p><img src="assets/ai-tommy-coach.png?v=1" alt="AIトミー監督"></aside>
+        <span id="tutorial-ball" aria-hidden="true"></span>
+        <p id="tutorial-out-call" aria-live="polite"></p>
+      </div>
+    </section>
+    <button id="tutorial-infield-in" type="button">内野前進</button>
+    <p id="tutorial-action-status" aria-live="polite"></p>
+    <section id="tutorial-feedback" hidden>
+      <button id="tutorial-next" type="button">次のれんしゅうへ</button>
+    </section>
+    <section id="tutorial-finish" hidden>
+      <span>チュートリアルクリア!</span><h2>5つの基本プレーをおぼえたよ!</h2>
+      <p>次は本番で、アウトとランナーを見て自分で判断してみよう。</p>
+      <a href="index.html#game">内野守備編をはじめる</a><a class="tutorial-back-link" href="how-to.html">ゲーム説明へ戻る</a>
+    </section>
+  </main>
+  <script src="tutorial.js?v=2"></script>
+</body>
+</html>
