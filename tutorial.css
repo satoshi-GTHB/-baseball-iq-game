@@ -23,7 +23,7 @@ body{background:#edf6fc}.tutorial-app{width:min(100%,620px);margin:0 auto;min-he
 #tutorial-runner-layer{position:absolute;inset:0;z-index:10;pointer-events:none}
 #tutorial-manager{position:absolute;inset:0;z-index:18;pointer-events:none}#tutorial-manager img{position:absolute;right:1%;top:56.5%;width:25%}
 #tutorial-manager p{position:absolute;right:21%;top:68%;margin:0;padding:8px 12px;border:3px solid #082f55;border-radius:16px;background:#fff;color:#082f55;font-weight:900}
-#tutorial-manager.is-guide p{outline:5px solid var(--tutorial-yellow);outline-offset:3px;animation:tutorialPulse 1s infinite}
+#tutorial-manager.is-guide p{outline:5px solid #e32636;outline-offset:3px;box-shadow:0 0 16px 7px rgba(227,38,54,.75);animation:managerInstructionPulse 1s infinite}
 #tutorial-ball{position:absolute;z-index:16;width:16px;height:16px;border:3px solid #d52b1e;border-radius:50%;background:#fff;transform:translate(-50%,-50%);opacity:0;transition:left .5s,top .5s,opacity .15s}
 #tutorial-ball.is-resetting{transition:none}
 #tutorial-out-call{position:absolute;top:50%;left:50%;z-index:25;transform:translate(-50%,-50%);margin:0;width:100%;font-family:"Arial Rounded MT Bold","Yu Gothic",sans-serif;font-size:34px;font-weight:900;text-align:center;color:#e63946;text-shadow:-2px -2px 0 #111,0 -2px 0 #111,2px -2px 0 #111,-2px 0 0 #111,2px 0 0 #111,-2px 2px 0 #111,0 2px 0 #111,2px 2px 0 #111;pointer-events:none}
@@ -36,6 +36,7 @@ body{background:#edf6fc}.tutorial-app{width:min(100%,620px);margin:0 auto;min-he
 #tutorial-next,#tutorial-finish a{display:block;width:100%;box-sizing:border-box;margin-top:12px;padding:15px;border:0;border-radius:14px;background:#e62538;color:#fff;font-size:18px;font-weight:900;text-decoration:none}
 #tutorial-finish .tutorial-back-link{background:#082f55}
 @keyframes tutorialPulse{50%{outline-color:#fff;box-shadow:0 0 0 6px rgba(255,213,47,.65)}}
+@keyframes managerInstructionPulse{0%,100%{outline-color:#e32636;box-shadow:0 0 10px 4px rgba(227,38,54,.6)}50%{outline-color:#ff6674;box-shadow:0 0 20px 10px rgba(227,38,54,.9)}}
 @keyframes homeTargetPulse{0%,100%{opacity:.72;transform:translate(-50%,-50%) scale(.92)}50%{opacity:1;transform:translate(-50%,-50%) scale(1.08)}}
 @media(max-width:430px){
   body{overflow:hidden}
@@ -54,7 +55,8 @@ body{background:#edf6fc}.tutorial-app{width:min(100%,620px);margin:0 auto;min-he
   .runner{width:60px;height:68px}
   #tutorial-infield-in{width:calc(100% - 20px);margin:6px 10px;padding:11px;font-size:18px}
   #tutorial-action-status{min-height:20px;margin:2px 10px;font-size:12px}
-  #tutorial-feedback{position:fixed;z-index:50;left:10px;right:10px;bottom:8px;margin:0;padding:0;max-height:none;overflow:visible;background:transparent;border:0;box-shadow:none}
+  #tutorial-infield-in[hidden]{display:block;visibility:hidden;pointer-events:none}
+  #tutorial-feedback{position:static;z-index:auto;margin:2px 10px 0;padding:0;max-height:none;overflow:visible;background:transparent;border:0;box-shadow:none}
   #tutorial-next{margin-top:8px;padding:12px;font-size:16px}
   #tutorial-finish{position:fixed;z-index:60;inset:0;margin:0;border:0;border-radius:0;padding:18vh 18px 20px;background:#eef8ff}
 }

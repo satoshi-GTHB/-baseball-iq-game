@@ -136,6 +136,7 @@ function renderCase(){
   ball.classList.remove('is-resetting');
   $('#tutorial-out-call').textContent='';
   $('#tutorial-action-status').textContent='';
+  $('#tutorial-action-status').hidden=false;
   $('#tutorial-feedback').hidden=true;
   $('.tutorial-guide').classList.remove('is-explanation');
   guideNext();
@@ -212,6 +213,7 @@ function acceptStep(step,element){
   }
   locked=true;
   clearGuides();
+  $('#tutorial-action-status').hidden=true;
   const item=TUTORIAL_CASES[tutorialIndex];
   $('.tutorial-guide').classList.add('is-explanation');
   $('#guide-title').textContent=item.title;
