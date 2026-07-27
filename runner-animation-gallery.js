@@ -824,6 +824,7 @@ function playBuntFormation(play, fieldDuration) {
     second: [50, 30],
     third: [27.5, 57.5]
   };
+  const pitcherCoverPoint = [57, 67];
 
   ['first', 'third'].forEach((name) => {
     if (name === play.primary) {
@@ -841,7 +842,10 @@ function playBuntFormation(play, fieldDuration) {
     // 捕球しないコーナーも、まず打球へチャージしてから帰塁する。
     const start = positionOf(name);
     const charge = chargePoints[name];
-    const base = basePoints[name];
+    const base =
+      play.primary === 'pitcher' && name === 'first'
+        ? pitcherCoverPoint
+        : basePoints[name];
     animate(
       fielders[name],
       [
@@ -903,8 +907,8 @@ function playBuntFormation(play, fieldDuration) {
       'linear'
     );
   } else {
-    // 一塁手捕球時は二塁手＝一塁、遊撃手＝二塁。
-    // 投手捕球時も一塁手が戻るまで二塁手が一塁を埋める。
+    // 一塁手捕球時と投手捕球時は二塁手＝一塁、遊撃手＝二塁。
+    // 投手捕球時の一塁手は、チャージ後に投手の後方をカバーする。
     move(
       fielders.short,
       positionOf('short'),
@@ -913,38 +917,14 @@ function playBuntFormation(play, fieldDuration) {
       180,
       'linear'
     );
-    if (play.primary === 'pitcher') {
-      const secondStart = positionOf('second');
-      animate(
-        fielders.second,
-        [
-          {
-            left: pct(secondStart[0]),
-            top: pct(secondStart[1])
-          },
-          {
-            left: pct(basePoints.first[0]),
-            top: pct(basePoints.first[1]),
-            offset: .58
-          },
-          { left: '64%', top: '45%' }
-        ],
-        {
-          duration: fieldDuration,
-          delay: 160,
-          easing: 'linear'
-        }
-      );
-    } else {
-      move(
-        fielders.second,
-        positionOf('second'),
-        basePoints.first,
-        850,
-        180,
-        'linear'
-      );
-    }
+    move(
+      fielders.second,
+      positionOf('second'),
+      basePoints.first,
+      850,
+      180,
+      'linear'
+    );
   }
 
   move(
