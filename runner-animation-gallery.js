@@ -32,7 +32,8 @@ const SCENES = Object.freeze({
   single: { label: '外野前ヒット', duration: 3400, directions: 'gaps' },
   passed: { label: 'パスボール', duration: 2100, directions: null },
   ground: { label: '内野ゴロ', duration: 2700, directions: 'infield' },
-  error: { label: 'エラー', duration: 2400, directions: 'infield' }
+  error: { label: 'エラー', duration: 2400, directions: 'infield' },
+  bunt: { label: 'バント', duration: 3300, directions: 'bunt' }
 });
 
 const DIRECTION_SETS = Object.freeze({
@@ -58,6 +59,14 @@ const DIRECTION_SETS = Object.freeze({
     ['third-short', 'レフト前'],
     ['middle', 'センター前'],
     ['first-second', 'ライト前']
+  ],
+  bunt: [
+    ['third-ground', '3塁側ゴロ'],
+    ['third-popup', '3塁側小フライ'],
+    ['pitcher-ground', 'ピッチャー前'],
+    ['pitcher-popup', 'ピッチャー前小フライ'],
+    ['first-ground', '1塁側ゴロ'],
+    ['first-popup', '1塁前小フライ']
   ]
 });
 
@@ -121,6 +130,27 @@ const INFIELD_PLAYS = Object.freeze({
   'first-line': {
     target: [80, 53], primary: 'first', cover: 'short',
     support: 'second', supportPoint: [69, 52]
+  }
+});
+
+const BUNT_PLAYS = Object.freeze({
+  'third-ground': {
+    target: [41, 72], primary: 'third', popup: false
+  },
+  'third-popup': {
+    target: [42, 68], primary: 'third', popup: true
+  },
+  'pitcher-ground': {
+    target: [50, 70], primary: 'pitcher', popup: false
+  },
+  'pitcher-popup': {
+    target: [50, 66], primary: 'pitcher', popup: true
+  },
+  'first-ground': {
+    target: [59, 72], primary: 'first', popup: false
+  },
+  'first-popup': {
+    target: [58, 68], primary: 'first', popup: true
   }
 });
 
@@ -279,9 +309,12 @@ function renderDirectionPicker() {
         ? 'center'
         : setName === 'infield'
           ? 'pitcher'
+          : setName === 'bunt'
+            ? 'pitcher-ground'
           : options[Math.floor(options.length / 2)][0];
   }
   directionPicker.classList.toggle('three-options', options.length === 3);
+  directionPicker.classList.toggle('six-options', options.length === 6);
 
   directionButtons.forEach((button, index) => {
     const option = options[index];
@@ -781,6 +814,220 @@ function playInfieldScene(kind) {
   }
 }
 
+function playBuntFormation(play, fieldDuration) {
+  const chargePoints = {
+    first: [60, 71],
+    third: [40, 71]
+  };
+  const basePoints = {
+    first: [72.5, 57.5],
+    second: [50, 30],
+    third: [27.5, 57.5]
+  };
+
+  ['first', 'third'].forEach((name) => {
+    if (name === play.primary) {
+      move(
+        fielders[name],
+        positionOf(name),
+        play.target,
+        fieldDuration - 120,
+        80,
+        'ease-in'
+      );
+      return;
+    }
+
+    // 捕球しないコーナーも、まず打球へチャージしてから帰塁する。
+    const start = positionOf(name);
+    const charge = chargePoints[name];
+    const base = basePoints[name];
+    animate(
+      fielders[name],
+      [
+        { left: pct(start[0]), top: pct(start[1]) },
+        {
+          left: pct(charge[0]),
+          top: pct(charge[1]),
+          offset: .48
+        },
+        { left: pct(base[0]), top: pct(base[1]) }
+      ],
+      {
+        duration: fieldDuration - 80,
+        delay: 80,
+        easing: 'linear'
+      }
+    );
+  });
+
+  if (play.primary === 'pitcher') {
+    move(
+      fielders.pitcher,
+      positionOf('pitcher'),
+      play.target,
+      fieldDuration - 120,
+      80,
+      'ease-in'
+    );
+  } else {
+    const pitcherBackup = play.primary === 'third'
+      ? [46, 69]
+      : [54, 69];
+    move(
+      fielders.pitcher,
+      positionOf('pitcher'),
+      pitcherBackup,
+      fieldDuration - 140,
+      100,
+      'ease-in'
+    );
+  }
+
+  if (play.primary === 'third') {
+    // 一塁手＝一塁、二塁手＝二塁、遊撃手＝三塁。
+    move(
+      fielders.second,
+      positionOf('second'),
+      basePoints.second,
+      850,
+      180,
+      'linear'
+    );
+    move(
+      fielders.short,
+      positionOf('short'),
+      basePoints.third,
+      850,
+      180,
+      'linear'
+    );
+  } else {
+    // 一塁手捕球時は二塁手＝一塁、遊撃手＝二塁。
+    // 投手捕球時も一塁手が戻るまで二塁手が一塁を埋める。
+    move(
+      fielders.short,
+      positionOf('short'),
+      basePoints.second,
+      850,
+      180,
+      'linear'
+    );
+    if (play.primary === 'pitcher') {
+      const secondStart = positionOf('second');
+      animate(
+        fielders.second,
+        [
+          {
+            left: pct(secondStart[0]),
+            top: pct(secondStart[1])
+          },
+          {
+            left: pct(basePoints.first[0]),
+            top: pct(basePoints.first[1]),
+            offset: .58
+          },
+          { left: '64%', top: '45%' }
+        ],
+        {
+          duration: fieldDuration,
+          delay: 160,
+          easing: 'linear'
+        }
+      );
+    } else {
+      move(
+        fielders.second,
+        positionOf('second'),
+        basePoints.first,
+        850,
+        180,
+        'linear'
+      );
+    }
+  }
+
+  move(
+    fielders.catcher,
+    positionOf('catcher'),
+    [50, 84],
+    520,
+    120
+  );
+  move(fielders.left, positionOf('left'), [22, 45], 950, 320);
+  move(fielders.center, positionOf('center'), [50, 25], 950, 340);
+  move(fielders.right, positionOf('right'), [78, 45], 950, 320);
+}
+
+function playBuntScene() {
+  const play = BUNT_PLAYS[selectedDirection];
+  if (!play) return;
+  const fieldDuration = play.popup ? 1300 : 1450;
+  playBuntFormation(play, fieldDuration);
+
+  if (play.popup) {
+    playBallFlight(play.target, fieldDuration, 1.15);
+  } else {
+    animate(
+      ball,
+      [
+        {
+          left: '50%',
+          top: '89%',
+          opacity: 1,
+          transform: 'translateY(0) scale(.78)'
+        },
+        {
+          left: pct((50 + play.target[0]) / 2),
+          top: pct((89 + play.target[1]) / 2),
+          opacity: 1,
+          transform: 'translateY(-2px) scale(.82)'
+        },
+        {
+          left: pct(play.target[0]),
+          top: pct(play.target[1]),
+          opacity: 1,
+          transform: 'translateY(0) scale(.78)'
+        }
+      ],
+      { duration: fieldDuration, easing: 'linear' }
+    );
+  }
+
+  playCatchFlash(play.target, fieldDuration - 100);
+  if (play.popup) return;
+
+  const throwDelay = fieldDuration + 160;
+  const throwDuration = 650;
+  const firstBaseReceiver = [72.5, 57.5];
+  animate(
+    ball,
+    [
+      {
+        left: pct(play.target[0]),
+        top: pct(play.target[1]),
+        opacity: 1,
+        transform: 'scale(.78)'
+      },
+      {
+        left: pct(firstBaseReceiver[0]),
+        top: pct(firstBaseReceiver[1]),
+        opacity: 1,
+        transform: 'scale(.72)'
+      }
+    ],
+    {
+      duration: throwDuration,
+      delay: throwDelay,
+      easing: 'linear'
+    }
+  );
+  playCatchFlash(
+    firstBaseReceiver,
+    throwDelay + throwDuration - 100
+  );
+}
+
 function playPassedBall() {
   animate(
     ball,
@@ -835,6 +1082,7 @@ function playSelectedScene() {
   else if (selectedScene === 'passed') playPassedBall();
   else if (selectedScene === 'ground') playInfieldScene('ground');
   else if (selectedScene === 'error') playInfieldScene('error');
+  else if (selectedScene === 'bunt') playBuntScene();
 
   sceneTimer = setTimeout(() => {
     galleryReplay.disabled = false;
