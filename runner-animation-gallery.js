@@ -38,8 +38,8 @@ const SCENES = Object.freeze({
 const DIRECTION_SETS = Object.freeze({
   outfield: [
     ['left-line', 'レフト線'],
-    ['right-center', '右中間'],
     ['left-center', '左中間'],
+    ['right-center', '右中間'],
     ['right-line', 'ライト線'],
     ['left', 'レフト'],
     ['center', 'センター'],
