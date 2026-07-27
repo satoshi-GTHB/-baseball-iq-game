@@ -1324,10 +1324,16 @@ function promotionText(){
   }
 
   const next=LEVELS[level];
+  const current=LEVELS[level-1];
   const currentMastery=mastery(level);
   const rule=PROMOTION[level];
+  const remainingXp=Math.max(0,next.xp-state.xp);
 
-  return `次の「${next.name}」まで：XP ${Math.max(0,next.xp-state.xp)}／レベル${level}問題 ${currentMastery.attempts}/${rule.attempts}問／理解度 ${Math.round(currentMastery.rate*100)}%（目標${Math.round(rule.rate*100)}%）`;
+  if(level===9){
+    return `「${next.name}」まで：XPあと${remainingXp}\n連続満点 ${currentMastery.attempts}/${rule.attempts}問`;
+  }
+
+  return `「${next.name}」まで：XPあと${remainingXp}\n${current.name}になってから ${currentMastery.attempts}/${rule.attempts}問／理解度 ${Math.round(currentMastery.rate*100)}%（目標${Math.round(rule.rate*100)}%）`;
 }
 
 function updateLevel(){

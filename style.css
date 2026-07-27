@@ -449,6 +449,20 @@ button {
     opacity: .8
 }
 
+.topbar .quiz-progress {
+    min-width: 0;
+    max-width: calc(100% - 108px);
+}
+
+.topbar .quiz-promotion {
+    margin-top: 3px;
+    font-size: 10px;
+    line-height: 1.25;
+    white-space: pre-line;
+    opacity: 1;
+    color: #fff4a8;
+}
+
 .question-card {
     padding: 8px 18px 6px;
     background: linear-gradient(180deg, #fffdf7, #fff7e8)

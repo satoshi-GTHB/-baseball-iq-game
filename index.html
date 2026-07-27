@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#06284a">
   <title>野球IQアカデミー Ver4.0α.4</title>
-  <link rel="stylesheet" href="style.css?v=4.5a32">
+  <link rel="stylesheet" href="style.css?v=4.5a34">
   <link rel="stylesheet" href="home-v4.css?v=4.5a1">
 </head>
 <body>
@@ -36,7 +36,7 @@
         <small id="profile-error" role="alert"></small>
       </form>
     </section>
-    <section class="curriculum-box"><strong id="curriculum-status"></strong><small id="promotion-status"></small></section>
+    <section class="curriculum-box"><strong id="curriculum-status"></strong></section>
     <div class="mode-grid">
       <article class="mode-card defense-mode-card">
         <span class="mode-icon glove-icon"><img src="assets/baseball-glove-cutout.png" alt="ボールが入った野球のグローブ"></span>
@@ -69,7 +69,11 @@
   <section id="quiz" class="screen">
     <header class="topbar">
       <button id="back-home" type="button" aria-label="ホームへ戻る">‹</button>
-      <div><strong id="mode-title">内野守備編</strong><small id="question-count">1 / 15</small></div>
+      <div class="quiz-progress">
+        <strong id="mode-title">内野守備編</strong>
+        <small id="question-count">1 / 15</small>
+        <small id="promotion-status" class="quiz-promotion"></small>
+      </div>
       <span class="xp-chip">XP <b data-xp>0</b></span>
     </header>
 
@@ -190,6 +194,6 @@
 </main>
 <script src="questions.js?v=4.0a3"></script>
 <script src="sprint45-rules.js?v=4.5a9"></script>
-<script src="script.js?v=4.5a53"></script>
+<script src="script.js?v=4.5a55"></script>
 </body>
 </html>
