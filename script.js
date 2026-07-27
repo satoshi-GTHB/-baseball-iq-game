@@ -20,7 +20,7 @@ const PROMOTION={
   6:{attempts:60,rate:.85},
   7:{attempts:80,rate:.85},
   8:{attempts:95,rate:.90},
-  9:{attempts:115,rate:.90}
+  9:{attempts:115,rate:1}
 };
 
 const RUNNERS={
@@ -1265,6 +1265,23 @@ function mastery(level){
     points:0
   };
 
+  if(Number(level)===9){
+    const perfectStreak=Number(
+      data.perfectStreak ??
+      (
+        data.attempts &&
+        data.points===data.attempts*3
+          ?data.attempts
+          :0
+      )
+    );
+
+    return {
+      attempts:perfectStreak,
+      rate:Math.min(1,perfectStreak/PROMOTION[9].attempts)
+    };
+  }
+
   return {
     attempts:data.attempts,
     rate:data.attempts
@@ -2162,6 +2179,10 @@ function answer(answerData,q){
 
   stat.attempts+=1;
   stat.points+=xp;
+  stat.perfectStreak=
+    xp===3
+      ?Number(stat.perfectStreak || 0)+1
+      :0;
 
   state.stats[key]=stat;
 

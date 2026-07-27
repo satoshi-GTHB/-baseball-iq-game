@@ -24,6 +24,8 @@ assert.equal(context.levels.length,10);
 assert.equal(Object.keys(context.promotion).length,9);
 assert.equal(context.levels[9].name,'殿堂入り');
 assert.equal(context.levels[9].xp,1250);
+assert.equal(context.promotion[9].attempts,115);
+assert.equal(context.promotion[9].rate,1);
 
 for(let level=1;level<=9;level+=1){
   assert.ok(context.promotion[level]);
@@ -66,5 +68,37 @@ assert.equal(calculateLevel(19),1);
 assert.equal(calculateLevel(20),2);
 assert.equal(calculateLevel(220),5);
 assert.equal(calculateLevel(1250),10);
+
+const masteryStart=source.indexOf('function mastery(level)');
+const masteryEnd=source.indexOf('function calculateLevel()');
+const masteryContext={
+  PROMOTION:{9:{attempts:115}},
+  state:{
+    stats:{
+      9:{
+        attempts:115,
+        points:345,
+        perfectStreak:115
+      }
+    }
+  }
+};
+
+vm.createContext(masteryContext);
+vm.runInContext(
+  source.slice(masteryStart,masteryEnd),
+  masteryContext
+);
+
+assert.deepEqual(
+  JSON.parse(JSON.stringify(masteryContext.mastery(9))),
+  {attempts:115,rate:1}
+);
+
+masteryContext.state.stats[9].perfectStreak=0;
+assert.deepEqual(
+  JSON.parse(JSON.stringify(masteryContext.mastery(9))),
+  {attempts:0,rate:0}
+);
 
 console.log('Level progression tests passed');
