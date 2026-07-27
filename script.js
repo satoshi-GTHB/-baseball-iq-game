@@ -3,18 +3,24 @@ const LEVELS=[
   {name:'入団',xp:20,school:'低学年・基礎',active:true},
   {name:'準レギュラー',xp:60,school:'低学年・判断入門',active:true},
   {name:'レギュラー',xp:120,school:'低学年の到達目標',active:true},
-  {name:'オール上尾',xp:220,school:'高学年・発展',active:false},
-  {name:'コーチ',xp:350,school:'中級',active:false},
-  {name:'監督',xp:500,school:'上級',active:false},
-  {name:'NPB',xp:700,school:'高度な状況判断',active:false},
-  {name:'メジャー',xp:950,school:'確率とリスク',active:false},
-  {name:'殿堂入り',xp:1250,school:'説明・指導レベル',active:false}
+  {name:'オール上尾',xp:220,school:'高学年・発展',active:true},
+  {name:'コーチ',xp:350,school:'中級',active:true},
+  {name:'監督',xp:500,school:'上級',active:true},
+  {name:'NPB',xp:700,school:'高度な状況判断',active:true},
+  {name:'メジャー',xp:950,school:'確率とリスク',active:true},
+  {name:'殿堂入り',xp:1250,school:'説明・指導レベル',active:true}
 ];
 
 const PROMOTION={
-  1:{attempts:2,rate:.70},
-  2:{attempts:3,rate:.75},
-  3:{attempts:3,rate:.75}
+  1:{attempts:10,rate:.70},
+  2:{attempts:20,rate:.75},
+  3:{attempts:30,rate:.75},
+  4:{attempts:45,rate:.80},
+  5:{attempts:55,rate:.80},
+  6:{attempts:60,rate:.85},
+  7:{attempts:80,rate:.85},
+  8:{attempts:95,rate:.90},
+  9:{attempts:115,rate:.90}
 };
 
 const RUNNERS={
@@ -41,6 +47,10 @@ const DEFENSE_CASE_FREQUENCY_KEY='baseballIqDefenseCaseFrequencyV1';
 const DEFENSE_FIELDER_FREQUENCY_KEY='baseballIqDefenseFielderFrequencyV1';
 const PROFILE_STORAGE_KEY='baseballIqProfilesV1';
 const MAX_PROFILES=5;
+const COURSE_IDS={
+  defense:'defense',
+  runner:'runner'
+};
 
 const $=s=>document.querySelector(s);
 const $$=s=>[...document.querySelectorAll(s)];
@@ -53,9 +63,10 @@ function safeParse(value,fallback){
   }
 }
 
-function createEmptyProfileData(){
+function createEmptyCourseData(){
   return {
     xp:0,
+    highestLevel:1,
     stats:{},
     history:{
       version:1,
@@ -67,12 +78,53 @@ function createEmptyProfileData(){
   };
 }
 
-function normalizeProfileData(data){
-  const empty=createEmptyProfileData();
+function calculatePreviousLevel(data){
+  const previousPromotion={
+    1:{attempts:2,rate:.70},
+    2:{attempts:3,rate:.75},
+    3:{attempts:3,rate:.75}
+  };
+  let level=1;
+
+  for(let current=1;current<=3;current++){
+    const stat=data?.stats?.[current] || {
+      attempts:0,
+      points:0
+    };
+    const rate=stat.attempts
+      ?stat.points/(stat.attempts*3)
+      :0;
+
+    if(
+      Number(data?.xp || 0)>=LEVELS[current].xp &&
+      stat.attempts>=previousPromotion[current].attempts &&
+      rate>=previousPromotion[current].rate
+    ){
+      level=current+1;
+    }else{
+      break;
+    }
+  }
+
+  return level;
+}
+
+function normalizeCourseData(data){
+  const empty=createEmptyCourseData();
 
   return {
     ...empty,
     ...(data || {}),
+    highestLevel:Math.max(
+      1,
+      Math.min(
+        LEVELS.length,
+        Number(
+          data?.highestLevel ||
+          calculatePreviousLevel(data)
+        )
+      )
+    ),
     stats:data?.stats || {},
     history:
       data?.history &&
@@ -84,6 +136,33 @@ function normalizeProfileData(data){
     results:Array.isArray(data?.results)
       ?data.results
       :[]
+  };
+}
+
+function createEmptyProfileData(){
+  return {
+    courses:{
+      defense:createEmptyCourseData(),
+      runner:createEmptyCourseData()
+    }
+  };
+}
+
+function normalizeProfileData(data){
+  if(data?.courses){
+    return {
+      courses:{
+        defense:normalizeCourseData(data.courses.defense),
+        runner:normalizeCourseData(data.courses.runner)
+      }
+    };
+  }
+
+  return {
+    courses:{
+      defense:normalizeCourseData(data),
+      runner:createEmptyCourseData()
+    }
   };
 }
 
@@ -143,8 +222,54 @@ function getActiveProfileData(){
   return getActiveProfile()?.data || null;
 }
 
+function getCourseId(mode=state?.mode){
+  return COURSE_IDS[mode] || COURSE_IDS.defense;
+}
+
+function getActiveCourseData(mode=state?.mode){
+  const profileData=getActiveProfileData();
+
+  if(!profileData){
+    return null;
+  }
+
+  const courseId=getCourseId(mode);
+  profileData.courses ||= {};
+  profileData.courses[courseId]=normalizeCourseData(
+    profileData.courses[courseId]
+  );
+
+  return profileData.courses[courseId];
+}
+
+function getOverallProgress(profileData=getActiveProfileData()){
+  const courses=profileData?.courses || {};
+  const courseProgress=Object.fromEntries(
+    Object.values(COURSE_IDS).map(courseId=>{
+      const course=normalizeCourseData(courses[courseId]);
+      return [
+        courseId,
+        {
+          xp:course.xp,
+          answerCount:course.history.answers.length,
+          playCount:course.results.length
+        }
+      ];
+    })
+  );
+
+  return {
+    xp:Object.values(courseProgress).reduce(
+      (sum,course)=>sum+course.xp,
+      0
+    ),
+    courses:courseProgress
+  };
+}
+
 function legacyProfileData(){
-  const data=createEmptyProfileData();
+  const profileData=createEmptyProfileData();
+  const data=profileData.courses.defense;
   const legacyHistory=safeParse(
     localStorage.getItem(HISTORY_STORAGE_KEY),
     null
@@ -171,7 +296,7 @@ function legacyProfileData(){
     {}
   );
 
-  return data;
+  return profileData;
 }
 
 let profileStore=loadProfileStore();
@@ -182,16 +307,19 @@ const initialProfileData=
       ?legacyProfileData()
       :null
   );
+const initialCourseData=
+  initialProfileData?.courses?.defense ||
+  createEmptyCourseData();
 
 let state={
   mode:'defense',
   index:0,
   score:0,
-  xp:Number(initialProfileData?.xp || 0),
-  stats:initialProfileData?.stats || {},
+  xp:Number(initialCourseData.xp || 0),
+  stats:initialCourseData.stats || {},
   questions:[],
   sessionAnswers:[],
-  level:1,
+  level:Number(initialCourseData.highestLevel || 1),
   questionStartedAt:null,
   answering:false,
 playSequence:[],
@@ -1004,7 +1132,7 @@ function show(id){
 }
 
 function loadAnswerHistory(){
-  const saved=getActiveProfileData()?.history;
+  const saved=getActiveCourseData()?.history;
 
   if(
     saved &&
@@ -1021,7 +1149,7 @@ function loadAnswerHistory(){
 }
 
 function saveAnswerHistory(history){
-  const data=getActiveProfileData();
+  const data=getActiveCourseData();
 
   if(!data){
     return;
@@ -1146,9 +1274,13 @@ function mastery(level){
 }
 
 function calculateLevel(){
-  let level=1;
+  let level=Math.max(1,Number(state.level || 1));
 
-  for(let current=1;current<=3;current++){
+  for(
+    let current=level;
+    current<LEVELS.length;
+    current++
+  ){
     const next=LEVELS[current];
     const currentMastery=mastery(current);
     const rule=PROMOTION[current];
@@ -1170,8 +1302,8 @@ function calculateLevel(){
 function promotionText(){
   const level=state.level;
 
-  if(level===4){
-    return '低学年の目標「レギュラー」到達！ 発展編はβ版以降で追加します。';
+  if(level===LEVELS.length){
+    return '最高レベル「殿堂入り」達成！ これからも最高の判断を続けよう！';
   }
 
   const next=LEVELS[level];
@@ -1297,7 +1429,7 @@ function createBalancedDefenseSession(questionCount){
   const allQuestions=
     window.FUJICON_SPRINT45.createDefenseSession();
   const profileData=
-    getActiveProfileData();
+    getActiveCourseData('defense');
   const caseCounts=
     profileData?.caseFrequency || {};
   const fielderCounts=
@@ -1859,6 +1991,7 @@ function start(mode){
   }
 
   state.mode=mode;
+  syncStateFromActiveProfile();
   state.index=0;
   state.score=0;
   state.sessionAnswers=[];
@@ -1988,7 +2121,7 @@ function returnToFeedback(){
 }
 
 function persistActiveProfileProgress(){
-  const data=getActiveProfileData();
+  const data=getActiveCourseData();
 
   if(!data){
     return;
@@ -1996,6 +2129,7 @@ function persistActiveProfileProgress(){
 
   data.xp=state.xp;
   data.stats=state.stats;
+  data.highestLevel=state.level;
   saveProfileStore();
 }
 
@@ -2019,7 +2153,7 @@ function answer(answerData,q){
   state.xp+=xp;
   state.score+=xp;
 
-  const key=String(q.difficulty);
+  const key=String(state.level);
 
   const stat=state.stats[key]||{
     attempts:0,
@@ -2031,9 +2165,8 @@ function answer(answerData,q){
 
   state.stats[key]=stat;
 
-  persistActiveProfileProgress();
-
   updateLevel();
+  persistActiveProfileProgress();
   renderFeedbackReview(q);
 
   $('#judge').textContent=
@@ -2300,7 +2433,7 @@ function showResult(){
   $('#retry').textContent=
     `もう一度${state.questions.length}問`;
 
-  const profileData=getActiveProfileData();
+  const profileData=getActiveCourseData();
 
   if(profileData){
     profileData.results.push({
@@ -2336,10 +2469,11 @@ function next(){
 }
 
 function syncStateFromActiveProfile(){
-  const data=getActiveProfileData();
+  const data=getActiveCourseData();
 
   state.xp=Number(data?.xp || 0);
   state.stats=data?.stats || {};
+  state.level=Number(data?.highestLevel || 1);
   updateLevel();
 }
 
