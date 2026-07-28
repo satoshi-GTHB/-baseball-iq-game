@@ -5,6 +5,7 @@ const sceneButtons = [...document.querySelectorAll('[data-scene]')];
 const directionPicker = document.querySelector('#direction-picker');
 const directionHeading = document.querySelector('#direction-heading');
 const directionButtons = [...document.querySelectorAll('[data-direction]')];
+const rundownButtons = [...document.querySelectorAll('[data-rundown]')];
 const selectedPlayerStatus = document.querySelector('#selected-player-status');
 
 const fielders = Object.freeze({
@@ -23,6 +24,8 @@ const ball = galleryField.querySelector('.gallery-ball');
 const shadow = galleryField.querySelector('.gallery-shadow');
 const catchFlash = galleryField.querySelector('.catch-flash');
 const missFlash = galleryField.querySelector('.miss-flash');
+const rundownRunner = galleryField.querySelector('.rundown-runner');
+const rundownCall = galleryField.querySelector('.rundown-call');
 
 const SCENES = Object.freeze({
   fly: { label: '外野フライ', duration: 4200, directions: 'outfield' },
@@ -154,6 +157,68 @@ const BUNT_PLAYS = Object.freeze({
   }
 });
 
+const ACADEMY_BASE_POINTS = Object.freeze({
+  1: [75, 60],
+  2: [50, 31],
+  3: [25, 60],
+  4: [50, 89]
+});
+
+const RUNDOWN_PLAYS = Object.freeze({
+  'first-second': Object.freeze({
+    label: '1・2塁間',
+    source: 'pickoff',
+    sourceLabel: '投手の一塁牽制',
+    segmentIndex: 1,
+    trailGate: 'first',
+    trailBackup: 'pitcher',
+    leadGate: 'short',
+    leadBackup: 'second',
+    trailQueue: [80, 65],
+    leadQueue: [50, 25],
+    support: Object.freeze([
+      ['right', [84, 53]],
+      ['center', [50, 19]]
+    ])
+  }),
+  'second-third': Object.freeze({
+    label: '2・3塁間',
+    source: 'short-ground',
+    sourceLabel: 'ショートゴロ',
+    primary: 'short',
+    fieldPoint: [40, 40],
+    segmentIndex: 2,
+    trailGate: 'second',
+    trailBackup: 'short',
+    leadGate: 'third',
+    leadBackup: 'pitcher',
+    trailQueue: [54, 26],
+    leadQueue: [20, 56],
+    support: Object.freeze([
+      ['center', [45, 20]],
+      ['left', [15, 50]]
+    ])
+  }),
+  'third-home': Object.freeze({
+    label: '3・本塁間',
+    source: 'pitcher-ground',
+    sourceLabel: 'ピッチャーゴロ',
+    primary: 'pitcher',
+    fieldPoint: [50, 57],
+    segmentIndex: 3,
+    trailGate: 'third',
+    trailBackup: 'short',
+    leadGate: 'catcher',
+    leadBackup: 'pitcher',
+    trailQueue: [20, 56],
+    leadQueue: [54, 94],
+    support: Object.freeze([
+      ['left', [15, 50]],
+      ['first', [59, 81]]
+    ])
+  })
+});
+
 const GROUND_OUTFIELD_PLAYS = Object.freeze({
   'third-line': {
     chaser: 'left', chasePoint: [15, 47],
@@ -227,6 +292,7 @@ const OUTFIELD_SINGLE_PLAYS = Object.freeze({
 
 let selectedScene = 'fly';
 let selectedDirection = 'center';
+let selectedRundown = null;
 let selectedPlayer = null;
 let isPlaying = false;
 let sceneTimer;
@@ -258,12 +324,27 @@ function pct(value) {
 }
 
 function move(element, from, to, duration, delay = 0, easing = 'ease-out') {
+  const rundownPlay = selectedRundown
+    ? RUNDOWN_PLAYS[selectedRundown]
+    : null;
+  const movementDuration = rundownPlay
+    ? rundownMovementDuration(
+        rundownPlay.segmentIndex,
+        from,
+        to
+      )
+    : duration;
   const animation = element.animate(
     [
       { left: pct(from[0]), top: pct(from[1]) },
       { left: pct(to[0]), top: pct(to[1]) }
     ],
-    { duration, delay, easing, fill: 'forwards' }
+    {
+      duration: movementDuration,
+      delay,
+      easing: rundownPlay ? 'linear' : easing,
+      fill: 'forwards'
+    }
   );
   activeAnimations.push(animation);
   return animation;
@@ -280,18 +361,25 @@ function resetAnimation() {
   activeAnimations.forEach((animation) => animation.cancel());
   activeAnimations = [];
   galleryField.classList.remove('scene-running');
+  rundownRunner.hidden = true;
+  rundownCall.hidden = true;
   galleryReplay.disabled = false;
   isPlaying = false;
   setFielderSelectionEnabled(true);
 }
 
 function currentDirectionLabel() {
+  if (selectedRundown) return '';
   if (!SCENES[selectedScene].directions) return '';
   const options = DIRECTION_SETS[SCENES[selectedScene].directions];
   return options.find(([value]) => value === selectedDirection)?.[1] || '';
 }
 
 function displayLabel() {
+  if (selectedRundown) {
+    const play = RUNDOWN_PLAYS[selectedRundown];
+    return `挟殺プレー（${play.label}・${play.sourceLabel}）`;
+  }
   const direction = currentDirectionLabel();
   return direction ? `${SCENES[selectedScene].label}（${direction}）` : SCENES[selectedScene].label;
 }
@@ -330,9 +418,11 @@ function updateLabels() {
   const label = displayLabel();
   galleryField.setAttribute(
     'aria-label',
-    selectedScene === 'fly'
-      ? `${currentDirectionLabel()}方向のフライ。捕球、外野カバー、カット、2塁カバー、返球の連係`
-      : `${label}のアニメーション`
+    selectedRundown
+      ? `${RUNDOWN_PLAYS[selectedRundown].sourceLabel}から始まる${RUNDOWN_PLAYS[selectedRundown].label}の挟殺プレー`
+      : selectedScene === 'fly'
+        ? `${currentDirectionLabel()}方向のフライ。捕球、外野カバー、カット、2塁カバー、返球の連係`
+        : `${label}のアニメーション`
   );
   galleryReplay.textContent = `▶ ${label}を再生`;
   galleryStatus.textContent = `${label}を選択中です。`;
@@ -341,12 +431,17 @@ function updateLabels() {
 function selectScene(sceneName) {
   if (!SCENES[sceneName]) return;
   resetAnimation();
+  selectedRundown = null;
+  galleryField.classList.remove('scene-rundown');
   galleryField.classList.remove(`scene-${selectedScene}`);
   selectedScene = sceneName;
   galleryField.classList.add(`scene-${selectedScene}`);
 
   sceneButtons.forEach((button) => {
     button.setAttribute('aria-pressed', String(button.dataset.scene === selectedScene));
+  });
+  rundownButtons.forEach((button) => {
+    button.setAttribute('aria-pressed', 'false');
   });
   renderDirectionPicker();
   updateLabels();
@@ -357,10 +452,38 @@ function selectDirection(directionName) {
   if (!setName || !DIRECTION_SETS[setName].some(([value]) => value === directionName)) return;
 
   resetAnimation();
+  selectedRundown = null;
+  galleryField.classList.remove('scene-rundown');
+  sceneButtons.forEach((button) => {
+    button.setAttribute(
+      'aria-pressed',
+      String(button.dataset.scene === selectedScene)
+    );
+  });
+  rundownButtons.forEach((button) => {
+    button.setAttribute('aria-pressed', 'false');
+  });
   galleryField.classList.remove(`direction-${selectedDirection}`);
   selectedDirection = directionName;
   galleryField.classList.add(`direction-${selectedDirection}`);
   renderDirectionPicker();
+  updateLabels();
+}
+
+function selectRundown(rundownName) {
+  if (!RUNDOWN_PLAYS[rundownName]) return;
+  resetAnimation();
+  selectedRundown = rundownName;
+  galleryField.classList.add('scene-rundown');
+  sceneButtons.forEach((button) => {
+    button.setAttribute('aria-pressed', 'false');
+  });
+  rundownButtons.forEach((button) => {
+    button.setAttribute(
+      'aria-pressed',
+      String(button.dataset.rundown === rundownName)
+    );
+  });
   updateLabels();
 }
 
@@ -1043,8 +1166,888 @@ function playPassedBall() {
   move(fielders.pitcher, positionOf('pitcher'), [50, 82], 800, 1000);
 }
 
+function academyDistance(firstPoint, secondPoint) {
+  const width = galleryField.clientWidth || 100;
+  const height = galleryField.clientHeight || 100;
+  return Math.hypot(
+    (secondPoint[0] - firstPoint[0]) * width / 100,
+    (secondPoint[1] - firstPoint[1]) * height / 100
+  );
+}
+
+function rundownMovementDuration(segmentIndex, from, to) {
+  const segmentDistance = academyDistance(
+    ACADEMY_BASE_POINTS[segmentIndex],
+    ACADEMY_BASE_POINTS[segmentIndex + 1]
+  );
+  if (!segmentDistance) return 1;
+  return Math.max(
+    1,
+    Math.round(
+      3636 * academyDistance(from, to) / segmentDistance
+    )
+  );
+}
+
+function rundownPathDuration(segmentIndex, points) {
+  const segmentDistance = academyDistance(
+    ACADEMY_BASE_POINTS[segmentIndex],
+    ACADEMY_BASE_POINTS[segmentIndex + 1]
+  );
+  if (!segmentDistance) return 1;
+  const pathDistance = points
+    .slice(1)
+    .reduce(
+      (total, point, index) =>
+        total + academyDistance(points[index], point),
+      0
+    );
+  return Math.max(
+    1,
+    Math.round(3636 * pathDistance / segmentDistance)
+  );
+}
+
+function academyThrowDuration(from, to) {
+  const diagonal = academyDistance(
+    ACADEMY_BASE_POINTS[4],
+    ACADEMY_BASE_POINTS[2]
+  );
+  return Math.max(
+    260,
+    Math.round(2500 * academyDistance(from, to) / diagonal)
+  );
+}
+
+function rundownPoint(segmentIndex, progress) {
+  const start = ACADEMY_BASE_POINTS[segmentIndex];
+  const end = ACADEMY_BASE_POINTS[segmentIndex + 1];
+  return [
+    start[0] + (end[0] - start[0]) * progress,
+    start[1] + (end[1] - start[1]) * progress
+  ];
+}
+
+function pointFrame(point, offset = null) {
+  const frame = {
+    left: pct(point[0]),
+    top: pct(point[1])
+  };
+  if (offset !== null) frame.offset = offset;
+  return frame;
+}
+
+function proportionalPathFrames(points) {
+  const total = points
+    .slice(1)
+    .reduce(
+      (sum, point, index) =>
+        sum + academyDistance(points[index], point),
+      0
+    ) || 1;
+  let travelled = 0;
+  return points.map((point, index) => {
+    if (index > 0) {
+      travelled += academyDistance(points[index - 1], point);
+    }
+    return pointFrame(point, travelled / total);
+  });
+}
+
+function rotateAfterThrow(
+  fielder,
+  from,
+  to,
+  duration,
+  delay,
+  curveDirection
+) {
+  const deltaX = to[0] - from[0];
+  const deltaY = to[1] - from[1];
+  const length = Math.hypot(deltaX, deltaY) || 1;
+  const passPoint = [
+    (from[0] + to[0]) / 2 +
+      (-deltaY / length) * 3.4 * curveDirection,
+    (from[1] + to[1]) / 2 +
+      (deltaX / length) * 3.4 * curveDirection
+  ];
+  const rundownPlay = selectedRundown
+    ? RUNDOWN_PLAYS[selectedRundown]
+    : null;
+  const movementDuration = rundownPlay
+    ? rundownPathDuration(
+        rundownPlay.segmentIndex,
+        [from, passPoint, to]
+      )
+    : duration;
+  animate(
+    fielder,
+    proportionalPathFrames([from, passPoint, to]),
+    { duration: movementDuration, delay, easing: 'linear' }
+  );
+}
+
+function showRundownTag(tagPoint, tagTime) {
+  rundownCall.hidden = false;
+  rundownCall.style.left = pct(tagPoint[0]);
+  rundownCall.style.top = pct(Math.max(8, tagPoint[1] - 4));
+  animate(
+    rundownCall,
+    [
+      {
+        opacity: 0,
+        transform: 'translate(-50%, -115%) scale(.45)'
+      },
+      {
+        opacity: 1,
+        transform: 'translate(-50%, -115%) scale(1.12)',
+        offset: .38
+      },
+      {
+        opacity: 1,
+        transform: 'translate(-50%, -115%) scale(1)'
+      }
+    ],
+    {
+      duration: 850,
+      delay: tagTime,
+      easing: 'ease-out'
+    }
+  );
+}
+
+function playPickoffRundown(play) {
+  const segmentIndex = play.segmentIndex;
+  const trailBase = ACADEMY_BASE_POINTS[segmentIndex];
+  const leadBase = ACADEMY_BASE_POINTS[segmentIndex + 1];
+  const pitcherPoint = positionOf('pitcher');
+  const runnerSegmentDuration = 3636;
+  const pickoffDelay = 350;
+  const pickoffDuration =
+    academyThrowDuration(pitcherPoint, trailBase);
+  const trailCatchTime = pickoffDelay + pickoffDuration;
+  const trailChaseDuration =
+    Math.round(runnerSegmentDuration * .18);
+  const firstThrowStart =
+    trailCatchTime + trailChaseDuration;
+  const trailThrowPoint = rundownPoint(segmentIndex, .18);
+  const leadReceivePoint = rundownPoint(segmentIndex, .82);
+  const firstExchangeDuration =
+    academyThrowDuration(trailThrowPoint, leadReceivePoint);
+  const leadCatchTime =
+    firstThrowStart + firstExchangeDuration;
+  const leadChaseDuration =
+    Math.round(runnerSegmentDuration * .16);
+  const leadThrowPoint = rundownPoint(segmentIndex, .66);
+  const trailReceivePoint = rundownPoint(segmentIndex, .28);
+  const secondExchangeDuration =
+    academyThrowDuration(leadThrowPoint, trailReceivePoint);
+  const trailBackupPathDuration =
+    rundownMovementDuration(
+      segmentIndex,
+      pitcherPoint,
+      trailReceivePoint
+    );
+  const naturalFinalCatchTime =
+    leadCatchTime +
+    leadChaseDuration +
+    secondExchangeDuration;
+  const trailBackupMoveStart = Math.max(
+    pickoffDelay,
+    naturalFinalCatchTime - trailBackupPathDuration
+  );
+  const trailBackupReadyTime =
+    trailBackupMoveStart + trailBackupPathDuration;
+  const earliestSecondThrowStart =
+    leadCatchTime + leadChaseDuration;
+  const finalCatchTime = Math.max(
+    earliestSecondThrowStart + secondExchangeDuration,
+    trailBackupReadyTime
+  );
+  const secondThrowStart =
+    finalCatchTime - secondExchangeDuration;
+  const leadRunnerProgress = Math.min(
+    .79,
+    leadCatchTime / runnerSegmentDuration
+  );
+  const returnRunnerProgress = Math.max(
+    .34,
+    leadRunnerProgress -
+      (finalCatchTime - leadCatchTime) /
+        runnerSegmentDuration
+  );
+  const closingGap = Math.max(
+    .02,
+    returnRunnerProgress - .28
+  );
+  const tagDelay = Math.round(
+    Math.min(500, Math.max(200, closingGap / 2 * runnerSegmentDuration))
+  );
+  const tagTime = finalCatchTime + tagDelay;
+  const tagProgress =
+    returnRunnerProgress - tagDelay / runnerSegmentDuration;
+  const tagPoint = rundownPoint(segmentIndex, tagProgress);
+
+  galleryField.dataset.rundownSource = play.source;
+  galleryField.dataset.rundownSegment = String(segmentIndex);
+  galleryField.dataset.rundownState = 'playing';
+  rundownRunner.hidden = false;
+  rundownRunner.style.left = pct(trailBase[0]);
+  rundownRunner.style.top = pct(trailBase[1]);
+
+  animate(
+    rundownRunner,
+    [
+      { ...pointFrame(trailBase, 0), opacity: 1 },
+      {
+        ...pointFrame(
+          rundownPoint(segmentIndex, leadRunnerProgress),
+          leadCatchTime / tagTime
+        ),
+        opacity: 1
+      },
+      {
+        ...pointFrame(
+          rundownPoint(segmentIndex, returnRunnerProgress),
+          finalCatchTime / tagTime
+        ),
+        opacity: 1
+      },
+      { ...pointFrame(tagPoint, 1), opacity: 1 }
+    ],
+    { duration: tagTime, easing: 'linear' }
+  );
+
+  animate(
+    ball,
+    [
+      {
+        ...pointFrame(pitcherPoint),
+        opacity: 1,
+        transform: 'scale(.76)'
+      },
+      {
+        ...pointFrame(trailBase),
+        opacity: 1,
+        transform: 'scale(.72)'
+      }
+    ],
+    {
+      duration: pickoffDuration,
+      delay: pickoffDelay,
+      easing: 'linear'
+    }
+  );
+  move(
+    fielders[play.trailGate],
+    positionOf(play.trailGate),
+    trailBase,
+    Math.max(420, trailCatchTime - 80),
+    80,
+    'linear'
+  );
+  move(
+    fielders[play.leadGate],
+    positionOf(play.leadGate),
+    leadBase,
+    Math.max(520, leadCatchTime - 180),
+    180,
+    'linear'
+  );
+  move(
+    fielders[play.leadBackup],
+    positionOf(play.leadBackup),
+    play.leadQueue,
+    950,
+    240,
+    'linear'
+  );
+  play.support.forEach(([name, target], index) => {
+    move(
+      fielders[name],
+      positionOf(name),
+      target,
+      1050,
+      260 + index * 80,
+      'linear'
+    );
+  });
+
+  move(
+    fielders[play.trailGate],
+    trailBase,
+    trailThrowPoint,
+    trailChaseDuration,
+    trailCatchTime,
+    'linear'
+  );
+  animate(
+    ball,
+    [
+      {
+        ...pointFrame(trailBase),
+        opacity: 1,
+        transform: 'scale(.72)'
+      },
+      {
+        ...pointFrame(trailThrowPoint),
+        opacity: 1,
+        transform: 'scale(.72)'
+      }
+    ],
+    {
+      duration: trailChaseDuration,
+      delay: trailCatchTime,
+      easing: 'linear'
+    }
+  );
+  animate(
+    ball,
+    [
+      {
+        ...pointFrame(trailThrowPoint),
+        opacity: 1,
+        transform: 'scale(.72)'
+      },
+      {
+        ...pointFrame(leadReceivePoint),
+        opacity: 1,
+        transform: 'scale(.72)'
+      }
+    ],
+    {
+      duration: firstExchangeDuration,
+      delay: firstThrowStart,
+      easing: 'linear'
+    }
+  );
+  rotateAfterThrow(
+    fielders[play.trailGate],
+    trailThrowPoint,
+    play.leadQueue,
+    Math.max(900, leadCatchTime - firstThrowStart),
+    firstThrowStart,
+    -1
+  );
+
+  move(
+    fielders[play.leadGate],
+    leadBase,
+    leadReceivePoint,
+    Math.round(runnerSegmentDuration * .18),
+    leadCatchTime -
+      Math.round(runnerSegmentDuration * .18),
+    'linear'
+  );
+  move(
+    fielders[play.leadGate],
+    leadReceivePoint,
+    leadThrowPoint,
+    leadChaseDuration,
+    leadCatchTime,
+    'linear'
+  );
+  animate(
+    ball,
+    [
+      {
+        ...pointFrame(leadReceivePoint),
+        opacity: 1,
+        transform: 'scale(.72)'
+      },
+      {
+        ...pointFrame(leadThrowPoint),
+        opacity: 1,
+        transform: 'scale(.72)'
+      }
+    ],
+    {
+      duration: leadChaseDuration,
+      delay: leadCatchTime,
+      easing: 'linear'
+    }
+  );
+  animate(
+    ball,
+    [
+      {
+        ...pointFrame(leadThrowPoint),
+        opacity: 1,
+        transform: 'scale(.72)'
+      },
+      {
+        ...pointFrame(trailReceivePoint),
+        opacity: 1,
+        transform: 'scale(.72)'
+      }
+    ],
+    {
+      duration: secondExchangeDuration,
+      delay: secondThrowStart,
+      easing: 'linear'
+    }
+  );
+  rotateAfterThrow(
+    fielders[play.leadGate],
+    leadThrowPoint,
+    play.trailQueue,
+    Math.max(850, finalCatchTime - secondThrowStart),
+    secondThrowStart,
+    1
+  );
+
+  move(
+    fielders[play.trailBackup],
+    pitcherPoint,
+    trailReceivePoint,
+    trailBackupPathDuration,
+    trailBackupMoveStart,
+    'linear'
+  );
+  move(
+    fielders[play.trailBackup],
+    trailReceivePoint,
+    tagPoint,
+    tagDelay,
+    finalCatchTime,
+    'linear'
+  );
+  animate(
+    ball,
+    [
+      {
+        ...pointFrame(trailReceivePoint),
+        opacity: 1,
+        transform: 'scale(.72)'
+      },
+      {
+        ...pointFrame(tagPoint),
+        opacity: 1,
+        transform: 'scale(.72)'
+      }
+    ],
+    {
+      duration: tagDelay,
+      delay: finalCatchTime,
+      easing: 'linear'
+    }
+  );
+
+  showRundownTag(tagPoint, tagTime);
+  return tagTime + 900;
+}
+
+function playSourceRundown(rundownName) {
+  const play = RUNDOWN_PLAYS[rundownName];
+  if (!play) return 0;
+  if (play.source === 'pickoff') {
+    return playPickoffRundown(play);
+  }
+
+  const segmentIndex = play.segmentIndex;
+  const trailBase = ACADEMY_BASE_POINTS[segmentIndex];
+  const leadBase = ACADEMY_BASE_POINTS[segmentIndex + 1];
+  const fieldPoint = play.fieldPoint;
+  const runnerSegmentDuration = 3636;
+  const fieldDuration =
+    play.source === 'short-ground' ? 1350 : 1150;
+  const initialThrowDelay = fieldDuration + 120;
+  const initialThrowDuration =
+    academyThrowDuration(fieldPoint, leadBase);
+  const initialCatchTime =
+    initialThrowDelay + initialThrowDuration;
+  const leadChaseDuration =
+    Math.round(runnerSegmentDuration * .18);
+  const firstThrowStart =
+    initialCatchTime + leadChaseDuration;
+  const leadThrowPoint = rundownPoint(segmentIndex, .82);
+  const trailReceivePoint = rundownPoint(segmentIndex, .12);
+  const firstExchangeDuration =
+    academyThrowDuration(leadThrowPoint, trailReceivePoint);
+  const trailCatchTime =
+    firstThrowStart + firstExchangeDuration;
+  const trailChaseDuration =
+    Math.round(runnerSegmentDuration * .16);
+  const trailThrowPoint = rundownPoint(segmentIndex, .28);
+  const leadReceivePoint = rundownPoint(segmentIndex, .72);
+  const secondExchangeDuration =
+    academyThrowDuration(trailThrowPoint, leadReceivePoint);
+  const leadBackupStart =
+    play.leadBackup === play.primary
+      ? fieldPoint
+      : positionOf(play.leadBackup);
+  const leadBackupEarliest =
+    play.leadBackup === play.primary
+      ? initialThrowDelay
+      : 180;
+  const leadBackupMoveDuration =
+    rundownMovementDuration(
+      segmentIndex,
+      leadBackupStart,
+      leadReceivePoint
+    );
+  const naturalSecondThrowStart =
+    trailCatchTime + trailChaseDuration;
+  const naturalLeadCatchTime =
+    naturalSecondThrowStart + secondExchangeDuration;
+  const leadBackupMoveStart = Math.max(
+    leadBackupEarliest,
+    naturalLeadCatchTime - leadBackupMoveDuration
+  );
+  const leadBackupReadyTime =
+    leadBackupMoveStart + leadBackupMoveDuration;
+  const leadCatchTime =
+    Math.max(naturalLeadCatchTime, leadBackupReadyTime);
+  const secondThrowStart =
+    leadCatchTime - secondExchangeDuration;
+
+  const initialRunnerProgress = Math.min(
+    .76,
+    initialCatchTime / runnerSegmentDuration
+  );
+  const returnRunnerProgress = Math.max(
+    .12,
+    initialRunnerProgress -
+      (trailCatchTime - initialCatchTime) /
+        runnerSegmentDuration
+  );
+  const secondRunnerProgress = Math.min(
+    .68,
+    returnRunnerProgress +
+      (leadCatchTime - trailCatchTime) /
+        runnerSegmentDuration
+  );
+  const closingProgress = Math.max(
+    .02,
+    .72 - secondRunnerProgress
+  );
+  const tagDelay = Math.round(
+    Math.min(520, Math.max(220, closingProgress / 2 * runnerSegmentDuration))
+  );
+  const tagTime = leadCatchTime + tagDelay;
+  const tagProgress =
+    secondRunnerProgress + tagDelay / runnerSegmentDuration;
+  const tagPoint = rundownPoint(segmentIndex, tagProgress);
+
+  galleryField.dataset.rundownSource = play.source;
+  galleryField.dataset.rundownSegment = String(segmentIndex);
+  galleryField.dataset.rundownState = 'playing';
+  rundownRunner.hidden = false;
+  rundownRunner.style.left = pct(trailBase[0]);
+  rundownRunner.style.top = pct(trailBase[1]);
+
+  animate(
+    rundownRunner,
+    [
+      {
+        ...pointFrame(trailBase, 0),
+        opacity: 1
+      },
+      {
+        ...pointFrame(
+          rundownPoint(segmentIndex, initialRunnerProgress),
+          initialCatchTime / tagTime
+        ),
+        opacity: 1
+      },
+      {
+        ...pointFrame(
+          rundownPoint(segmentIndex, returnRunnerProgress),
+          trailCatchTime / tagTime
+        ),
+        opacity: 1
+      },
+      {
+        ...pointFrame(
+          rundownPoint(segmentIndex, secondRunnerProgress),
+          leadCatchTime / tagTime
+        ),
+        opacity: 1
+      },
+      {
+        ...pointFrame(tagPoint, 1),
+        opacity: 1
+      }
+    ],
+    { duration: tagTime, easing: 'linear' }
+  );
+
+  animate(
+    ball,
+    [
+      {
+        left: '50%',
+        top: '89%',
+        opacity: 1,
+        transform: 'scale(.78)'
+      },
+      {
+        left: pct(fieldPoint[0]),
+        top: pct(fieldPoint[1]),
+        opacity: 1,
+        transform: 'scale(.78)'
+      }
+    ],
+    { duration: fieldDuration, easing: 'linear' }
+  );
+  move(
+    fielders[play.primary],
+    positionOf(play.primary),
+    fieldPoint,
+    fieldDuration - 80,
+    80,
+    'linear'
+  );
+  animate(
+    ball,
+    [
+      {
+        ...pointFrame(fieldPoint),
+        opacity: 1,
+        transform: 'scale(.76)'
+      },
+      {
+        ...pointFrame(leadBase),
+        opacity: 1,
+        transform: 'scale(.72)'
+      }
+    ],
+    {
+      duration: initialThrowDuration,
+      delay: initialThrowDelay,
+      easing: 'linear'
+    }
+  );
+
+  const receiverMoveDuration =
+    Math.max(500, initialCatchTime - 160);
+  move(
+    fielders[play.leadGate],
+    positionOf(play.leadGate),
+    leadBase,
+    receiverMoveDuration,
+    80,
+    'linear'
+  );
+  move(
+    fielders[play.trailGate],
+    positionOf(play.trailGate),
+    trailBase,
+    receiverMoveDuration,
+    80,
+    'linear'
+  );
+
+  play.support.forEach(([name, target], index) => {
+    move(
+      fielders[name],
+      positionOf(name),
+      target,
+      1050,
+      260 + index * 80,
+      'linear'
+    );
+  });
+
+  move(
+    fielders[play.leadBackup],
+    leadBackupStart,
+    leadReceivePoint,
+    leadBackupMoveDuration,
+    leadBackupMoveStart,
+    'linear'
+  );
+
+  const trailBackupStart =
+    play.trailBackup === play.primary
+      ? fieldPoint
+      : positionOf(play.trailBackup);
+  const trailBackupDelay =
+    play.trailBackup === play.primary
+      ? initialCatchTime
+      : 180;
+  animate(
+    fielders[play.trailBackup],
+    proportionalPathFrames([
+      trailBackupStart,
+      play.trailQueue,
+      trailBase
+    ]),
+    {
+      duration: rundownPathDuration(
+        segmentIndex,
+        [
+          trailBackupStart,
+          play.trailQueue,
+          trailBase
+        ]
+      ),
+      delay: trailBackupDelay,
+      easing: 'linear'
+    }
+  );
+
+  move(
+    fielders[play.leadGate],
+    leadBase,
+    leadThrowPoint,
+    leadChaseDuration,
+    initialCatchTime,
+    'linear'
+  );
+  animate(
+    ball,
+    [
+      {
+        ...pointFrame(leadBase),
+        opacity: 1,
+        transform: 'scale(.72)'
+      },
+      {
+        ...pointFrame(leadThrowPoint),
+        opacity: 1,
+        transform: 'scale(.72)'
+      }
+    ],
+    {
+      duration: leadChaseDuration,
+      delay: initialCatchTime,
+      easing: 'linear'
+    }
+  );
+  animate(
+    ball,
+    [
+      {
+        ...pointFrame(leadThrowPoint),
+        opacity: 1,
+        transform: 'scale(.72)'
+      },
+      {
+        ...pointFrame(trailReceivePoint),
+        opacity: 1,
+        transform: 'scale(.72)'
+      }
+    ],
+    {
+      duration: firstExchangeDuration,
+      delay: firstThrowStart,
+      easing: 'linear'
+    }
+  );
+  move(
+    fielders[play.trailGate],
+    trailBase,
+    trailReceivePoint,
+    Math.round(runnerSegmentDuration * .12),
+    trailCatchTime -
+      Math.round(runnerSegmentDuration * .12),
+    'linear'
+  );
+  rotateAfterThrow(
+    fielders[play.leadGate],
+    leadThrowPoint,
+    play.trailQueue,
+    Math.max(900, trailCatchTime - firstThrowStart),
+    firstThrowStart,
+    segmentIndex === 2 ? -1 : 1
+  );
+
+  move(
+    fielders[play.trailGate],
+    trailReceivePoint,
+    trailThrowPoint,
+    trailChaseDuration,
+    trailCatchTime,
+    'linear'
+  );
+  animate(
+    ball,
+    [
+      {
+        ...pointFrame(trailReceivePoint),
+        opacity: 1,
+        transform: 'scale(.72)'
+      },
+      {
+        ...pointFrame(trailThrowPoint),
+        opacity: 1,
+        transform: 'scale(.72)'
+      }
+    ],
+    {
+      duration: trailChaseDuration,
+      delay: trailCatchTime,
+      easing: 'linear'
+    }
+  );
+  animate(
+    ball,
+    [
+      {
+        ...pointFrame(trailThrowPoint),
+        opacity: 1,
+        transform: 'scale(.72)'
+      },
+      {
+        ...pointFrame(leadReceivePoint),
+        opacity: 1,
+        transform: 'scale(.72)'
+      }
+    ],
+    {
+      duration: secondExchangeDuration,
+      delay: secondThrowStart,
+      easing: 'linear'
+    }
+  );
+  rotateAfterThrow(
+    fielders[play.trailGate],
+    trailThrowPoint,
+    play.leadQueue,
+    Math.max(850, leadCatchTime - secondThrowStart),
+    secondThrowStart,
+    segmentIndex === 2 ? 1 : -1
+  );
+
+  move(
+    fielders[play.leadBackup],
+    leadReceivePoint,
+    tagPoint,
+    tagDelay,
+    leadCatchTime,
+    'linear'
+  );
+  animate(
+    ball,
+    [
+      {
+        ...pointFrame(leadReceivePoint),
+        opacity: 1,
+        transform: 'scale(.72)'
+      },
+      {
+        ...pointFrame(tagPoint),
+        opacity: 1,
+        transform: 'scale(.72)'
+      }
+    ],
+    {
+      duration: tagDelay,
+      delay: leadCatchTime,
+      easing: 'linear'
+    }
+  );
+
+  showRundownTag(tagPoint, tagTime);
+
+  return tagTime + 900;
+}
+
 function playSelectedScene() {
-  const scene = SCENES[selectedScene];
+  const scene = selectedRundown
+    ? null
+    : SCENES[selectedScene];
   const label = displayLabel();
   resetAnimation();
   galleryField.classList.add('scene-running');
@@ -1054,7 +2057,11 @@ function playSelectedScene() {
   galleryReplay.textContent = `${label}を再生中…`;
   galleryStatus.textContent = `${label}を再生しています。`;
 
-  if (selectedScene === 'fly') playOutfieldFly();
+  let playDuration = scene?.duration || 0;
+  if (selectedRundown) {
+    playDuration =
+      playSourceRundown(selectedRundown);
+  } else if (selectedScene === 'fly') playOutfieldFly();
   else if (selectedScene === 'popup') playInfieldScene('popup');
   else if (selectedScene === 'liner') playInfieldScene('liner');
   else if (selectedScene === 'extra') playOutfieldLiner(true);
@@ -1070,7 +2077,10 @@ function playSelectedScene() {
     setFielderSelectionEnabled(true);
     galleryReplay.textContent = `↻ ${label}をもう一度見る`;
     galleryStatus.textContent = `${label}の再生が終わりました。`;
-  }, scene.duration);
+    if (selectedRundown) {
+      galleryField.dataset.rundownState = 'tagged';
+    }
+  }, playDuration);
 }
 
 sceneButtons.forEach((button) => {
@@ -1079,6 +2089,13 @@ sceneButtons.forEach((button) => {
 
 directionButtons.forEach((button) => {
   button.addEventListener('click', () => selectDirection(button.dataset.direction));
+});
+
+rundownButtons.forEach((button) => {
+  button.addEventListener(
+    'click',
+    () => selectRundown(button.dataset.rundown)
+  );
 });
 
 Object.values(fielders).forEach((fielder) => {

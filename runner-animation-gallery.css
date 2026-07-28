@@ -19,28 +19,28 @@
 }
 
 .picker-heading {
-  margin: 9px 12px 2px;
+  margin: 6px 12px 1px;
   color: #102b46;
   font-size: 14px;
   font-weight: 1000;
 }
 
 .direction-heading {
-  margin-top: 5px;
+  margin-top: 3px;
 }
 
 .scene-picker {
   display: grid;
   grid-template-columns: repeat(8, minmax(0, 1fr));
   gap: 5px;
-  padding: 4px 10px 8px;
+  padding: 2px 10px 4px;
 }
 
 .scene-picker button {
   grid-column: span 2;
   min-width: 0;
-  min-height: 42px;
-  padding: 5px 2px;
+  min-height: 34px;
+  padding: 3px 2px;
   border: 2px solid #cbd8e4;
   border-radius: 11px;
   color: #31506c;
@@ -70,8 +70,8 @@
   display: grid;
   grid-template-columns: repeat(8, minmax(0, 1fr));
   gap: 5px;
-  margin: 3px 10px 8px;
-  padding: 6px;
+  margin: 2px 10px 4px;
+  padding: 4px;
   border-radius: 12px;
   background: #e8f0f6;
 }
@@ -110,7 +110,8 @@
 
 .direction-picker button {
   min-width: 0;
-  padding: 7px 2px;
+  min-height: 32px;
+  padding: 4px 2px;
   border: 2px solid #b9cad9;
   border-radius: 9px;
   color: #31506c;
@@ -123,6 +124,39 @@
   border-color: #0b477e;
   color: #fff;
   background: #0b477e;
+}
+
+.rundown-heading {
+  margin-top: 3px;
+}
+
+.rundown-picker {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+  margin: 2px 10px 6px;
+  padding: 4px;
+  border-radius: 12px;
+  background: #fff1d9;
+}
+
+.rundown-picker button {
+  min-width: 0;
+  min-height: 32px;
+  padding: 4px 2px;
+  border: 2px solid #e3bd78;
+  border-radius: 9px;
+  color: #704611;
+  background: #fff;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.rundown-picker button[aria-pressed="true"] {
+  border-color: #c46c0d;
+  color: #fff;
+  background: #d77a16;
+  box-shadow: 0 2px 0 #96500a;
 }
 
 .motion-v2.scene-running * {
@@ -193,6 +227,49 @@
   opacity: 0;
   background: #fff;
   box-shadow: 0 0 0 1px #fff, 0 2px 5px #0008;
+}
+
+.rundown-runner {
+  position: absolute;
+  z-index: 13;
+  width: 27px;
+  height: 27px;
+  margin: -14px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  color: #fff;
+  background: #1671c5;
+  font-size: 12px;
+  font-weight: 1000;
+  line-height: 23px;
+  text-align: center;
+  box-shadow: 0 2px 6px #0008;
+  will-change: left, top, opacity, transform;
+}
+
+.rundown-runner[hidden],
+.rundown-call[hidden] {
+  display: none;
+}
+
+.rundown-call {
+  position: absolute;
+  z-index: 25;
+  left: 50%;
+  top: 50%;
+  padding: 3px 7px;
+  border: 2px solid #fff;
+  border-radius: 7px;
+  color: #fff;
+  background: #d91f31;
+  font-size: 12px;
+  font-weight: 1000;
+  line-height: 1.1;
+  white-space: nowrap;
+  opacity: 0;
+  box-shadow: 0 2px 5px #0007;
+  pointer-events: none;
+  will-change: left, top, opacity, transform;
 }
 
 .gallery-shadow {
@@ -597,6 +674,92 @@
 @media (max-width: 370px) {
   .scene-picker button {
     font-size: 10px;
+  }
+}
+
+@media (max-height: 840px) {
+  .animation-gallery header {
+    padding: 5px 12px;
+    border-bottom-width: 3px;
+  }
+
+  .animation-gallery header small {
+    font-size: 9px;
+    line-height: 1;
+  }
+
+  .animation-gallery header strong {
+    font-size: 16px;
+    line-height: 1.05;
+  }
+
+  .animation-gallery .academy-back {
+    padding: 4px 8px;
+    font-size: 10px;
+  }
+
+  .animation-gallery .picker-heading {
+    margin: 5px 10px 0;
+    font-size: 11px;
+    line-height: 1;
+  }
+
+  .animation-gallery .rundown-heading {
+    margin-top: 8px;
+  }
+
+  .animation-gallery .scene-picker {
+    gap: 3px;
+    padding: 2px 8px;
+  }
+
+  .animation-gallery .scene-picker button {
+    min-height: 26px;
+    padding: 1px 2px;
+    border-width: 1px;
+    border-radius: 8px;
+    font-size: 9px;
+    line-height: 1;
+  }
+
+  .animation-gallery .direction-picker {
+    gap: 3px;
+    margin: 1px 8px 2px;
+    padding: 2px;
+    border-radius: 9px;
+  }
+
+  .animation-gallery .direction-picker button,
+  .animation-gallery .rundown-picker button {
+    min-height: 24px;
+    padding: 1px 2px;
+    border-width: 1px;
+    border-radius: 7px;
+    font-size: 9px;
+    line-height: 1;
+  }
+
+  .animation-gallery .rundown-picker {
+    gap: 3px;
+    margin: 1px 8px 3px;
+    padding: 2px;
+    border-radius: 9px;
+  }
+
+  .animation-gallery .field-shell {
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .animation-gallery .gallery-controls {
+    padding: 4px 12px 6px;
+  }
+
+  .animation-gallery #gallery-replay {
+    min-height: 36px;
+    border-radius: 10px;
+    font-size: 11px;
+    line-height: 1.05;
   }
 }
 
