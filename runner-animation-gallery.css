@@ -763,6 +763,101 @@
   }
 }
 
+@media (min-height: 841px) and (max-width: 520px) {
+  .animation-gallery header {
+    padding: 16px;
+  }
+
+  .animation-gallery header strong {
+    font-size: 22px;
+  }
+
+  .animation-gallery .academy-back {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .animation-gallery .picker-heading {
+    margin: 8px 12px 2px;
+    font-size: 15px;
+    line-height: 1.1;
+  }
+
+  .animation-gallery .rundown-heading {
+    margin-top: 10px;
+  }
+
+  .animation-gallery .scene-picker {
+    gap: 5px;
+    padding: 4px 10px 7px;
+  }
+
+  .animation-gallery .scene-picker button {
+    min-height: 44px;
+    padding: 4px 2px;
+    font-size: 12px;
+  }
+
+  .animation-gallery .direction-picker {
+    gap: 5px;
+    margin: 3px 10px 6px;
+    padding: 5px;
+  }
+
+  .animation-gallery .direction-picker button,
+  .animation-gallery .rundown-picker button {
+    min-height: 42px;
+    padding: 4px 2px;
+    font-size: 12px;
+  }
+
+  .animation-gallery .rundown-picker {
+    gap: 5px;
+    margin: 3px 10px 8px;
+    padding: 5px;
+  }
+
+  .animation-gallery .gallery-controls {
+    padding: 9px 12px 14px;
+  }
+
+  .animation-gallery #gallery-replay {
+    min-height: 56px;
+    border-radius: 16px;
+  }
+}
+
+@media (min-height: 900px) and (max-width: 520px) {
+  .animation-gallery header {
+    padding-top: 20px;
+    padding-bottom: 20px;
+  }
+
+  .animation-gallery .picker-heading {
+    margin-top: 11px;
+  }
+
+  .animation-gallery .rundown-heading {
+    margin-top: 13px;
+  }
+
+  .animation-gallery .scene-picker button {
+    min-height: 50px;
+    font-size: 13px;
+  }
+
+  .animation-gallery .direction-picker button,
+  .animation-gallery .rundown-picker button {
+    min-height: 48px;
+    font-size: 13px;
+  }
+
+  .animation-gallery #gallery-replay {
+    min-height: 64px;
+    font-size: 17px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .gallery-field.scene-running * {
     animation-duration: .01ms !important;
