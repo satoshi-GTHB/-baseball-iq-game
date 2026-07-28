@@ -763,98 +763,188 @@
   }
 }
 
-@media (min-height: 841px) and (max-width: 520px) {
+@media (max-width: 520px) {
   .animation-gallery header {
-    padding: 16px;
+    padding: 10px 14px;
+    border-bottom-width: 4px;
+  }
+
+  .animation-gallery header small {
+    font-size: 10px;
+    line-height: 1.1;
+  }
+
+  .animation-gallery header strong {
+    font-size: 20px;
+    line-height: 1.1;
+  }
+
+  .animation-gallery .academy-back {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  .animation-gallery .picker-heading {
+    margin: 5px 10px 1px;
+    font-size: 12.5px;
+    line-height: 1;
+  }
+
+  .animation-gallery .rundown-heading {
+    margin-top: 8px;
+  }
+
+  .animation-gallery .scene-picker {
+    gap: 4px;
+    padding: 3px 8px;
+  }
+
+  .animation-gallery .scene-picker button {
+    min-height: 36px;
+    padding: 3px 2px;
+    border-width: 2px;
+    font-size: 11.5px;
+  }
+
+  .animation-gallery .direction-picker {
+    gap: 4px;
+    margin: 2px 8px 4px;
+    padding: 3px;
+  }
+
+  .animation-gallery .direction-picker button,
+  .animation-gallery .rundown-picker button {
+    min-height: 34px;
+    padding: 3px 2px;
+    border-width: 2px;
+    font-size: 11.5px;
+  }
+
+  .animation-gallery .rundown-picker {
+    gap: 4px;
+    margin: 2px 8px 5px;
+    padding: 3px;
+  }
+
+  .animation-gallery .gallery-controls {
+    padding: 6px 12px 10px;
+  }
+
+  .animation-gallery #gallery-replay {
+    min-height: 46px;
+    border-radius: 12px;
+    font-size: 14px;
+  }
+}
+
+@media (min-height: 760px) and (max-width: 520px) {
+  .animation-gallery header {
+    padding-top: 15px;
+    padding-bottom: 15px;
   }
 
   .animation-gallery header strong {
     font-size: 22px;
   }
 
-  .animation-gallery .academy-back {
-    padding: 8px 12px;
-    font-size: 13px;
-  }
-
   .animation-gallery .picker-heading {
-    margin: 8px 12px 2px;
-    font-size: 15px;
-    line-height: 1.1;
+    margin-top: 7px;
+    font-size: 13.5px;
   }
 
   .animation-gallery .rundown-heading {
     margin-top: 10px;
   }
 
-  .animation-gallery .scene-picker {
-    gap: 5px;
-    padding: 4px 10px 7px;
-  }
-
   .animation-gallery .scene-picker button {
-    min-height: 44px;
-    padding: 4px 2px;
-    font-size: 12px;
-  }
-
-  .animation-gallery .direction-picker {
-    gap: 5px;
-    margin: 3px 10px 6px;
-    padding: 5px;
+    min-height: 42px;
+    font-size: 12.5px;
   }
 
   .animation-gallery .direction-picker button,
   .animation-gallery .rundown-picker button {
-    min-height: 42px;
-    padding: 4px 2px;
-    font-size: 12px;
-  }
-
-  .animation-gallery .rundown-picker {
-    gap: 5px;
-    margin: 3px 10px 8px;
-    padding: 5px;
-  }
-
-  .animation-gallery .gallery-controls {
-    padding: 9px 12px 14px;
+    min-height: 40px;
+    font-size: 12.5px;
   }
 
   .animation-gallery #gallery-replay {
     min-height: 56px;
-    border-radius: 16px;
+    font-size: 16px;
+  }
+}
+
+@media (min-height: 820px) and (max-width: 520px) {
+  .animation-gallery header {
+    padding-top: 18px;
+    padding-bottom: 18px;
+  }
+
+  .animation-gallery .picker-heading {
+    margin-top: 9px;
+    font-size: 15px;
+  }
+
+  .animation-gallery .rundown-heading {
+    margin-top: 12px;
+  }
+
+  .animation-gallery .scene-picker {
+    padding-top: 5px;
+    padding-bottom: 5px;
+  }
+
+  .animation-gallery .scene-picker button {
+    min-height: 48px;
+    font-size: 13px;
+  }
+
+  .animation-gallery .direction-picker,
+  .animation-gallery .rundown-picker {
+    padding-top: 5px;
+    padding-bottom: 5px;
+  }
+
+  .animation-gallery .direction-picker button,
+  .animation-gallery .rundown-picker button {
+    min-height: 46px;
+    font-size: 13px;
+  }
+
+  .animation-gallery #gallery-replay {
+    min-height: 62px;
+    font-size: 17px;
   }
 }
 
 @media (min-height: 900px) and (max-width: 520px) {
   .animation-gallery header {
-    padding-top: 20px;
-    padding-bottom: 20px;
+    padding-top: 22px;
+    padding-bottom: 22px;
   }
 
   .animation-gallery .picker-heading {
-    margin-top: 11px;
+    margin-top: 12px;
+    font-size: 16px;
   }
 
   .animation-gallery .rundown-heading {
-    margin-top: 13px;
+    margin-top: 15px;
   }
 
   .animation-gallery .scene-picker button {
-    min-height: 50px;
-    font-size: 13px;
+    min-height: 54px;
+    font-size: 14px;
   }
 
   .animation-gallery .direction-picker button,
   .animation-gallery .rundown-picker button {
-    min-height: 48px;
-    font-size: 13px;
+    min-height: 52px;
+    font-size: 14px;
   }
 
   .animation-gallery #gallery-replay {
-    min-height: 64px;
-    font-size: 17px;
+    min-height: 70px;
+    font-size: 18px;
   }
 }
 
