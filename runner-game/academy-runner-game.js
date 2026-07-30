@@ -18,15 +18,6 @@
     ROUND: 'オーバーラン'
   };
 
-  const ADVICE_ACTION_PHRASES = {
-    GO: 'スタートを切った',
-    STOP: '止まった',
-    HALFWAY: 'ハーフウェイで待った',
-    BACK: '元の塁へ戻った',
-    KAKENUK: '1塁を駆け抜けた',
-    ROUND: 'ベースを回った'
-  };
-
   function point(action, weight = 1, axis = 'personal') {
     return { action, weight, axis };
   }
@@ -136,14 +127,14 @@
       expected: [point('GO', 3)]
     }),
     makeProblem('BA-03', 'basic', {
-      start: 'THIRD', direction: 'center', title: 'いつもの守り・3塁ランナー',
-      prompt: '内野手はいつもの場所にいる。ホームへ走ろう。',
+      start: 'THIRD', direction: 'center', title: '3塁ランナー・内野ゴロ',
+      prompt: '守る人の位置を見て、どう走るか考えよう。',
       otherBases: ['HOME', 'SECOND'],
       expected: [point('GO', 3)]
     }),
     makeProblem('BA-04', 'basic', {
       start: 'THIRD', direction: 'left', alignment: '前進守備',
-      title: '前に出た守り・3塁ランナー', prompt: '内野手が前にいる。まずどうする？',
+      title: '3塁ランナー・内野ゴロ', prompt: '守る人の位置を見て、どう走るか考えよう。',
       otherBases: ['HOME', 'SECOND'],
       expected: [point('STOP', 3)]
     }),
@@ -262,13 +253,13 @@
       expected: [point('GO', 3), point('STOP', 1)]
     }),
     makeProblem('AD-07', 'advanced', {
-      start: 'THIRD', alignment: '通常守備', title: 'いつもの守る場所を見る',
-      prompt: '内野手はいつもの場所にいる。ホームへ進もう。',
+      start: 'THIRD', alignment: '通常守備', title: '3塁ランナー・守る人を見る',
+      prompt: '守る人の位置を見て、どう走るか考えよう。',
       expected: [point('GO', 3)]
     }),
     makeProblem('AD-08', 'advanced', {
-      start: 'THIRD', alignment: '前進守備', title: '前に出た守りを見る',
-      prompt: '内野手が前にいる。まず止まろう。',
+      start: 'THIRD', alignment: '前進守備', title: '3塁ランナー・守る人を見る',
+      prompt: '守る人の位置を見て、どう走るか考えよう。',
       expected: [point('STOP', 3)]
     }),
     makeProblem('AD-09', 'advanced', {
@@ -319,7 +310,7 @@
     makeProblem('EX-07', 'expert', {
       start: 'THIRD', alignment: '前進守備', title: '1点より走者を残す',
       instruction: 'たくさん点を取るため、むりをしない。',
-      prompt: '内野手が前にいるのを見て、どうするか考えよう。',
+      prompt: '守る人の位置を見て、どうするか考えよう。',
       expected: [point('STOP', 3, 'strategy')]
     }),
     makeProblem('EX-08', 'expert', {
@@ -651,6 +642,77 @@
     return '×';
   }
 
+  function bestStoryItems(problem) {
+    const expectedActions = problem.expected.map((item) => item.action);
+    const caughtFly = ['fly', 'popup', 'liner'].includes(problem.scene);
+    if (
+      caughtFly &&
+      expectedActions.length === 1 &&
+      expectedActions[0] === 'BACK'
+    ) {
+      return [
+        '投球時にスタートを切る、または2次リードをする',
+        'フライが上がったのを見てバックする'
+      ];
+    }
+    return expectedActions.map((action, index) => {
+      if (action === 'BACK' && caughtFly) {
+        return 'フライが上がったのを見てバックする';
+      }
+      if (action === 'GO' && problem.stealSign) {
+        return 'ピッチャーが投げるのに合わせてスタートを切る';
+      }
+      if (
+        action === 'GO' &&
+        caughtFly &&
+        expectedActions.slice(0, index).includes('BACK')
+      ) {
+        return '守る人がボールを取ったのを見てスタートを切る';
+      }
+      if (action === 'GO' && problem.scene === 'ground') {
+        return '打球がゴロになったのを見てスタートを切る';
+      }
+      if (action === 'GO') {
+        return '打球と守る人を見てスタートを切る';
+      }
+      if (action === 'HALFWAY') {
+        return '投球に合わせて2次リードをする';
+      }
+      if (action === 'STOP') {
+        return '守る人と前のランナーを見てストップする';
+      }
+      if (action === 'KAKENUK') {
+        return '内野ゴロを見て、1塁をかけぬける';
+      }
+      return '外野への打球を見て、ベースを回る';
+    });
+  }
+
+  function evaluationPhrase(problem, action) {
+    if (action === 'BACK' && ['fly', 'popup', 'liner'].includes(problem.scene)) {
+      return 'フライが上がった状況でのバック';
+    }
+    if (action === 'HALFWAY') {
+      return '投球に合わせるタイミングでの2次リード';
+    }
+    if (action === 'GO' && problem.stealSign) {
+      return '投球に合わせるタイミングでの盗塁スタート';
+    }
+    if (action === 'GO' && isForcedGroundAdvance(problem)) {
+      return 'ランナーが詰まっている状況でのスタート';
+    }
+    if (action === 'GO') {
+      return '打球と守る人を見たタイミングでのスタート';
+    }
+    if (action === 'STOP') {
+      return '守る人と前のランナーを見たタイミングでのストップ';
+    }
+    if (action === 'KAKENUK') {
+      return '内野ゴロのような状況での1塁かけぬけ';
+    }
+    return '外野へ打球が飛んだ状況でのオーバーラン';
+  }
+
   function showQuestionResult() {
     if (!state.active) return;
     state.active = false;
@@ -697,80 +759,52 @@
         !expectedActions.includes(action)
       ))
     ];
-    const missingExpected = problem.expected.find((expected) =>
-      missingActions.includes(expected.action)
-    );
     const missedForcedGroundAdvance =
       isForcedGroundAdvance(problem) &&
       missingActions.includes('GO');
-    const firstExpected = ACTION_LABELS[
-      missingExpected?.action || problem.expected[0].action
-    ];
     const renderFeedbackList = (selector, items) => {
       document.querySelector(selector).innerHTML = items
         .map((item) => `<li>${item}</li>`)
         .join('');
     };
+    renderFeedbackList('#best-story-list', bestStoryItems(problem));
     let didItems = completedActions.map((action) =>
-      action === 'GO'
-        ? 'いいスタートが切れた'
-        : `「${ACTION_LABELS[action]}」を選べた`
+      evaluationPhrase(problem, action)
     );
     let missedItems = missingActions.map((action) =>
-      action === 'GO'
-        ? 'スタートが遅れた'
-        : `「${ACTION_LABELS[action]}」を選べなかった`
+      evaluationPhrase(problem, action)
     );
     if (stealStart) {
       didItems = stealSucceeded
-        ? ['盗塁のスタートを適切なタイミングで切れた']
+        ? ['投球に合わせるタイミングでの盗塁スタート']
         : [];
       missedItems = stealSucceeded
         ? []
         : [
             stealWasOut
-              ? 'ボールより後に2塁へ着き、盗塁がアウトになった'
+              ? '投球より遅れたタイミングでの盗塁スタート'
               : stealStart.attempted
-              ? '捕手に投球が届いてから盗塁をスタートした'
-              : '盗塁のスタートを切れなかった'
+              ? '捕手にボールが届いた後のタイミングでの盗塁スタート'
+              : '投球に合わせるタイミングでの盗塁スタート'
           ];
     } else if (missedForcedGroundAdvance) {
       didItems = [];
-      missedItems = ['後ろが詰まったゴロでスタートが遅れた'];
+      missedItems = ['ランナーが詰まっている状況でのスタート'];
     } else {
       extraActions.forEach((action) => {
-        missedItems.push(`不要な「${ACTION_LABELS[action]}」を選んだ`);
+        missedItems.push(
+          `この状況での不要な「${ACTION_LABELS[action]}」`
+        );
       });
     }
     renderFeedbackList(
       '#feedback-did',
-      didItems.length ? didItems : ['']
+      didItems.length ? didItems : ['なし']
     );
     renderFeedbackList(
       '#feedback-missed',
-      missedItems.length ? missedItems : ['']
+      missedItems.length ? missedItems : ['なし']
     );
-    document.querySelector('#feedback-advice').textContent =
-      stealSucceeded
-        ? 'ピッチャーが投げるのに合わせてスタートしたから、ボールより先に2塁へ着いた。次からもこの調子でいこう。'
-        : stealStart
-          ? 'ボールが先に2塁へ着いてアウトになった。ピッチャーをよく見て、ホームへ投げる動きが始まったらすぐにスタートしよう。'
-        : missedForcedGroundAdvance
-          ? '後ろが詰まっているとき、ゴロでは元の塁に戻れない。必ず次の塁へ進もう。'
-        : result.exact
-          ? problem.good
-            ? `${expectedActions.map((action) =>
-                ADVICE_ACTION_PHRASES[action]
-              ).join('、')}から、${problem.good}次からもこの調子でいこう。`
-            : expectedActions.length === 1 &&
-                expectedActions[0] === 'GO'
-              ? '状況を見ていいスタートを切れた。次からもこの調子でいこう。'
-              : `${expectedActions.map((action) =>
-                  ADVICE_ACTION_PHRASES[action]
-                ).join('、')}。その場に合う走りができた。次からもこの調子でいこう。`
-          : missingExpected
-            ? `${firstExpected}を意識しよう。${problem.next}`
-            : 'ボールと守る人の動きを最後まで見て考えよう。';
     document.querySelector('#next-question').textContent =
       state.index === 9 ? '結果を見る' : '次の問題へ';
     resultOverlay.hidden = false;
