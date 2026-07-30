@@ -744,12 +744,35 @@
     return '×';
   }
 
+  function sceneSituation(problem) {
+    return {
+      ground: '内野ゴロ',
+      fly: '外野フライ',
+      popup: '内野フライ',
+      liner: 'ライナー',
+      single: '外野前ヒット',
+      extra: '長打',
+      passed: 'ボールが後ろへそれた場面',
+      swing: '空振り',
+      take: '見逃し',
+      error: '守備のエラー',
+      bunt: 'バント'
+    }[problem.scene] || '打球';
+  }
+
   function bestStoryItems(problem) {
     const expectedActions = problem.expected.map((item) => item.action);
     const caughtFly = ['fly', 'popup', 'liner'].includes(problem.scene);
+    const situation = sceneSituation(problem);
     return expectedActions.map((action, index) => {
       if (action === 'BACK' && caughtFly) {
-        return 'フライが上がったのを見てバックする';
+        return `${situation}が上がったのを見てバックする`;
+      }
+      if (action === 'BACK' && problem.scene === 'bunt') {
+        return 'バントがフライになったのを見てバックする';
+      }
+      if (action === 'BACK') {
+        return `${situation}と守る人を見て元の塁へ戻る`;
       }
       if (action === 'GO' && problem.stealSign) {
         return 'ピッチャーが投げるのに合わせてスタートを切る';
@@ -761,28 +784,29 @@
       ) {
         return '守る人がボールを取ったのを見てスタートを切る';
       }
-      if (action === 'GO' && problem.scene === 'ground') {
-        return '打球がゴロになったのを見てスタートを切る';
+      if (action === 'GO' && problem.scene === 'bunt') {
+        return 'バントが転がったのを見てスタートを切る';
       }
       if (action === 'GO') {
-        return '打球と守る人を見てスタートを切る';
+        return `${situation}と守る人を見てスタートを切る`;
       }
       if (action === 'HALFWAY') {
         return '投球に合わせて2次リードをする';
       }
       if (action === 'STOP') {
-        return '守る人と前のランナーを見てストップする';
+        return `${situation}と前のランナーを見てストップする`;
       }
       if (action === 'KAKENUK') {
-        return '内野ゴロを見て、1塁をかけぬける';
+        return `${situation}を見て、1塁をかけぬける`;
       }
-      return '外野への打球を見て、ベースを回る';
+      return `${situation}を見て、1塁を回る`;
     });
   }
 
   function evaluationPhrase(problem, action) {
+    const situation = sceneSituation(problem);
     if (action === 'BACK' && ['fly', 'popup', 'liner'].includes(problem.scene)) {
-      return 'フライが上がった状況でのバック';
+      return `${situation}が上がった状況でのバック`;
     }
     if (action === 'HALFWAY') {
       return '投球に合わせるタイミングでの2次リード';
@@ -794,15 +818,49 @@
       return 'ランナーが詰まっている状況でのスタート';
     }
     if (action === 'GO') {
-      return '打球と守る人を見たタイミングでのスタート';
+      return `${situation}と守る人を見たタイミングでのスタート`;
     }
     if (action === 'STOP') {
-      return '守る人と前のランナーを見たタイミングでのストップ';
+      return `${situation}と前のランナーを見たタイミングでのストップ`;
     }
     if (action === 'KAKENUK') {
-      return '内野ゴロのような状況での1塁かけぬけ';
+      return `${situation}のような状況での1塁かけぬけ`;
     }
-    return '外野へ打球が飛んだ状況でのオーバーラン';
+    if (action === 'ROUND') {
+      return `${situation}のような状況でのオーバーラン`;
+    }
+    return `${situation}のような状況でのバック`;
+  }
+
+  function validateProblemAdvice() {
+    const forbiddenByScene = {
+      ground: ['外野フライ', '外野前ヒット', '長打', '内野フライ'],
+      fly: ['内野ゴロ', '内野フライ', '外野前ヒット'],
+      popup: ['内野ゴロ', '外野フライ', '外野前ヒット'],
+      liner: ['内野ゴロ', '内野フライ', '外野フライ'],
+      single: ['内野ゴロ', '内野フライ', '外野フライ', '長打'],
+      extra: ['内野ゴロ', '内野フライ', '外野フライ', '外野前ヒット'],
+      passed: ['内野ゴロ', '内野フライ', '外野フライ', '外野前ヒット', '長打']
+    };
+    const issues = [];
+    PROBLEMS.forEach((problem) => {
+      const phrases = [
+        ...bestStoryItems(problem),
+        ...problem.expected.map((item) =>
+          evaluationPhrase(problem, item.action)
+        )
+      ];
+      (forbiddenByScene[problem.scene] || []).forEach((word) => {
+        if (phrases.some((phrase) => phrase.includes(word))) {
+          issues.push(`${problem.id}: ${word}`);
+        }
+      });
+    });
+    if (issues.length) {
+      throw new Error(
+        `出題とアドバイスが一致していません: ${issues.join(', ')}`
+      );
+    }
   }
 
   function showQuestionResult() {
@@ -840,6 +898,9 @@
     const stealSucceeded =
       Boolean(stealStart?.onTime) &&
       !stealWasOut;
+    const pickoffOut =
+      state.lastSelfDefenseResult?.out === true &&
+      state.lastSelfDefenseResult?.reason === 'pickoff';
     const completedActions = expectedActions.filter((action) =>
       result.evaluatedActions.includes(action)
     );
@@ -866,7 +927,15 @@
     let missedItems = missingActions.map((action) =>
       evaluationPhrase(problem, action)
     );
-    if (stealStart) {
+    if (pickoffOut) {
+      const pickoffAction = state.lastSelfDefenseResult.action;
+      didItems = [];
+      missedItems = [
+        pickoffAction === 'GO'
+          ? 'ピッチャーが投げる前のタイミングでのスタート'
+          : 'ピッチャーが投げる前のタイミングでの2次リード'
+      ];
+    } else if (stealStart) {
       didItems = stealSucceeded
         ? ['投球に合わせるタイミングでの盗塁スタート']
         : [];
@@ -1011,7 +1080,12 @@
     ) {
       state.lastSelfDefenseResult = {
         out: Boolean(event.detail.out),
-        targetBaseIndex: Number(event.detail.targetBaseIndex)
+        targetBaseIndex: Number(event.detail.targetBaseIndex),
+        reason:
+          event.detail.defenseReason ||
+          event.detail.reason ||
+          null,
+        action: state.timeline.at(-1)?.action || null
       };
     }
   });
@@ -1040,6 +1114,7 @@
   });
   document.querySelector('#back-to-levels').addEventListener('click', backToLevels);
 
+  validateProblemAdvice();
   updateUserLevelDisplay();
   renderLevels();
 })();
