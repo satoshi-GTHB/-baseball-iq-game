@@ -287,59 +287,69 @@
     }),
 
     makeProblem('EX-01', 'expert', {
-      start: 'THIRD', title: '1点を取りにいく', instruction: 'アウトになっても1点を取りにいこう。',
+      start: 'THIRD', outs: 1, otherBases: ['HOME'],
+      title: '1点を取りにいく', instruction: 'アウトになっても1点を取りにいこう。',
       prompt: '監督の作戦どおりに動こう。',
       expected: [point('GO', 3, 'strategy')]
     }),
     makeProblem('EX-02', 'expert', {
-      start: 'THIRD', title: 'ランナーをのこす', instruction: 'むりをせず、ランナーをのこそう。',
+      start: 'THIRD', otherBases: ['HOME', 'SECOND'],
+      title: 'ランナーをのこす', instruction: 'むりをせず、ランナーをのこそう。',
       prompt: '監督の作戦どおりに動こう。',
       expected: [point('STOP', 3, 'strategy')]
     }),
     makeProblem('EX-03', 'expert', {
-      start: 'FIRST', scene: 'ground', outs: 2, title: 'おとりになって走る',
+      start: 'FIRST', scene: 'ground', outs: 1,
+      otherBases: ['HOME', 'THIRD'], title: 'おとりになって走る',
       instruction: '自分がおとりになって、3塁走者を返そう。',
       prompt: '守備を引きつけよう。',
       expected: [point('GO', 3, 'strategy'), point('BACK', 2), point('GO', 2)]
     }),
     makeProblem('EX-04', 'expert', {
-      start: 'THIRD', scene: 'bunt', outs: 1, title: 'スクイズ・ゴロ',
+      start: 'THIRD', scene: 'bunt', outs: 1,
+      otherBases: ['HOME'], title: 'スクイズ・ゴロ',
       instruction: 'スクイズで1点を取ろう。',
       prompt: '投球と同時にスタートしよう。',
       expected: [point('GO', 3, 'strategy'), point('GO', 2)]
     }),
     makeProblem('EX-05', 'expert', {
       start: 'THIRD', scene: 'bunt', outs: 1, direction: 'left',
-      title: 'スクイズ・小フライ', instruction: 'スクイズで1点を取ろう。',
+      otherBases: ['HOME'], title: 'スクイズ・小フライ',
+      instruction: 'スクイズで1点を取ろう。',
       prompt: '投球でスタートし、フライなら戻ろう。',
       expected: [point('GO', 3, 'strategy'), point('BACK', 3)]
     }),
     makeProblem('EX-06', 'expert', {
-      start: 'THIRD', scene: 'ground', outs: 2, title: '遅れたスタート',
+      start: 'FIRST', scene: 'ground', outs: 1,
+      otherBases: ['HOME', 'THIRD'], title: '遅れたスタート',
       instruction: '1塁走者、遅れてスタート。',
-      prompt: 'ランナーが塁の間ではさまれたら、ホームへ向かおう。',
+      prompt: '3塁走者がホームへかえる時間を作ろう。',
       expected: [point('GO', 3, 'strategy')]
     }),
     makeProblem('EX-07', 'expert', {
-      start: 'THIRD', alignment: '前進守備', title: '1点より走者を残す',
+      start: 'THIRD', alignment: '前進守備',
+      otherBases: ['HOME', 'SECOND'], title: '1点より走者を残す',
       instruction: 'たくさん点を取るため、むりをしない。',
       prompt: '守る人の位置を見て、どうするか考えよう。',
       expected: [point('STOP', 3, 'strategy')]
     }),
     makeProblem('EX-08', 'expert', {
-      start: 'FIRST', scene: 'ground', outs: 2, title: '塁の間ではさまれて時間を作る',
+      start: 'FIRST', scene: 'ground', outs: 1,
+      otherBases: ['HOME', 'THIRD'], title: '塁の間ではさまれて時間を作る',
       instruction: '3塁走者がかえるまで守備を引きつけよう。',
       prompt: 'ボールから離れる方向へ逃げよう。',
       expected: [point('GO', 3, 'strategy'), point('BACK', 2), point('GO', 2)]
     }),
     makeProblem('EX-09', 'expert', {
-      start: 'THIRD', scene: 'bunt', title: 'スクイズの打球を見る',
+      start: 'THIRD', scene: 'bunt', otherBases: ['HOME'],
+      title: 'スクイズの打球を見る',
       instruction: 'スクイズで1点を取ろう。',
       prompt: 'バントが転がるか、上がるかを見よう。',
       expected: [point('GO', 3, 'strategy'), point('BACK', 2)]
     }),
     makeProblem('EX-10', 'expert', {
-      start: 'FIRST', scene: 'ground', title: '点を取るのを助ける走り',
+      start: 'FIRST', scene: 'ground', outs: 1,
+      otherBases: ['HOME', 'THIRD'], title: '点を取るのを助ける走り',
       instruction: '前の走者を返すため、守備の目を引こう。',
       prompt: '次の塁へ進み、守る人をまよわせよう。',
       expected: [point('GO', 3, 'strategy'), point('STOP', 1)]
@@ -891,6 +901,50 @@
     }
   }
 
+  function validateManagerSituations() {
+    const issues = [];
+    PROBLEMS
+      .filter((problem) => problem.instruction)
+      .forEach((problem) => {
+        const otherBases = new Set(problem.otherBases || []);
+        const scoresRunner =
+          /1点|返そ|かえる|ホーム/.test(
+            `${problem.instruction}${problem.prompt}`
+          );
+        if (scoresRunner && problem.outs >= 2) {
+          issues.push(`${problem.id}: 2アウトで得点を助ける指示`);
+        }
+        if (
+          /3塁走者|前の走者/.test(problem.instruction) &&
+          problem.start !== 'THIRD' &&
+          !otherBases.has('THIRD')
+        ) {
+          issues.push(`${problem.id}: 3塁走者がいない`);
+        }
+        if (
+          /1塁走者/.test(problem.instruction) &&
+          problem.start !== 'FIRST' &&
+          !otherBases.has('FIRST')
+        ) {
+          issues.push(`${problem.id}: 1塁走者がいない`);
+        }
+        if (
+          /スクイズ/.test(problem.instruction) &&
+          (
+            problem.start !== 'THIRD' ||
+            !otherBases.has('HOME')
+          )
+        ) {
+          issues.push(`${problem.id}: スクイズの走者配置が違う`);
+        }
+      });
+    if (issues.length) {
+      throw new Error(
+        `監督の指示と状況が一致していません: ${issues.join(', ')}`
+      );
+    }
+  }
+
   function showQuestionResult() {
     if (!state.active) return;
     state.active = false;
@@ -1142,6 +1196,7 @@
   document.querySelector('#back-to-levels').addEventListener('click', backToLevels);
 
   validateProblemAdvice();
+  validateManagerSituations();
   updateUserLevelDisplay();
   renderLevels();
 })();
