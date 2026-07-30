@@ -1,4 +1,6 @@
 const galleryField = document.querySelector('#gallery-field');
+const galleryPlayArea =
+  galleryField.querySelector('.field-play-area') || galleryField;
 const galleryReplay = document.querySelector('#gallery-replay');
 const galleryStatus = document.querySelector('#gallery-status');
 const sceneButtons = [...document.querySelectorAll('[data-scene]')];
@@ -325,8 +327,8 @@ const RUNDOWN_BACKUP_POINTS = Object.freeze({
 });
 
 function fieldDistance(from, to) {
-  const width = galleryField.clientWidth || 100;
-  const height = galleryField.clientHeight || 100;
+  const width = galleryPlayArea.clientWidth || 100;
+  const height = galleryPlayArea.clientHeight || 100;
   return Math.hypot(
     (to[0] - from[0]) * width / 100,
     (to[1] - from[1]) * height / 100
@@ -780,7 +782,7 @@ function throwHomeDirect(from, decision) {
 }
 
 function currentFielderPoint(fielder) {
-  const fieldRect = galleryField.getBoundingClientRect();
+  const fieldRect = galleryPlayArea.getBoundingClientRect();
   const fielderRect = fielder.getBoundingClientRect();
   if (!fieldRect.width || !fieldRect.height) {
     return [50, 50];
@@ -2300,8 +2302,8 @@ function regularPositionOf(name) {
 
 function infieldInPoint(point) {
   const home = [50, 89];
-  const width = galleryField.clientWidth || 100;
-  const height = galleryField.clientHeight || 100;
+  const width = galleryPlayArea.clientWidth || 100;
+  const height = galleryPlayArea.clientHeight || 100;
   const deltaX = (home[0] - point[0]) * width / 100;
   const deltaY = (home[1] - point[1]) * height / 100;
   const distance = Math.hypot(deltaX, deltaY);

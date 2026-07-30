@@ -51,18 +51,25 @@ header > span {
 .field-shell { padding: 0 12px; }
 .field {
   position: relative;
-  aspect-ratio: 8 / 7;
+  aspect-ratio: 1;
   overflow: hidden;
   border: 6px solid #fff;
   border-radius: 25px;
-  background:
-    repeating-linear-gradient(
-      90deg,
-      #4b9533 0 28px,
-      #5ea33c 28px 56px
-    );
+  background: linear-gradient(
+    90deg,
+    #469b35 0 50%,
+    #58aa40 50% 100%
+  );
+  background-size: 8.333333% 100%;
   box-shadow: 0 7px 20px #06284a2b;
   isolation: isolate;
+}
+
+.field-play-area {
+  position: absolute;
+  inset: auto 0 0;
+  width: 100%;
+  aspect-ratio: 8 / 7;
 }
 .field-image {
   position: absolute;

@@ -1,6 +1,8 @@
 'use strict';
 
 const runnerGameField = document.querySelector('#gallery-field');
+const runnerGamePlayArea =
+  runnerGameField.querySelector('.field-play-area') || runnerGameField;
 const runnerGameOtherRunners = [
   ...runnerGameField.querySelectorAll('.other-runner')
 ];
@@ -1144,8 +1146,8 @@ function settleAutonomousRundownSupport(detail) {
 
 function runnerPointDistance(firstPoint, secondPoint) {
   if (!firstPoint || !secondPoint) return Infinity;
-  const width = runnerGameField.clientWidth || 100;
-  const height = runnerGameField.clientHeight || 100;
+  const width = runnerGamePlayArea.clientWidth || 100;
+  const height = runnerGamePlayArea.clientHeight || 100;
   return Math.hypot(
     (firstPoint[0] - secondPoint[0]) * width / 100,
     (firstPoint[1] - secondPoint[1]) * height / 100
