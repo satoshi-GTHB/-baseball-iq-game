@@ -1,0 +1,555 @@
+.animation-gallery {
+  min-height: 100vh;
+}
+
+.scene-picker {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 5px;
+  padding: 9px 10px 8px;
+}
+
+.scene-picker button {
+  min-width: 0;
+  min-height: 42px;
+  padding: 5px 2px;
+  border: 2px solid #cbd8e4;
+  border-radius: 11px;
+  color: #31506c;
+  background: #fff;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1.15;
+}
+
+.scene-picker button[aria-pressed="true"] {
+  border-color: #dc2638;
+  color: #fff;
+  background: #dc2638;
+  box-shadow: 0 3px 0 #9f1625;
+}
+
+.direction-picker {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 5px;
+  margin: -2px 10px 8px;
+  padding: 6px;
+  border-radius: 12px;
+  background: #e8f0f6;
+}
+
+.direction-picker[hidden] {
+  display: none;
+}
+
+.direction-picker.three-options {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.direction-picker.six-options {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.direction-picker button {
+  min-width: 0;
+  padding: 7px 2px;
+  border: 2px solid #b9cad9;
+  border-radius: 9px;
+  color: #31506c;
+  background: #fff;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.direction-picker button[aria-pressed="true"] {
+  border-color: #0b477e;
+  color: #fff;
+  background: #0b477e;
+}
+
+.motion-v2.scene-running * {
+  animation: none !important;
+}
+
+.motion-v2 .fielder {
+  will-change: left, top, transform;
+}
+
+.motion-v2 .fielder.is-receiving {
+  z-index: 15;
+}
+
+.motion-v2 .gallery-ball,
+.motion-v2 .board-bat,
+.motion-v2 .gallery-shadow,
+.motion-v2 .catch-flash,
+.motion-v2 .miss-flash {
+  will-change: left, top, opacity, transform;
+}
+
+.board-bat {
+  position: absolute;
+  z-index: 13;
+  left: 37.5%;
+  top: 87%;
+  width: 84px;
+  height: 16px;
+  overflow: visible;
+  filter: drop-shadow(0 1px 1px #0008);
+  transform: rotate(15deg);
+  transform-origin: 3px 50%;
+  pointer-events: none;
+}
+
+.board-bat .bat-body {
+  fill: #d89a4b;
+  stroke: #643613;
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+
+.board-bat .bat-grip {
+  fill: #70401d;
+  stroke: #3e210e;
+  stroke-width: 1.2;
+}
+
+.board-bat .bat-highlight {
+  fill: none;
+  stroke: #ffd99a;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  opacity: .72;
+}
+
+.gallery-field .runner {
+  pointer-events: none;
+}
+
+.gallery-ball {
+  position: absolute;
+  z-index: 14;
+  left: 50%;
+  top: 89%;
+  width: 12px;
+  height: 12px;
+  margin: -6px;
+  border: 1px solid #b82128;
+  border-radius: 50%;
+  opacity: 0;
+  background: #fff;
+  box-shadow: 0 0 0 1px #fff, 0 2px 5px #0008;
+}
+
+.gallery-shadow {
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  top: 89%;
+  width: 17px;
+  height: 7px;
+  margin: 4px -8px;
+  border-radius: 50%;
+  opacity: 0;
+  background: #0006;
+  filter: blur(1px);
+}
+
+.speed-trail {
+  position: absolute;
+  z-index: 12;
+  left: 50%;
+  top: 89%;
+  width: 4px;
+  height: 2px;
+  opacity: 0;
+  background: linear-gradient(90deg, transparent, #fff9);
+  transform-origin: left;
+}
+
+.scene-dust {
+  position: absolute;
+  z-index: 3;
+  width: 25px;
+  height: 10px;
+  border-radius: 50%;
+  opacity: 0;
+  background: #d9ae77b8;
+  filter: blur(2px);
+}
+
+.dust-a { left: 48%; top: 69%; }
+.dust-b { left: 42%; top: 48%; }
+
+.catch-flash {
+  position: absolute;
+  z-index: 16;
+  left: 50%;
+  top: 21%;
+  width: 22px;
+  height: 22px;
+  border: 4px solid #fff;
+  border-radius: 50%;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(.3);
+  box-shadow: 0 0 0 5px #ffd83d99;
+}
+
+.miss-flash {
+  position: absolute;
+  z-index: 17;
+  left: 50%;
+  top: 11%;
+  display: grid;
+  place-items: center;
+  width: 29px;
+  height: 29px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  opacity: 0;
+  color: #fff;
+  background: #dc2638;
+  font-size: 20px;
+  font-weight: 1000;
+  transform: translate(-50%, -50%) scale(.4);
+}
+
+.gallery-controls {
+  padding: 8px 12px 13px;
+}
+
+#gallery-replay {
+  width: 100%;
+  min-height: 48px;
+  border: 0;
+  border-radius: 14px;
+  color: #fff;
+  background: #0b477e;
+  font-weight: 900;
+  box-shadow: 0 4px 0 #06284a;
+}
+
+#gallery-replay:disabled {
+  opacity: .65;
+}
+
+/* フライ：高く上がり、センターが前進して捕球 */
+.scene-fly.scene-running .gallery-ball {
+  animation: fly-ball 2.55s linear forwards;
+}
+.scene-fly.scene-running .gallery-shadow {
+  animation: fly-shadow 2.55s linear forwards;
+}
+.scene-fly.scene-running .center {
+  animation: fly-center 1.35s 1.1s ease-out forwards;
+}
+.scene-fly.scene-running .catch-flash {
+  animation: catch-at-center .5s 2.3s ease-out forwards;
+}
+
+@keyframes fly-ball {
+  0% { left: 50%; top: 89%; opacity: 1; transform: scale(.7); }
+  50% { left: 50%; top: 55%; transform: scale(1.6); }
+  100% { left: 50%; top: 21%; opacity: 1; transform: scale(.78); }
+}
+@keyframes fly-shadow {
+  0% { left: 50%; top: 89%; opacity: .4; transform: scale(.8); }
+  50% { left: 50%; top: 55%; opacity: .13; transform: scale(.3); }
+  100% { left: 50%; top: 21%; opacity: .45; transform: scale(.75); }
+}
+@keyframes fly-center {
+  to { top: 21%; transform: translate(-50%, -50%) scale(1.08); }
+}
+@keyframes catch-at-center {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.3); }
+  45% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
+}
+
+/* 内野フライ：高く上がるが内野の土の上へ落ちる */
+.scene-popup.scene-running .gallery-ball {
+  animation: popup-ball 2.25s linear forwards;
+}
+.scene-popup.scene-running .gallery-shadow {
+  animation: popup-shadow 2.25s linear forwards;
+}
+.scene-popup.scene-running .short {
+  animation: popup-short 1.15s .85s ease-out forwards;
+}
+.scene-popup.scene-running .catch-flash {
+  left: 43%;
+  top: 31%;
+  animation: catch-at-center .48s 2.02s ease-out forwards;
+}
+
+@keyframes popup-ball {
+  0% { left: 50%; top: 89%; opacity: 1; transform: scale(.7); }
+  50% { left: 46.5%; top: 60%; transform: scale(1.7); }
+  100% { left: 43%; top: 31%; opacity: 1; transform: scale(.76); }
+}
+@keyframes popup-shadow {
+  0% { left: 50%; top: 89%; opacity: .38; transform: scale(.8); }
+  50% { left: 46.5%; top: 60%; opacity: .12; transform: scale(.3); }
+  100% { left: 43%; top: 31%; opacity: .45; transform: scale(.7); }
+}
+@keyframes popup-short {
+  65%,100% { left: 43%; top: 31%; transform: translate(-50%, -50%) scale(1.08); }
+}
+
+/* ライナー：低く速い直線でショートへ */
+.scene-liner.scene-running .gallery-ball {
+  animation: liner-ball .72s linear forwards;
+}
+.scene-liner.scene-running .speed-trail {
+  animation: liner-trail .72s linear forwards;
+}
+.scene-liner.scene-running .short {
+  animation: liner-short .72s ease-out forwards;
+}
+.scene-liner.scene-running .catch-flash {
+  left: 42%;
+  top: 39%;
+  animation: catch-at-center .42s .62s ease-out forwards;
+}
+
+@keyframes liner-ball {
+  0% { left: 50%; top: 89%; opacity: 1; transform: scale(.8); }
+  100% { left: 42%; top: 39%; opacity: 1; transform: scale(.9); }
+}
+@keyframes liner-trail {
+  0% {
+    left: 50%;
+    top: 89%;
+    width: 5px;
+    opacity: .9;
+    transform: rotate(-98deg);
+  }
+  100% {
+    left: 43%;
+    top: 42%;
+    width: 82px;
+    opacity: 0;
+    transform: rotate(-98deg);
+  }
+}
+@keyframes liner-short {
+  65%,100% { left: 42%; top: 39%; transform: translate(-50%, -50%) scale(1.09); }
+}
+
+/* 長打コース：低いライナーで外野の間・両翼線へ抜ける */
+.scene-extra.scene-running .gallery-ball {
+  animation: extra-base-liner 1.55s cubic-bezier(.16,.62,.3,1) forwards;
+}
+.scene-extra.scene-running .speed-trail {
+  animation: extra-speed 1.15s ease-out forwards;
+}
+
+.course-left-center {
+  --extra-x: 30%;
+  --extra-y: .5%;
+  --extra-angle: -103deg;
+}
+.course-right-center {
+  --extra-x: 70%;
+  --extra-y: .5%;
+  --extra-angle: -77deg;
+}
+.course-left-line {
+  --extra-x: 2%;
+  --extra-y: 9%;
+  --extra-angle: -120deg;
+}
+.course-right-line {
+  --extra-x: 98%;
+  --extra-y: 9%;
+  --extra-angle: -60deg;
+}
+
+@keyframes extra-base-liner {
+  0% { left: 50%; top: 89%; opacity: 1; transform: scale(.75); }
+  100% { left: var(--extra-x); top: var(--extra-y); opacity: 1; transform: scale(.76); }
+}
+@keyframes extra-speed {
+  0% {
+    left: 50%;
+    top: 89%;
+    width: 4px;
+    opacity: .85;
+    transform: rotate(var(--extra-angle));
+  }
+  65% {
+    width: 95px;
+    opacity: .6;
+  }
+  100% {
+    left: var(--extra-x);
+    top: var(--extra-y);
+    width: 120px;
+    opacity: 0;
+    transform: rotate(var(--extra-angle));
+  }
+}
+
+.course-left-center.scene-running .center { animation: lc-center 1.5s ease-in forwards; }
+.course-left-center.scene-running .left { animation: lc-left-cover 1.5s ease-in forwards; }
+.course-left-center.scene-running .right { animation: lc-right-shift 1.5s ease-in forwards; }
+.course-right-center.scene-running .center { animation: rc-center 1.5s ease-in forwards; }
+.course-right-center.scene-running .right { animation: rc-right-cover 1.5s ease-in forwards; }
+.course-right-center.scene-running .left { animation: rc-left-shift 1.5s ease-in forwards; }
+.course-left-line.scene-running .left { animation: ll-left 1.5s ease-in forwards; }
+.course-left-line.scene-running .center { animation: ll-center-cover 1.5s ease-in forwards; }
+.course-left-line.scene-running .right { animation: ll-right-shift 1.5s ease-in forwards; }
+.course-right-line.scene-running .right { animation: rl-right 1.5s ease-in forwards; }
+.course-right-line.scene-running .center { animation: rl-center-cover 1.5s ease-in forwards; }
+.course-right-line.scene-running .left { animation: rl-left-shift 1.5s ease-in forwards; }
+
+@keyframes lc-center { to { left: 35%; top: 7%; transform: translate(-50%,-50%) scale(1.08); } }
+@keyframes lc-left-cover { to { left: 27%; top: 1%; transform: translate(-50%,-50%) scale(1.06); } }
+@keyframes lc-right-shift { to { left: 68%; top: 17%; transform: translate(-50%,-50%); } }
+@keyframes rc-center { to { left: 65%; top: 7%; transform: translate(-50%,-50%) scale(1.08); } }
+@keyframes rc-right-cover { to { left: 73%; top: 1%; transform: translate(-50%,-50%) scale(1.06); } }
+@keyframes rc-left-shift { to { left: 32%; top: 17%; transform: translate(-50%,-50%); } }
+@keyframes ll-left { to { left: 7%; top: 13%; transform: translate(-50%,-50%) scale(1.08); } }
+@keyframes ll-center-cover { to { left: 12%; top: 4%; transform: translate(-50%,-50%) scale(1.06); } }
+@keyframes ll-right-shift { to { left: 68%; top: 17%; transform: translate(-50%,-50%); } }
+@keyframes rl-right { to { left: 93%; top: 13%; transform: translate(-50%,-50%) scale(1.08); } }
+@keyframes rl-center-cover { to { left: 88%; top: 4%; transform: translate(-50%,-50%) scale(1.06); } }
+@keyframes rl-left-shift { to { left: 32%; top: 17%; transform: translate(-50%,-50%); } }
+
+@keyframes miss-pop {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.4); }
+  45% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
+  100% { opacity: 0; transform: translate(-50%, -70%) scale(1); }
+}
+
+/* パスボール：投球が捕手の横を抜ける */
+.scene-passed.scene-running .gallery-ball {
+  animation: passed-ball 1.65s linear forwards;
+}
+.scene-passed.scene-running .catcher {
+  animation: catcher-miss .45s .55s ease-out;
+}
+.scene-passed.scene-running .miss-flash {
+  left: 51%;
+  top: 88%;
+  animation: miss-pop .5s .62s ease-out forwards;
+}
+
+@keyframes passed-ball {
+  0% { left: 50%; top: 59%; opacity: 1; transform: scale(.78); }
+  42% { left: 51%; top: 88%; transform: scale(1); }
+  55% { left: 55%; top: 92%; transform: scale(.92); }
+  100% { left: 63%; top: 98%; opacity: 1; transform: scale(.8); }
+}
+@keyframes catcher-miss {
+  0% { transform: translate(-50%, -50%) rotate(0); }
+  55% { transform: translate(-50%, -50%) rotate(-12deg); }
+  100% { transform: translate(-50%, -50%) rotate(0); }
+}
+
+/* 内野ゴロ：ショートが捕り、1塁へ送る */
+.scene-ground.scene-running .gallery-ball {
+  animation: infield-ground-ball 2.35s linear forwards;
+}
+.scene-ground.scene-running .gallery-shadow {
+  animation: infield-ground-shadow 1.35s linear forwards;
+}
+.scene-ground.scene-running .short {
+  animation: ground-short 1.25s .25s ease-out forwards;
+}
+.scene-ground.scene-running .dust-a {
+  animation: ground-dust .4s .5s ease-out;
+}
+.scene-ground.scene-running .dust-b {
+  animation: ground-dust .4s .98s ease-out;
+}
+.scene-ground.scene-running .catch-flash {
+  left: 42%;
+  top: 40%;
+  animation: catch-at-center .4s 1.28s ease-out forwards;
+}
+
+@keyframes infield-ground-ball {
+  0% { left: 50%; top: 89%; opacity: 1; transform: translateY(0) scale(.85); }
+  15% { left: 48%; top: 77%; transform: translateY(-7px); }
+  26% { left: 46%; top: 69%; transform: translateY(1px); }
+  43% { left: 44%; top: 55%; transform: translateY(-5px); }
+  56% { left: 42%; top: 40%; transform: translateY(0); }
+  65% { left: 42%; top: 40%; transform: scale(.85); }
+  100% { left: 72%; top: 51%; opacity: 1; transform: scale(.72); }
+}
+@keyframes infield-ground-shadow {
+  0% { left: 50%; top: 89%; opacity: .42; }
+  100% { left: 42%; top: 40%; opacity: .35; }
+}
+@keyframes ground-short {
+  70%,100% { left: 42%; top: 40%; transform: translate(-50%, -50%) scale(1.08); }
+}
+@keyframes ground-dust {
+  0% { opacity: 0; transform: scale(.25); }
+  50% { opacity: .85; }
+  100% { opacity: 0; transform: scale(1.5); }
+}
+
+/* エラー：ショート正面のゴロをグラブに当て、横へこぼす */
+.scene-error.scene-running .gallery-ball {
+  animation: error-ball 2.05s linear forwards;
+}
+.scene-error.scene-running .gallery-shadow {
+  animation: error-shadow 1.2s linear forwards;
+}
+.scene-error.scene-running .short {
+  animation: error-short 1.95s .18s ease-out forwards;
+}
+.scene-error.scene-running .dust-a {
+  animation: ground-dust .4s .48s ease-out;
+}
+.scene-error.scene-running .dust-b {
+  animation: ground-dust .4s .9s ease-out;
+}
+.scene-error.scene-running .miss-flash {
+  left: 49%;
+  top: 45%;
+  animation: error-pop .72s 1.22s ease-out forwards;
+}
+
+@keyframes error-ball {
+  0% { left: 50%; top: 89%; opacity: 1; transform: translateY(0) scale(.85); }
+  18% { left: 48%; top: 75%; transform: translateY(-7px); }
+  31% { left: 46%; top: 66%; transform: translateY(1px); }
+  49% { left: 43%; top: 49%; transform: translateY(-5px); }
+  60% { left: 42%; top: 40%; transform: translateY(0); }
+  68% { left: 42%; top: 40%; transform: translate(4px,-3px) scale(1.05); }
+  78% { left: 47%; top: 44%; transform: translateY(-5px) rotate(90deg); }
+  100% { left: 52%; top: 48%; opacity: 1; transform: translateY(0) rotate(180deg) scale(.85); }
+}
+@keyframes error-shadow {
+  0% { left: 50%; top: 89%; opacity: .4; }
+  100% { left: 42%; top: 40%; opacity: .35; }
+}
+@keyframes error-short {
+  0% { left: 39%; top: 34%; }
+  55% { left: 42%; top: 40%; transform: translate(-50%, -50%) scale(1.08); }
+  65% { left: 42%; top: 40%; transform: translate(-50%, -50%) rotate(-13deg); }
+  76% { left: 41%; top: 40%; transform: translate(-50%, -50%) rotate(13deg); }
+  100% { left: 48%; top: 45%; transform: translate(-50%, -50%) scale(1.06); }
+}
+@keyframes error-pop {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.35); }
+  38% { opacity: 1; transform: translate(-50%, -50%) scale(1.25); }
+  100% { opacity: 0; transform: translate(-50%, -75%) scale(1); }
+}
+
+@media (max-width: 370px) {
+  .scene-picker button {
+    font-size: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gallery-field.scene-running * {
+    animation-duration: .01ms !important;
+    animation-delay: 0ms !important;
+  }
+}

@@ -1,0 +1,191 @@
+.runner-motion-prototype {
+  padding-bottom: 12px;
+}
+
+.route-picker {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  padding: 9px 10px 7px;
+}
+
+.route-picker button {
+  min-height: 40px;
+  border: 2px solid #b8cad9;
+  border-radius: 11px;
+  color: #244865;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.route-picker button[aria-pressed="true"] {
+  border-color: #0b477e;
+  color: #fff;
+  background: #0b477e;
+  box-shadow: 0 3px 0 #06284a;
+}
+
+.runner-legend {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 2px 12px 7px;
+  color: #34516a;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.runner-legend span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.runner-legend strong {
+  margin-left: auto;
+  padding: 4px 8px;
+  border-radius: 999px;
+  color: #fff;
+  background: #dc2638;
+}
+
+.legend-dot {
+  display: inline-grid;
+  width: 20px;
+  height: 20px;
+  place-items: center;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px #0005;
+  color: #fff;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.self-dot {
+  background: #dc2638;
+}
+
+.other-dot {
+  background: #1478c9;
+}
+
+.runner-motion-field {
+  isolation: isolate;
+}
+
+.runner-dot {
+  position: absolute;
+  z-index: 8;
+  display: grid;
+  width: 31px;
+  height: 31px;
+  place-items: center;
+  transform: translate(-50%, -50%);
+  border: 3px solid #fff;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 1000;
+  box-shadow: 0 3px 6px #0007, inset 0 -3px #0002;
+  will-change: left, top;
+}
+
+.self-runner {
+  left: 50%;
+  top: 89%;
+  background: #dc2638;
+}
+
+.other-runner {
+  background: #1478c9;
+}
+
+.movement-controls {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+  padding: 10px 12px 4px;
+}
+
+.movement-controls button {
+  grid-column: span 3;
+  min-height: 48px;
+  border: 0;
+  border-radius: 14px;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 1000;
+  box-shadow: 0 4px 0 #06284a;
+}
+
+.movement-controls button:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #06284a;
+}
+
+.movement-controls button:disabled {
+  opacity: .38;
+  transform: none;
+}
+
+.movement-controls .go {
+  background: #16833e;
+}
+
+.movement-controls .kakenuke {
+  background: #dc2638;
+}
+
+.movement-controls .round {
+  background: #d76b14;
+}
+
+.movement-controls .stop {
+  background: #68727c;
+}
+
+.movement-controls .half {
+  grid-column: span 3;
+  background: #7250a5;
+  padding-inline: 0;
+  line-height: 1;
+  letter-spacing: -1.6px;
+  white-space: nowrap;
+}
+
+.movement-controls .back {
+  grid-column: span 3;
+  background: #0b477e;
+}
+
+.runner-status {
+  min-height: 38px;
+  margin: 7px 12px 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  color: #244865;
+  background: #e8f0f6;
+  font-size: 13px;
+  font-weight: 800;
+  text-align: center;
+}
+
+@media (max-width: 360px) {
+  .runner-legend {
+    gap: 6px;
+    font-size: 10px;
+  }
+
+  .movement-controls {
+    gap: 6px;
+  }
+
+  .movement-controls button {
+    min-height: 44px;
+    font-size: 14px;
+  }
+
+}

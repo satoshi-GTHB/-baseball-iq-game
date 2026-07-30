@@ -1,0 +1,664 @@
+:root {
+  --game-navy: #082f54;
+  --game-blue: #0d6fc2;
+  --game-sky: #eaf6ff;
+  --game-red: #d8243f;
+  --game-gold: #ffca28;
+  --game-ink: #17324a;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+body {
+  background: linear-gradient(180deg, #dff3ff 0%, #f6fbff 48%, #e8f6df 100%);
+}
+
+.academy-runner-game {
+  position: relative;
+  min-height: 100svh;
+}
+
+.academy-runner-game > header {
+  background: var(--game-navy);
+}
+
+.academy-runner-game:not(.is-playing) .steal-sign-picker,
+.academy-runner-game:not(.is-playing) .play-result-label,
+.academy-runner-game:not(.is-playing) .scene-picker,
+.academy-runner-game:not(.is-playing) .direction-picker,
+.academy-runner-game:not(.is-playing) .route-picker,
+.academy-runner-game:not(.is-playing) .game-legends,
+.academy-runner-game:not(.is-playing) .field-shell,
+.academy-runner-game:not(.is-playing) .gallery-controls,
+.academy-runner-game:not(.is-playing) .movement-controls,
+.academy-runner-game:not(.is-playing) .runner-status {
+  display: none;
+}
+
+.academy-runner-game.is-playing .steal-sign-picker,
+.academy-runner-game.is-playing .play-result-label,
+.academy-runner-game.is-playing .scene-picker,
+.academy-runner-game.is-playing .direction-picker,
+.academy-runner-game.is-playing .route-picker {
+  display: none;
+}
+
+.level-screen {
+  padding: 20px 14px 28px;
+}
+
+.level-intro {
+  text-align: center;
+}
+
+.eyebrow {
+  margin: 0 0 4px;
+  color: var(--game-blue);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+
+.level-intro h1 {
+  margin: 2px 0 6px;
+  color: var(--game-ink);
+  font-size: clamp(23px, 7vw, 34px);
+}
+
+.level-intro > p:last-child,
+.save-note {
+  margin: 0;
+  color: #527087;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.level-grid {
+  display: grid;
+  gap: 10px;
+  margin: 20px auto 12px;
+  max-width: 560px;
+}
+
+.level-button {
+  display: grid;
+  grid-template-columns: 50px 1fr auto;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  min-height: 70px;
+  padding: 9px 13px;
+  border: 0;
+  border-radius: 17px;
+  background: white;
+  box-shadow: 0 6px 18px rgba(8, 47, 84, .14);
+  color: var(--game-ink);
+  text-align: left;
+}
+
+.level-button:not(:disabled):active {
+  transform: translateY(2px);
+}
+
+.level-number {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--game-blue);
+  color: white;
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.level-copy strong,
+.level-copy small {
+  display: block;
+}
+
+.level-copy strong {
+  font-size: 18px;
+}
+
+.level-copy small {
+  margin-top: 3px;
+  color: #668197;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.level-state {
+  color: var(--game-blue);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.level-button:disabled {
+  filter: grayscale(1);
+  opacity: .58;
+}
+
+.level-button:disabled .level-state::before {
+  content: "🔒 ";
+}
+
+.question-hud {
+  padding: 7px 8px 4px;
+}
+
+.question-progress {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 6px;
+  color: var(--game-ink);
+  font-size: 12px;
+}
+
+.question-progress > * {
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: white;
+  box-shadow: 0 2px 8px rgba(8, 47, 84, .1);
+}
+
+.situation-card {
+  padding: 9px 11px;
+  border-left: 5px solid var(--game-blue);
+  border-radius: 12px;
+  background: white;
+  box-shadow: 0 3px 12px rgba(8, 47, 84, .12);
+}
+
+.situation-card > div:first-child {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.situation-label {
+  color: var(--game-blue);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.situation-card strong {
+  color: var(--game-ink);
+  font-size: 14px;
+}
+
+.situation-card p {
+  margin: 5px 0;
+  color: #314f66;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.situation-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.situation-tags span {
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: var(--game-sky);
+  color: #205678;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.coach-instruction {
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  align-items: center;
+  gap: 7px;
+  margin-top: 5px;
+  padding: 5px 9px;
+  border: 2px solid var(--game-gold);
+  border-radius: 12px;
+  background: #fff9db;
+}
+
+.coach-instruction img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.coach-instruction p {
+  margin: 0;
+  color: #5e4100;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.academy-runner-game.is-playing .game-legends {
+  margin-top: 2px;
+}
+
+.academy-runner-game.is-playing .gallery-controls {
+  margin-top: 4px;
+}
+
+.runner-bso-row:nth-child(1) .runner-bso-dot.is-game-on {
+  background: #1787e8;
+  box-shadow: 0 0 7px #1787e8;
+}
+
+.runner-bso-row:nth-child(2) .runner-bso-dot.is-game-on {
+  background: #ffd323;
+  box-shadow: 0 0 7px #ffd323;
+}
+
+.academy-runner-game.is-playing #gallery-replay {
+  min-height: 38px;
+}
+
+.result-overlay {
+  position: fixed;
+  z-index: 500;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 14px;
+  background: rgba(5, 28, 48, .7);
+}
+
+.result-card {
+  width: min(100%, 430px);
+  max-height: calc(100svh - 28px);
+  overflow: auto;
+  padding: 18px;
+  border: 4px solid white;
+  border-radius: 24px;
+  background: #f8fcff;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, .3);
+  text-align: center;
+}
+
+.result-advice-card {
+  width: min(100%, 700px);
+  text-align: left;
+}
+
+.result-layout {
+  display: grid;
+  grid-template-columns: minmax(170px, .78fr) minmax(280px, 1.22fr);
+  grid-template-areas:
+    "coach advice"
+    "feedback feedback";
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.result-coach {
+  grid-area: coach;
+  position: relative;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  border: 2px solid #d7e6f0;
+  border-radius: 18px;
+  background: white;
+}
+
+.result-coach img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 190px;
+  object-fit: cover;
+  object-position: center 34%;
+}
+
+.result-coach figcaption {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: rgba(5, 28, 48, .86);
+  color: white;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.result-verdict {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #cfe2ed;
+  text-align: center;
+}
+
+.result-score-copy {
+  min-width: 0;
+}
+
+.result-mark {
+  display: grid;
+  place-items: center;
+  width: 66px;
+  height: 66px;
+  margin: -4px auto 4px;
+  border-radius: 50%;
+  background: var(--game-gold);
+  color: var(--game-navy);
+  font-size: 42px;
+  font-weight: 1000;
+}
+
+.result-card h2 {
+  margin: 4px 0 10px;
+  color: var(--game-navy);
+}
+
+.score-breakdown {
+  display: grid;
+  gap: 5px;
+  margin-bottom: 12px;
+}
+
+.score-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  padding: 7px 9px;
+  border-radius: 9px;
+  background: white;
+  color: var(--game-ink);
+  font-size: 13px;
+  font-weight: 800;
+  text-align: left;
+}
+
+.feedback-columns {
+  grid-area: feedback;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.feedback-panel {
+  min-width: 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+}
+
+.feedback-did {
+  background: #e8f8ee;
+  border: 2px solid #9bd5ae;
+}
+
+.feedback-missed {
+  background: #fff1ed;
+  border: 2px solid #efb2a3;
+}
+
+.feedback-panel h3 {
+  margin: 0 0 7px;
+  color: var(--game-navy);
+  font-size: 15px;
+}
+
+.feedback-panel ul {
+  margin: 0;
+  padding-left: 18px;
+  color: #355066;
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.5;
+}
+
+.coach-advice {
+  grid-area: advice;
+  display: grid;
+  align-content: center;
+  min-width: 0;
+  padding: 16px 18px;
+  border-left: 5px solid var(--game-gold);
+  border-radius: 18px;
+  background: #eaf5fb;
+}
+
+.coach-advice strong {
+  display: block;
+  color: var(--game-blue);
+  font-size: 12px;
+}
+
+.coach-advice-copy {
+  min-width: 0;
+}
+
+.coach-advice p {
+  margin: 3px 0 0;
+  color: #355066;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.result-card button {
+  min-height: 45px;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--game-blue);
+  color: white;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.result-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.result-card .result-replay {
+  background: white;
+  color: var(--game-blue);
+  border: 2px solid var(--game-blue);
+}
+
+.final-score {
+  color: var(--game-red);
+  font-size: 72px;
+  font-weight: 1000;
+  line-height: 1;
+}
+
+.final-score::after {
+  content: "点";
+  font-size: 22px;
+}
+
+.final-actions {
+  display: grid;
+  gap: 8px;
+}
+
+.final-actions button:last-child {
+  background: var(--game-navy);
+}
+
+@media (max-width: 480px) {
+  .question-hud {
+    padding: 2px 6px 0;
+  }
+
+  .question-progress {
+    margin-bottom: 2px;
+  }
+
+  .result-overlay {
+    display: block;
+    padding: 0;
+    background: #f8fcff;
+  }
+
+  .result-advice-card {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100svh;
+    max-height: none;
+    padding: 9px;
+    overflow: hidden;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .result-layout {
+    flex: 1;
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(105px, 1.25fr) auto minmax(78px, 1fr) minmax(72px, .75fr);
+    grid-template-areas: none;
+    gap: 6px;
+    min-height: 0;
+    margin-bottom: 7px;
+  }
+
+  .result-coach {
+    grid-area: auto;
+    order: 1;
+    min-height: 0;
+    border-radius: 12px;
+  }
+
+  .result-coach img {
+    min-height: 0;
+    object-position: center 26%;
+  }
+
+  .result-coach figcaption {
+    right: 6px;
+    bottom: 6px;
+    padding: 3px 7px;
+    font-size: 10px;
+  }
+
+  .coach-advice {
+    display: contents;
+  }
+
+  .result-verdict {
+    order: 2;
+    grid-template-columns: auto 1fr;
+    gap: 8px;
+    margin: 0;
+    padding: 7px 9px;
+    border: 0;
+    border-radius: 12px;
+    background: #eaf5fb;
+  }
+
+  .result-mark {
+    width: 46px;
+    height: 46px;
+    margin: 0;
+    font-size: 29px;
+  }
+
+  .result-card h2 {
+    margin: 0 0 4px;
+    font-size: 20px;
+  }
+
+  .score-breakdown {
+    gap: 2px;
+    margin: 0;
+  }
+
+  .score-row {
+    padding: 4px 7px;
+    font-size: 11px;
+  }
+
+  .feedback-columns {
+    grid-area: auto;
+    order: 3;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    min-height: 0;
+  }
+
+  .feedback-panel {
+    padding: 7px 9px;
+    overflow: auto;
+    border-width: 1px;
+    border-radius: 10px;
+  }
+
+  .feedback-panel h3 {
+    margin-bottom: 3px;
+    font-size: 12px;
+  }
+
+  .feedback-panel ul {
+    padding-left: 14px;
+    font-size: 10px;
+    line-height: 1.3;
+  }
+
+  .coach-advice-copy {
+    order: 4;
+    min-height: 0;
+    padding: 8px 10px;
+    overflow: auto;
+    border-left: 4px solid var(--game-gold);
+    border-radius: 10px;
+    background: #eaf5fb;
+  }
+
+  .coach-advice strong {
+    font-size: 10px;
+  }
+
+  .coach-advice p {
+    margin-top: 2px;
+    font-size: 11px;
+    line-height: 1.35;
+  }
+
+  .result-actions {
+    flex: 0 0 auto;
+    gap: 6px;
+  }
+
+  .result-card button {
+    min-height: 40px;
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+
+  .academy-runner-game.is-playing > header {
+    min-height: 42px;
+  }
+
+  .academy-runner-game.is-playing .field-shell {
+    margin-top: 0;
+  }
+
+  .academy-runner-game.is-playing .runner-status {
+    min-height: 24px;
+    margin: 2px 8px;
+    font-size: 11px;
+  }
+
+  .academy-runner-game.is-playing .movement-controls {
+    gap: 4px;
+    padding: 4px 8px;
+  }
+}

@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>アカデミーランナー編</title>
+  <link rel="stylesheet" href="runner-ground-hit-prototype.css?v=4">
+  <link rel="stylesheet" href="runner-animation-gallery.css?v=17">
+  <link rel="stylesheet" href="runner-movement-prototype.css?v=11">
+  <link rel="stylesheet" href="runner-game-prototype.css?v=9">
+  <link rel="stylesheet" href="academy-runner-game.css?v=7">
+</head>
+<body>
+  <main class="prototype animation-gallery runner-motion-prototype runner-game-prototype academy-runner-game">
+    <header>
+      <div>
+        <small>アカデミーランナー編</small>
+        <strong>走り方を考えるゲーム</strong>
+      </div>
+      <span id="game-header-status">レベル選択</span>
+    </header>
+
+    <section class="level-screen" id="level-screen" aria-labelledby="level-title">
+      <div class="level-intro">
+        <p class="eyebrow">フジコン 野球IQアカデミー</p>
+        <h1 id="level-title">どのレベルであそぶ？</h1>
+        <p>1ゲーム10問。80点以上で次のレベルが開きます。</p>
+      </div>
+      <div class="level-grid" id="level-grid"></div>
+      <p class="save-note">クリアしたレベルは、この端末にのこります。</p>
+    </section>
+
+    <section class="steal-sign-picker" aria-label="盗塁サインを選ぶ">
+      <strong>盗塁サイン</strong>
+      <button type="button" data-steal-sign="off" aria-pressed="true">なし</button>
+      <button type="button" data-steal-sign="on" aria-pressed="false">あり</button>
+    </section>
+
+    <p class="play-result-label">投球・打球の結果</p>
+    <nav class="scene-picker" aria-label="投球・打球の結果を選ぶ">
+      <button type="button" data-scene="fly" aria-pressed="true">外野フライ</button>
+      <button type="button" data-scene="popup" aria-pressed="false">内野フライ</button>
+      <button type="button" data-scene="liner" aria-pressed="false">ライナー</button>
+      <button type="button" data-scene="extra" aria-pressed="false">長打コース</button>
+      <button type="button" data-scene="single" aria-pressed="false">外野前ヒット</button>
+      <button type="button" data-scene="passed" aria-pressed="false">パスボール</button>
+      <button type="button" data-scene="swing" aria-pressed="false">空振り</button>
+      <button type="button" data-scene="take" aria-pressed="false">見逃し</button>
+      <button type="button" data-scene="ground" aria-pressed="false">内野ゴロ</button>
+      <button type="button" data-scene="error" aria-pressed="false">エラー</button>
+      <button type="button" data-scene="bunt" aria-pressed="false">バント</button>
+    </nav>
+
+    <div class="direction-picker" id="direction-picker" aria-label="打球方向を選ぶ">
+      <button type="button" data-direction="left-line" aria-pressed="false">レフト線</button>
+      <button type="button" data-direction="left" aria-pressed="false">レフト</button>
+      <button type="button" data-direction="left-center" aria-pressed="false">左中間</button>
+      <button type="button" data-direction="center" aria-pressed="true">センター</button>
+      <button type="button" data-direction="right-center" aria-pressed="false">右中間</button>
+      <button type="button" data-direction="right" aria-pressed="false">ライト</button>
+      <button type="button" data-direction="right-line" aria-pressed="false">ライト線</button>
+    </div>
+
+    <nav class="route-picker" aria-label="走者のスタート位置を選ぶ">
+      <button type="button" data-start="BATTER" aria-pressed="true">バッター</button>
+      <button type="button" data-start="FIRST" aria-pressed="false">1塁ランナー</button>
+      <button type="button" data-start="SECOND" aria-pressed="false">2塁ランナー</button>
+      <button type="button" data-start="THIRD" aria-pressed="false">3塁ランナー</button>
+    </nav>
+
+    <section class="field-shell">
+      <div class="field gallery-field runner-motion-field motion-v2 scene-fly direction-center" id="gallery-field" aria-label="走塁と守備フォーメーションのアニメーション">
+        <img class="field-image" src="assets/field-v1.png" alt="">
+        <div class="runner-bso" id="runner-bso" aria-label="ボール0、ストライク0、アウト0">
+          <div class="runner-bso-row">
+            <span class="runner-bso-label">B</span>
+            <span class="runner-bso-dot"></span>
+            <span class="runner-bso-dot"></span>
+            <span class="runner-bso-dot"></span>
+          </div>
+          <div class="runner-bso-row">
+            <span class="runner-bso-label">S</span>
+            <span class="runner-bso-dot"></span>
+            <span class="runner-bso-dot"></span>
+          </div>
+          <div class="runner-bso-row">
+            <span class="runner-bso-label">O</span>
+            <span class="runner-bso-dot runner-out-light"></span>
+            <span class="runner-bso-dot runner-out-light"></span>
+          </div>
+        </div>
+        <div class="defense-alignment-label" id="defense-alignment-label" hidden></div>
+
+        <div class="fielder catcher" aria-label="捕手・守備番号2">2</div>
+        <div class="fielder pitcher" aria-label="投手・守備番号1">1</div>
+        <div class="fielder first" aria-label="一塁手・守備番号3">3</div>
+        <div class="fielder second" aria-label="二塁手・守備番号4">4</div>
+        <div class="fielder short" aria-label="遊撃手・守備番号6">6</div>
+        <div class="fielder third" aria-label="三塁手・守備番号5">5</div>
+        <div class="fielder left" aria-label="左翼手・守備番号7">7</div>
+        <div class="fielder center" aria-label="中堅手・守備番号8">8</div>
+        <div class="fielder right" aria-label="右翼手・守備番号9">9</div>
+
+        <div class="runner-dot other-runner other-a" aria-label="ほかの走者"></div>
+        <div class="runner-dot other-runner other-b" aria-label="ほかの走者"></div>
+        <div class="runner-dot other-runner other-c" aria-label="ほかの走者"></div>
+        <div class="runner-dot self-runner" aria-label="操作する走者">自</div>
+
+        <svg class="board-bat" viewBox="0 0 100 20" role="img" aria-label="野球盤型のバット">
+          <path class="bat-body" d="M3 8.4h43c9 0 14-3.4 22-4.8C78 2.3 89 2.4 96 3.3c3 .5 4 3 4 6.7s-1 6.2-4 6.7c-7 .9-18 1-28-.3C60 15 55 11.6 46 11.6H3Z"></path>
+          <path class="bat-grip" d="M3 8.4h40v3.2H3Z"></path>
+          <ellipse class="bat-grip" cx="2.8" cy="10" rx="2.8" ry="4"></ellipse>
+          <path class="bat-highlight" d="M69 5.1C79 3.7 89 3.8 95 4.6"></path>
+        </svg>
+        <div class="gallery-ball" aria-label="プレー中のボール"></div>
+        <div class="gallery-shadow" aria-hidden="true"></div>
+        <div class="speed-trail" aria-hidden="true"></div>
+        <div class="scene-dust dust-a" aria-hidden="true"></div>
+        <div class="scene-dust dust-b" aria-hidden="true"></div>
+        <div class="catch-flash" aria-hidden="true"></div>
+        <div class="miss-flash" aria-hidden="true">!</div>
+        <div class="play-result-call" aria-live="polite"></div>
+        <div class="manager-sign" aria-hidden="true">
+          <img src="assets/ai-tommy-coach.png?v=1" alt="">
+          <p>盗塁！</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="gallery-controls">
+      <button id="gallery-replay" type="button">▶ プレー開始</button>
+      <p id="gallery-status" class="sr-only" aria-live="polite">外野フライ（センター）を選択中です。</p>
+    </section>
+
+    <section class="movement-controls" aria-label="走者を操作する">
+      <button id="runner-kakenuke" class="kakenuke" type="button">かけぬけ</button>
+      <button id="runner-round" class="round" type="button">オーバーラン</button>
+      <button id="runner-go" class="go" type="button">ゴーッ!</button>
+      <button id="runner-stop" class="stop" type="button">ストップ。</button>
+      <button id="runner-halfway" class="half" type="button">ハーフウェイ/2次リード</button>
+      <button id="runner-back" class="back" type="button">バック！</button>
+    </section>
+
+    <p id="runner-status" class="runner-status" aria-live="polite">
+      バッターボックスからスタートします。
+    </p>
+  </main>
+
+  <section class="result-overlay" id="result-overlay" hidden aria-live="polite">
+    <article class="result-card result-advice-card">
+      <div class="result-layout">
+        <figure class="result-coach">
+          <img src="assets/tommy-coach-advice.png?v=1" alt="トミー監督">
+          <figcaption>トミー監督</figcaption>
+        </figure>
+        <div class="coach-advice">
+          <div class="result-verdict">
+            <div class="result-mark" id="result-mark">◎</div>
+            <div class="result-score-copy">
+              <h2 id="result-score">10／10点</h2>
+              <div class="score-breakdown" id="score-breakdown"></div>
+            </div>
+          </div>
+          <div class="coach-advice-copy">
+            <strong>監督からのアドバイス</strong>
+            <p id="feedback-advice"></p>
+          </div>
+        </div>
+        <div class="feedback-columns">
+          <section class="feedback-panel feedback-did">
+            <h3>できたこと</h3>
+            <ul id="feedback-did"></ul>
+          </section>
+          <section class="feedback-panel feedback-missed">
+            <h3>できなかったこと</h3>
+            <ul id="feedback-missed"></ul>
+          </section>
+        </div>
+      </div>
+      <div class="result-actions">
+        <button id="result-replay" class="result-replay" type="button">↻ プレーを再現</button>
+        <button id="next-question" type="button">次の問題へ</button>
+      </div>
+    </article>
+  </section>
+
+  <section class="result-overlay" id="game-result-overlay" hidden aria-live="polite">
+    <article class="result-card final-result-card">
+      <p class="eyebrow">10問終了</p>
+      <div class="final-score" id="final-score">0</div>
+      <h2 id="final-message"></h2>
+      <p id="unlock-message"></p>
+      <div class="final-actions">
+        <button id="retry-level" type="button">同じレベルでもう一度</button>
+        <button id="back-to-levels" type="button">レベル選択へ</button>
+      </div>
+    </article>
+  </section>
+
+  <script src="runner-animation-gallery.js?v=74"></script>
+  <script src="runner-movement-rules.js?v=29"></script>
+  <script src="runner-movement-prototype.js?v=35"></script>
+  <script src="runner-game-prototype.js?v=43"></script>
+  <script src="academy-runner-game.js?v=21"></script>
+</body>
+</html>
