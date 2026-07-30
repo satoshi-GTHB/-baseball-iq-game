@@ -477,6 +477,14 @@
 
   function recordAction(action) {
     if (!state.active || !state.started) return;
+    const replacesBatterRun =
+      ['KAKENUK', 'ROUND'].includes(action) &&
+      ['KAKENUK', 'ROUND'].includes(state.actions.at(-1)) &&
+      state.actions.at(-1) !== action;
+    if (replacesBatterRun) {
+      state.actions.pop();
+      state.timeline.pop();
+    }
     state.actions.push(action);
     state.timeline.push({
       action,

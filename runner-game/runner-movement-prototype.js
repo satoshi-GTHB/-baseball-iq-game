@@ -183,6 +183,7 @@ function updateControls() {
     !state.out &&
     (
       atInitialBase() ||
+      state.special === 'kakenuke-running' ||
       (
         state.moving &&
         state.segmentIndex === 0 &&
@@ -217,8 +218,11 @@ function updateControls() {
 
   kakenukeButton.hidden = !showsBatterRunnerActions;
   roundButton.hidden = !showsBatterRunnerActions;
-  kakenukeButton.disabled = !batterReady;
-  roundButton.disabled = !batterReady;
+  kakenukeButton.disabled =
+    !batterReady || state.special === 'kakenuke-running';
+  roundButton.disabled =
+    !batterReady ||
+    (state.roundFirst && state.special !== 'kakenuke-running');
   goButton.disabled =
     unavailable || finished || Boolean(state.special);
   stopButton.disabled =
@@ -620,6 +624,7 @@ function startKakenuke() {
   ) return;
   if (state.moving) captureSegmentProgress();
 
+  state.roundFirst = false;
   notifyAcceptedAction('KAKENUK');
   const progress = state.segmentIndex === 0
     ? state.segmentProgress
@@ -668,6 +673,31 @@ function startKakenuke() {
     updateTimeChip();
     updateControls();
   };
+}
+
+function leaveKakenukeForRound() {
+  if (state.special !== 'kakenuke-running') return;
+  const elapsed = Math.max(
+    0,
+    Math.min(
+      Number(state.kakenukeFirstDuration) || 0,
+      Number(state.animation?.currentTime) || 0
+    )
+  );
+  const startProgress = 1 -
+    (Number(state.kakenukeFirstDuration) || 0) /
+      KAKENUK_TO_FIRST_DURATION;
+  const progress = rules.clampProgress(
+    startProgress + elapsed / KAKENUK_TO_FIRST_DURATION
+  );
+  cancelAnimation();
+  state.special = null;
+  state.moving = false;
+  state.baseIndex = 0;
+  state.segmentIndex = 0;
+  state.segmentProgress = progress;
+  state.kakenukeFirstDuration = 0;
+  placeSelf();
 }
 
 function selectStart(startKey) {
@@ -1177,6 +1207,7 @@ startButtons.forEach((button) => {
 kakenukeButton.addEventListener('click', startKakenuke);
 
 roundButton.addEventListener('click', () => {
+  leaveKakenukeForRound();
   if (state.moving) captureSegmentProgress();
   state.roundFirst = true;
   status.textContent = '1塁を回り、2塁まで走ります。';
