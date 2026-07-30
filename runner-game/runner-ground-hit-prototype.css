@@ -30,13 +30,23 @@ header {
 header div { display: grid; }
 header small { opacity: .78; font-weight: 800; }
 header strong { font-size: 20px; }
-header > span {
+.header-statuses {
+  display: grid;
+  justify-items: end;
+  gap: 4px;
+}
+
+.header-statuses span {
   padding: 6px 10px;
   border: 1px solid #ffffff55;
   border-radius: 999px;
   background: #ffffff18;
   font-size: 12px;
   font-weight: 900;
+}
+
+#user-level-status {
+  color: #ffe68a;
 }
 
 .prompt { padding: 9px 16px 7px; }

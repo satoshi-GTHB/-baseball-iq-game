@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>アカデミーランナー編</title>
-  <link rel="stylesheet" href="runner-ground-hit-prototype.css?v=6">
+  <link rel="stylesheet" href="runner-ground-hit-prototype.css?v=7">
   <link rel="stylesheet" href="runner-animation-gallery.css?v=17">
   <link rel="stylesheet" href="runner-movement-prototype.css?v=11">
   <link rel="stylesheet" href="runner-game-prototype.css?v=10">
@@ -17,17 +17,20 @@
         <small>アカデミーランナー編</small>
         <strong>走り方を考えるゲーム</strong>
       </div>
-      <span id="game-header-status">レベル選択</span>
+      <div class="header-statuses">
+        <span id="user-level-status">ユーザーレベル：初心者</span>
+        <span id="game-header-status">レベル選択</span>
+      </div>
     </header>
 
     <section class="level-screen" id="level-screen" aria-labelledby="level-title">
       <div class="level-intro">
         <p class="eyebrow">フジコン 野球IQアカデミー</p>
         <h1 id="level-title">どのレベルであそぶ？</h1>
-        <p>1ゲーム10問。80点以上で次のレベルが開きます。</p>
+        <p>1ゲーム10問。好きなレベルからあそべます。</p>
       </div>
       <div class="level-grid" id="level-grid"></div>
-      <p class="save-note">クリアしたレベルは、この端末にのこります。</p>
+      <p class="save-note">クリア実績とユーザーレベルは、この端末にのこります。</p>
     </section>
 
     <section class="steal-sign-picker" aria-label="盗塁サインを選ぶ">
@@ -202,6 +205,6 @@
   <script src="runner-movement-rules.js?v=29"></script>
   <script src="runner-movement-prototype.js?v=36"></script>
   <script src="runner-game-prototype.js?v=44"></script>
-  <script src="academy-runner-game.js?v=26"></script>
+  <script src="academy-runner-game.js?v=28"></script>
 </body>
 </html>

@@ -346,6 +346,77 @@
     })
   ];
 
+  const OUTFIELD_DIRECTIONS = [
+    'left-line',
+    'left',
+    'left-center',
+    'center',
+    'right-center',
+    'right',
+    'right-line'
+  ];
+  const INFIELD_DIRECTIONS = [
+    'left-line',
+    'left',
+    'left-center',
+    'center',
+    'right-center',
+    'right',
+    'right-line'
+  ];
+
+  function directionVariants(problem) {
+    if (['fly', 'single', 'extra'].includes(problem.scene)) {
+      return OUTFIELD_DIRECTIONS;
+    }
+    if (['popup', 'liner'].includes(problem.scene)) {
+      return INFIELD_DIRECTIONS;
+    }
+    if (problem.scene !== 'ground') {
+      return [problem.direction];
+    }
+    if (
+      problem.start === 'BATTER' ||
+      problem.start === 'FIRST' ||
+      problem.start === 'THIRD' ||
+      problem.outs >= 2 ||
+      isForcedGroundAdvance(problem)
+    ) {
+      return INFIELD_DIRECTIONS;
+    }
+    const firstDecision = problem.expected.find((item) =>
+      item.action !== 'HALFWAY'
+    )?.action;
+    return firstDecision === 'GO'
+      ? ['right-center', 'right', 'right-line']
+      : ['left-line', 'left', 'left-center', 'center'];
+  }
+
+  function problemCandidates(levelId) {
+    return PROBLEMS
+      .filter((problem) => problem.level === levelId)
+      .flatMap((problem) =>
+        directionVariants(problem).map((direction, index) => ({
+          ...problem,
+          id: `${problem.id}-V${index + 1}`,
+          sourceId: problem.id,
+          direction
+        }))
+      );
+  }
+
+  function chooseQuestions(levelId, count = 10) {
+    const sourceCounts = new Map();
+    return shuffle(problemCandidates(levelId))
+      .filter((problem) => {
+        const used = sourceCounts.get(problem.sourceId) || 0;
+        if (used >= 2) return false;
+        sourceCounts.set(problem.sourceId, used + 1);
+        return true;
+      })
+      .slice(0, count);
+  }
+
   const app = document.querySelector('.academy-runner-game');
   const field = document.querySelector('#gallery-field');
   const levelScreen = document.querySelector('#level-screen');
@@ -353,8 +424,12 @@
   const resultOverlay = document.querySelector('#result-overlay');
   const gameResultOverlay = document.querySelector('#game-result-overlay');
   const playButton = document.querySelector('#gallery-replay');
+  const savedUserLevel = Number(
+    localStorage.getItem('academyRunnerUserLevel') ||
+    localStorage.getItem('academyRunnerUnlocked')
+  );
   const state = {
-    unlocked: Math.max(1, Math.min(5, Number(localStorage.getItem('academyRunnerUnlocked')) || 1)),
+    userLevel: Math.max(1, Math.min(5, savedUserLevel || 1)),
     levelIndex: 0,
     questions: [],
     index: 0,
@@ -385,15 +460,19 @@
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'level-button';
-      button.disabled = index + 1 > state.unlocked;
       button.innerHTML = `
         <span class="level-number">${index + 1}</span>
         <span class="level-copy"><strong>${level.name}</strong><small>${level.description}</small></span>
-        <span class="level-state">${button.disabled ? 'まだあそべない' : 'あそぶ'}</span>
+        <span class="level-state">あそぶ</span>
       `;
       button.addEventListener('click', () => startGame(index));
       levelGrid.append(button);
     });
+  }
+
+  function updateUserLevelDisplay() {
+    document.querySelector('#user-level-status').textContent =
+      `ユーザーレベル：${LEVELS[state.userLevel - 1].name}`;
   }
 
   function clickOption(selector) {
@@ -466,7 +545,7 @@
 
   function startGame(levelIndex) {
     state.levelIndex = levelIndex;
-    state.questions = shuffle(PROBLEMS.filter((problem) => problem.level === LEVELS[levelIndex].id)).slice(0, 10);
+    state.questions = chooseQuestions(LEVELS[levelIndex].id);
     state.index = 0;
     state.scores = [];
     levelScreen.hidden = true;
@@ -856,15 +935,23 @@
     document.querySelector('#final-score').textContent = displayNumber(total);
     document.querySelector('#final-message').textContent =
       cleared ? 'レベルクリア！' : 'もう一度やってみよう';
-    let unlockText = '80点以上で次のレベルが開きます。';
-    if (cleared && state.levelIndex < LEVELS.length - 1) {
-      state.unlocked = Math.max(state.unlocked, state.levelIndex + 2);
-      localStorage.setItem('academyRunnerUnlocked', String(state.unlocked));
-      unlockText = `「${LEVELS[state.levelIndex + 1].name}」を解放しました！`;
-    } else if (cleared) {
-      unlockText = 'すべてのレベルをクリアしました！';
+    let resultText = '80点以上でユーザーレベルが上がります。';
+    if (cleared) {
+      const previousUserLevel = state.userLevel;
+      state.userLevel = Math.max(
+        state.userLevel,
+        Math.min(LEVELS.length, state.levelIndex + 2)
+      );
+      localStorage.setItem(
+        'academyRunnerUserLevel',
+        String(state.userLevel)
+      );
+      updateUserLevelDisplay();
+      resultText = state.userLevel > previousUserLevel
+        ? `ユーザーレベルが「${LEVELS[state.userLevel - 1].name}」になりました！`
+        : `現在のユーザーレベルは「${LEVELS[state.userLevel - 1].name}」です。`;
     }
-    document.querySelector('#unlock-message').textContent = unlockText;
+    document.querySelector('#unlock-message').textContent = resultText;
     gameResultOverlay.hidden = false;
   }
 
@@ -953,5 +1040,6 @@
   });
   document.querySelector('#back-to-levels').addEventListener('click', backToLevels);
 
+  updateUserLevelDisplay();
   renderLevels();
 })();
