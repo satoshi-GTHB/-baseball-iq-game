@@ -539,7 +539,9 @@ body {
 
   .result-coach img {
     min-height: 0;
-    object-position: center 26%;
+    object-fit: contain;
+    object-position: center;
+    background: #fff;
   }
 
   .result-coach figcaption {
@@ -623,13 +625,13 @@ body {
   }
 
   .coach-advice strong {
-    font-size: 10px;
+    font-size: 13px;
   }
 
   .coach-advice p {
-    margin-top: 2px;
-    font-size: 11px;
-    line-height: 1.35;
+    margin-top: 4px;
+    font-size: 15px;
+    line-height: 1.5;
   }
 
   .result-actions {
