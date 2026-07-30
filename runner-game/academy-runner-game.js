@@ -479,7 +479,21 @@
   }
 
   function actionsForGrade(problem) {
-    if (!problem.stealSign) return [...state.actions];
+    if (!problem.stealSign) {
+      const actions = [...state.actions];
+      const expectedActions = problem.expected.map((item) => item.action);
+      const safeFlyReturn =
+        ['fly', 'popup', 'liner'].includes(problem.scene) &&
+        expectedActions.includes('BACK') &&
+        !expectedActions.includes('GO') &&
+        actions.at(-1) === 'BACK' &&
+        state.lastSelfDefenseResult?.out !== true;
+      return safeFlyReturn
+        ? actions.filter((action) =>
+            !['GO', 'HALFWAY'].includes(action)
+          )
+        : actions;
+    }
     const pitchStartAt =
       Number(window.RUNNER_THROW_TIMING?.stealSignDelay);
     const catcherArrivalAt =
