@@ -286,7 +286,7 @@ let caughtPitchReady = false;
 let caughtPitchDefenseStarted = false;
 let playCompletionSent = false;
 const PITCH_DURATION = 1200;
-const STEAL_SIGN_DELAY = 2000;
+const STEAL_SIGN_DELAY = 500;
 const PRE_PITCH_WINDOW_DURATION = 500;
 const BATTED_BALL_TIME_SCALE = 2;
 const DIAMOND_DIAGONAL_THROW_DURATION = 2500;
@@ -3248,23 +3248,6 @@ function selectedRunnerStart() {
   )?.dataset.start || 'FIRST';
 }
 
-function playManagerSign() {
-  const managerSign = galleryField.querySelector('.manager-sign');
-
-  if (managerSign) {
-    animate(
-      managerSign,
-      [
-        { opacity: 0, transform: 'translateX(38%)' },
-        { opacity: 1, transform: 'translateX(0)', offset: .32 },
-        { opacity: 1, transform: 'translateX(0)', offset: .83 },
-        { opacity: 0, transform: 'translateX(10%)' }
-      ],
-      { duration: 2400, easing: 'linear' }
-    );
-  }
-}
-
 function moveStealCoverage(start, target) {
   if (start === 'SECOND') {
     move(fielders.third, positionOf('third'), target, 650, 0);
@@ -3528,11 +3511,11 @@ function playSelectedScene() {
   const label = displayLabel();
   resetAnimation();
   playCompletionSent = false;
-  const managerInstructionEnabled =
-    Boolean(galleryField.dataset.managerInstruction);
-  const pitchStartDelay = managerInstructionEnabled
-    ? STEAL_SIGN_DELAY
-    : PRE_PITCH_WINDOW_DURATION;
+  galleryField.classList.remove('manager-instruction-visible');
+  galleryField
+    .querySelector('.manager-sign')
+    ?.setAttribute('aria-hidden', 'true');
+  const pitchStartDelay = PRE_PITCH_WINDOW_DURATION;
   scheduledPitchAt =
     performance.now() + pitchStartDelay;
   pitchWindowActive = true;
@@ -3555,7 +3538,6 @@ function playSelectedScene() {
     sceneName === 'swing' ||
     sceneName === 'take';
 
-  if (managerInstructionEnabled) playManagerSign();
   if (sceneName === 'bunt') {
     playBuntBatHold(pitchStartDelay);
   } else if (sceneName !== 'take') {

@@ -233,6 +233,11 @@
   transform: translateX(38%);
 }
 
+.gallery-field.manager-instruction-visible .manager-sign {
+  opacity: 1;
+  transform: translateX(0);
+}
+
 .manager-sign img {
   position: absolute;
   right: -2%;

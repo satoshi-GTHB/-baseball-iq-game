@@ -524,10 +524,18 @@
         ? 'infield-in'
         : 'normal';
     field.dataset.managerInstruction = problem.instruction;
-    const managerComment = field.querySelector('.manager-sign p');
-    if (managerComment) {
-      managerComment.textContent = problem.instruction;
+    const managerSign = field.querySelector('.manager-sign');
+    if (managerSign) {
+      managerSign.querySelector('p').textContent = problem.instruction;
+      managerSign.setAttribute(
+        'aria-hidden',
+        String(!problem.instruction)
+      );
     }
+    field.classList.toggle(
+      'manager-instruction-visible',
+      Boolean(problem.instruction)
+    );
     window.RUNNER_GAME_STATE_API?.setOuts?.(problem.outs);
     clickOption(`[data-start="${problem.start}"]`);
     clickOption(`[data-scene="${problem.scene}"]`);
@@ -660,6 +668,13 @@
     return occupied.has('FIRST') && occupied.has('SECOND');
   }
 
+  function hasEarlyForcedGroundBack(problem, actions) {
+    if (!isForcedGroundAdvance(problem)) return false;
+    const firstGo = actions.indexOf('GO');
+    const firstBack = actions.indexOf('BACK');
+    return firstBack >= 0 && (firstGo < 0 || firstBack < firstGo);
+  }
+
   function weightedAxis(problem, axis, actions) {
     const targets = problem.expected.filter((item) => item.axis === axis);
     const max = targets.reduce((sum, item) => sum + item.weight, 0);
@@ -685,7 +700,12 @@
   }
 
   function grade(problem) {
-    const evaluatedActions = actionsForGrade(problem);
+    const submittedActions = actionsForGrade(problem);
+    const earlyForcedGroundBack =
+      hasEarlyForcedGroundBack(problem, submittedActions);
+    const evaluatedActions = earlyForcedGroundBack
+      ? submittedActions.filter((action) => action !== 'GO')
+      : submittedActions;
     const allExpected = problem.expected.map((item) => item.action);
     const stealWasOut =
       problem.stealSign &&
@@ -792,6 +812,9 @@
       if (action === 'GO' && problem.scene === 'bunt') {
         return 'バントが転がったのを見てスタートを切る';
       }
+      if (action === 'GO' && isForcedGroundAdvance(problem)) {
+        return '内野ゴロで元の塁へ戻れないため、次の塁へ進む';
+      }
       if (action === 'GO') {
         return `${situation}と守る人を見てスタートを切る`;
       }
@@ -820,7 +843,7 @@
       return '投球に合わせるタイミングでの盗塁スタート';
     }
     if (action === 'GO' && isForcedGroundAdvance(problem)) {
-      return 'ランナーが詰まっている状況でのスタート';
+      return '内野ゴロで元の塁へ戻れない状況での進塁';
     }
     if (action === 'GO') {
       return `${situation}と守る人を見たタイミングでのスタート`;
@@ -954,8 +977,7 @@
               : '投球に合わせるタイミングでの盗塁スタート'
           ];
     } else if (missedForcedGroundAdvance) {
-      didItems = [];
-      missedItems = ['ランナーが詰まっている状況でのスタート'];
+      missedItems = ['内野ゴロで元の塁へ戻れない状況での進塁'];
     } else {
       extraActions.forEach((action) => {
         const causedRunnerOut = state.defenseResults.some((defenseResult) =>
