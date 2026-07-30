@@ -81,6 +81,37 @@
   background: #91d43b;
 }
 
+.field-ball-legend {
+  position: absolute;
+  z-index: 21;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  gap: 3px;
+  padding: 5px 7px;
+  border: 2px solid rgb(255 255 255 / 88%);
+  border-radius: 9px;
+  background: rgb(0 0 0 / 62%);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 1000;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.field-ball-legend span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.field-ball-legend .ball-color {
+  width: 12px;
+  height: 12px;
+  border-width: 1px;
+}
+
 .runner-game-prototype .gallery-controls {
   padding-bottom: 5px;
 }
