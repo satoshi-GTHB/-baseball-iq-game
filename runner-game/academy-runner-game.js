@@ -523,6 +523,11 @@
       problem.alignment === '前進守備'
         ? 'infield-in'
         : 'normal';
+    field.dataset.managerInstruction = problem.instruction;
+    const managerComment = field.querySelector('.manager-sign p');
+    if (managerComment) {
+      managerComment.textContent = problem.instruction;
+    }
     window.RUNNER_GAME_STATE_API?.setOuts?.(problem.outs);
     clickOption(`[data-start="${problem.start}"]`);
     clickOption(`[data-scene="${problem.scene}"]`);

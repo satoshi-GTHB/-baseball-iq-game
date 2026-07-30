@@ -3528,7 +3528,9 @@ function playSelectedScene() {
   const label = displayLabel();
   resetAnimation();
   playCompletionSent = false;
-  const pitchStartDelay = stealSignEnabled
+  const managerInstructionEnabled =
+    Boolean(galleryField.dataset.managerInstruction);
+  const pitchStartDelay = managerInstructionEnabled
     ? STEAL_SIGN_DELAY
     : PRE_PITCH_WINDOW_DURATION;
   scheduledPitchAt =
@@ -3553,7 +3555,7 @@ function playSelectedScene() {
     sceneName === 'swing' ||
     sceneName === 'take';
 
-  if (stealSignEnabled) playManagerSign();
+  if (managerInstructionEnabled) playManagerSign();
   if (sceneName === 'bunt') {
     playBuntBatHold(pitchStartDelay);
   } else if (sceneName !== 'take') {
