@@ -23,7 +23,7 @@
   }
 
   function makeProblem(id, level, options) {
-    return {
+    const problem = {
       id,
       level,
       outs: 0,
@@ -43,6 +43,18 @@
       next: 'ボールと守備の動きを最後まで見よう。',
       ...options
     };
+    if (problem.start !== 'BATTER' && !problem.stealSign) {
+      const expectedAfterLead = problem.expected.map((item, index) =>
+        index === 0 && item.action === 'STOP'
+          ? { ...item, action: 'BACK' }
+          : item
+      );
+      problem.expected = [
+        point('HALFWAY', 2),
+        ...expectedAfterLead
+      ];
+    }
+    return problem;
   }
 
   const PROBLEMS = [
@@ -85,17 +97,18 @@
       next: '盗塁サインが出たら、投球に合わせてゴーしよう。'
     }),
     makeProblem('BG-06', 'beginner', {
-      start: 'FIRST', scene: 'popup', direction: 'center',
-      title: '内野フライ・元の塁へ',
-      prompt: '内野手がボールを取りそうだ。塁へもどろう。',
-      expected: [point('BACK', 3)],
-      good: 'フライを取ったのを見て、元の塁へもどれたね。',
-      next: 'フライを取られたら先へ進めないので、バックで元の塁へもどろう。'
+      start: 'BATTER', scene: 'popup', direction: 'center',
+      title: 'バッターランナー・内野フライ',
+      prompt: '内野フライでも、1塁まで全力で走ろう。',
+      expected: [point('KAKENUK', 3)],
+      good: '内野フライでも1塁まで走り切れたね。',
+      next: '内野フライでも「かけぬけ」で1塁まで全力で走ろう。'
     }),
     makeProblem('BG-07', 'beginner', {
-      start: 'BATTER', direction: 'left', title: '三塁側の内野ゴロ',
-      prompt: 'バッターランナーは1塁をどう走る？',
-      expected: [point('KAKENUK', 3)]
+      start: 'BATTER', scene: 'fly', direction: 'left',
+      title: 'バッターランナー・外野フライ',
+      prompt: '外野フライで、1塁を回って先を見よう。',
+      expected: [point('ROUND', 3)]
     }),
     makeProblem('BG-08', 'beginner', {
       start: 'BATTER', direction: 'right', title: '一塁側の内野ゴロ',
@@ -348,6 +361,7 @@
     scores: [],
     actions: [],
     timeline: [],
+    defenseResults: [],
     active: false,
     started: false,
     startedAt: 0,
@@ -439,6 +453,7 @@
     document.querySelector('#game-header-status').textContent = `${LEVELS[state.levelIndex].name} ${state.index + 1}/10`;
     state.actions = [];
     state.timeline = [];
+    state.defenseResults = [];
     state.active = true;
     state.started = false;
     state.startedAt = 0;
@@ -481,7 +496,7 @@
         state.lastSelfDefenseResult?.out !== true;
       return safeFlyReturn
         ? actions.filter((action) =>
-            !['GO', 'HALFWAY'].includes(action)
+            action !== 'GO'
           )
         : actions;
     }
@@ -645,16 +660,6 @@
   function bestStoryItems(problem) {
     const expectedActions = problem.expected.map((item) => item.action);
     const caughtFly = ['fly', 'popup', 'liner'].includes(problem.scene);
-    if (
-      caughtFly &&
-      expectedActions.length === 1 &&
-      expectedActions[0] === 'BACK'
-    ) {
-      return [
-        '投球時にスタートを切る、または2次リードをする',
-        'フライが上がったのを見てバックする'
-      ];
-    }
     return expectedActions.map((action, index) => {
       if (action === 'BACK' && caughtFly) {
         return 'フライが上がったのを見てバックする';
@@ -792,9 +797,15 @@
       missedItems = ['ランナーが詰まっている状況でのスタート'];
     } else {
       extraActions.forEach((action) => {
-        missedItems.push(
-          `この状況での不要な「${ACTION_LABELS[action]}」`
+        const causedRunnerOut = state.defenseResults.some((defenseResult) =>
+          defenseResult.out &&
+          defenseResult.action === action
         );
+        if (causedRunnerOut) {
+          missedItems.push(
+            `この状況での不要な「${ACTION_LABELS[action]}」`
+          );
+        }
       });
     }
     renderFeedbackList(
@@ -891,6 +902,14 @@
     }
   });
   field.addEventListener('runner-defense-result', (event) => {
+    state.defenseResults.push({
+      out: Boolean(event.detail?.out),
+      action: state.timeline.at(-1)?.action || null,
+      runnerId:
+        event.detail?.runnerId ||
+        event.detail?.runnerType ||
+        null
+    });
     if (
       event.detail?.runnerId === 'self' ||
       event.detail?.runnerType === 'self'
