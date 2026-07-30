@@ -2342,8 +2342,8 @@ function applyDefenseAlignment() {
     defenseAlignmentLabel.hidden = false;
     defenseAlignmentLabel.textContent =
       currentDefenseAlignment === 'infield-in'
-        ? '前に出た守り'
-        : 'いつもの守り';
+        ? '前進'
+        : '定位置';
     defenseAlignmentLabel.classList.toggle(
       'is-infield-in',
       currentDefenseAlignment === 'infield-in'

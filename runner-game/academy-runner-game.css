@@ -13,11 +13,16 @@
 
 body {
   background: linear-gradient(180deg, #dff3ff 0%, #f6fbff 48%, #e8f6df 100%);
+  touch-action: manipulation;
 }
 
 .academy-runner-game {
   position: relative;
   min-height: 100svh;
+}
+
+button {
+  touch-action: manipulation;
 }
 
 .academy-runner-game > header {
@@ -493,6 +498,18 @@ body {
 }
 
 @media (max-width: 480px) {
+  body:has(.academy-runner-game.is-playing) {
+    height: 100svh;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  .academy-runner-game.is-playing {
+    height: 100svh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
   .question-hud {
     padding: 2px 6px 0;
   }
