@@ -46,6 +46,7 @@ const state = {
   activeScene: null,
   activeDirection: null,
   tagUpEligible: false,
+  caughtBallCaught: false,
   rundownActive: false,
   rundownSegmentIndex: null,
   kakenukeFirstDuration: 0
@@ -271,6 +272,13 @@ function finishAtBase(baseIndex) {
   state.segmentIndex = null;
   state.segmentProgress = 0;
   state.moving = false;
+  if (
+    state.caughtBallCaught &&
+    baseIndex === state.minimumBaseIndex &&
+    baseIndex >= 1
+  ) {
+    state.tagUpEligible = true;
+  }
   placeSelf();
   updateTimeChip();
 }
@@ -724,6 +732,7 @@ function selectStart(startKey) {
   state.activeScene = null;
   state.activeDirection = null;
   state.tagUpEligible = false;
+  state.caughtBallCaught = false;
   state.rundownActive = false;
   state.rundownSegmentIndex = null;
   state.kakenukeFirstDuration = 0;
@@ -1179,6 +1188,7 @@ field.addEventListener('runner-play-phase', (event) => {
     selectStart(state.startKey);
     state.activeScene = event.detail.scene || null;
     state.activeDirection = event.detail.direction || null;
+    state.caughtBallCaught = false;
     return;
   }
   if (event.detail?.phase === 'contact') {
@@ -1191,6 +1201,17 @@ field.addEventListener('runner-play-phase', (event) => {
       event.detail.stealSign,
       event.detail.direction
     );
+    return;
+  }
+  if (event.detail?.phase === 'catch') {
+    state.caughtBallCaught = true;
+    if (
+      state.segmentIndex === null &&
+      state.baseIndex === state.minimumBaseIndex &&
+      state.baseIndex >= 1
+    ) {
+      state.tagUpEligible = true;
+    }
     return;
   }
   if (event.detail?.phase === 'fair-ball-infield') {

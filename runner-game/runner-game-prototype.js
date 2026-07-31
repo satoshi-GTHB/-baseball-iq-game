@@ -162,6 +162,7 @@ function resetAutonomousRunners() {
     runner.dataset.raceId = `other-${index}`;
     delete runner.dataset.rundownGo;
     delete runner.dataset.rundownDecision;
+    delete runner.dataset.decoyThrowHome;
     const base = configuredBases[index];
     runner.hidden = !base;
     if (!base) return;
@@ -1058,6 +1059,7 @@ function startAutonomousRundownSupport(detail) {
     }))
     .filter(({ runner, snapshot }) => (
       runner.dataset.raceId !== detail.runnerId &&
+      runner.dataset.decoyThrowHome !== 'true' &&
       snapshot &&
       Number(snapshot.advance) < 4
     ))
@@ -1942,6 +1944,22 @@ runnerGameField.addEventListener(
       event.detail
     );
     armAutonomousRundownTarget(event.detail);
+  }
+);
+runnerGameField.addEventListener(
+  'runner-decoy-throw-to-second',
+  () => {
+    if (
+      runnerGameField.dataset.autonomousDecoySteal !== 'true'
+    ) return;
+    const thirdRunner = runnerGameOtherRunners.find(
+      (runner) =>
+        !runner.hidden &&
+        runner.dataset.base === 'THIRD'
+    );
+    if (!thirdRunner) return;
+    thirdRunner.dataset.decoyThrowHome = 'true';
+    advanceAutonomousRunner(thirdRunner, 0);
   }
 );
 runnerGameField.addEventListener(

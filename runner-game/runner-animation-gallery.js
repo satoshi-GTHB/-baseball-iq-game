@@ -3362,6 +3362,15 @@ function defendCaughtPitchRunner() {
     return true;
   }
   galleryField.dataset.lastThrowRoute = 'steal-attempt';
+  galleryField.dispatchEvent(new CustomEvent(
+    'runner-decoy-throw-to-second',
+    {
+      detail: {
+        runnerId: stealDecision.runnerId,
+        targetBaseIndex: Number(stealDecision.targetBaseIndex)
+      }
+    }
+  ));
   const autonomousStart = {
     1: 'FIRST',
     2: 'SECOND',
@@ -3659,6 +3668,23 @@ function playSelectedScene() {
       if (contactColor) markBallResult(contactColor, 0);
       dispatchRunnerPhase('contact', sceneName);
       playSceneAnimation(sceneName);
+      const caughtBallDelay = {
+        fly: 4500,
+        popup: 3800,
+        liner: 1440
+      }[sceneName] ?? (
+        sceneName === 'bunt' &&
+        String(selectedDirection).endsWith('-popup')
+          ? 1700
+          : null
+      );
+      if (caughtBallDelay !== null) {
+        scheduleRunnerPhase(
+          'catch',
+          sceneName,
+          Math.max(0, caughtBallDelay - 1)
+        );
+      }
     }, pitchStartDelay + PITCH_DURATION);
   }
 

@@ -558,7 +558,7 @@ button {
   .result-layout {
     flex: 1;
     grid-template-columns: 1fr;
-    grid-template-rows: minmax(105px, 1.25fr) auto minmax(78px, 1fr) minmax(72px, .75fr);
+    grid-template-rows: minmax(105px, 1.25fr) auto minmax(62px, .65fr) minmax(105px, 1.25fr);
     grid-template-areas: none;
     gap: 6px;
     min-height: 0;

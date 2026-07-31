@@ -711,10 +711,27 @@
         !expectedActions.includes('GO') &&
         actions.at(-1) === 'BACK' &&
         state.lastSelfDefenseResult?.out !== true;
-      return safeFlyReturn
-        ? actions.filter((action) =>
-            action !== 'GO'
-          )
+      const safePitcherGroundReturn =
+        isThirdBaseGroundJudgment(problem) &&
+        directionForScene(problem) === 'pitcher' &&
+        actions.at(-1) === 'BACK' &&
+        !thirdBaseHomeAttempted();
+      if (safeFlyReturn) {
+        let leadReplaced = false;
+        return actions.flatMap((action) => {
+          if (action !== 'GO') return [action];
+          if (
+            expectedActions.includes('HALFWAY') &&
+            !leadReplaced
+          ) {
+            leadReplaced = true;
+            return ['HALFWAY'];
+          }
+          return [];
+        });
+      }
+      return safePitcherGroundReturn
+        ? actions.filter((action) => action !== 'GO')
         : actions;
     }
     const pitchStartAt =
@@ -817,12 +834,29 @@
     );
   }
 
+  function managerOrdersRunForPoint(problem) {
+    return (
+      problem.start === 'THIRD' &&
+      problem.resultGoal === 'score-self' &&
+      /アウトになっても1点/.test(problem.instruction || '')
+    );
+  }
+
   function thirdBaseRunnerScored() {
     const selfRunner = (state.playOutcome?.runners || [])
       .find((runner) => runner.id === 'self');
     return (
       !state.playOutcome?.outRunnerIds?.includes('self') &&
       Number(selfRunner?.baseIndex ?? selfRunner?.advance) >= 4
+    );
+  }
+
+  function thirdBaseHomeAttempted() {
+    const selfRunner = (state.playOutcome?.runners || [])
+      .find((runner) => runner.id === 'self');
+    return (
+      Number(selfRunner?.baseIndex ?? selfRunner?.advance) >= 4 ||
+      Number(state.lastSelfDefenseResult?.targetBaseIndex) >= 4
     );
   }
 
@@ -855,10 +889,40 @@
     const lead = problem.expected.filter(
       (item) => item.action === 'HALFWAY'
     );
+    const thirdBasePitcherFly =
+      problem.start === 'THIRD' &&
+      (
+        (
+          problem.scene === 'popup' &&
+          directionForScene(problem) === 'pitcher'
+        ) ||
+        (
+          problem.scene === 'bunt' &&
+          problem.direction === 'pitcher-popup'
+        )
+      );
+    if (thirdBasePitcherFly) {
+      const strategyAxis = problem.expected.some(
+        (item) => item.axis === 'strategy'
+      ) ? 'strategy' : 'personal';
+      return {
+        ...problem,
+        expected: problem.immediateStart
+          ? [
+              point('GO', 3, strategyAxis),
+              point('BACK', 3, strategyAxis)
+            ]
+          : [
+              ...lead,
+              point('BACK', 3, strategyAxis)
+            ]
+      };
+    }
     if (isThirdBaseGroundJudgment(problem)) {
       const pitcherGround = directionForScene(problem) === 'pitcher';
       const decisiveAction =
-        !pitcherGround && thirdBaseRunnerScored()
+        managerOrdersRunForPoint(problem) ||
+        (!pitcherGround && thirdBaseRunnerScored())
           ? 'GO'
           : 'BACK';
       const decision = problem.expected.find(
@@ -952,6 +1016,46 @@
       success: '監督の指示どおりランナーを残せたこと',
       failure: 'ランナーをアウトにしてしまったこと'
     };
+  }
+
+  function playResultFailure(problem) {
+    const outRunnerIds = state.playOutcome?.outRunnerIds || [];
+    if (outRunnerIds.length) {
+      const labels = outRunnerIds.map((runnerId) => {
+        if (runnerId === 'self') {
+          return {
+            BATTER: 'バッターランナー',
+            FIRST: '1塁走者',
+            SECOND: '2塁走者',
+            THIRD: '3塁走者'
+          }[problem.start] || '操作したランナー';
+        }
+        const otherIndex = Number(
+          String(runnerId).replace('other-', '')
+        );
+        const otherBase = (problem.otherBases || [])[otherIndex];
+        return {
+          HOME: 'バッターランナー',
+          FIRST: '1塁走者',
+          SECOND: '2塁走者',
+          THIRD: '3塁走者'
+        }[otherBase] || 'ほかのランナー';
+      });
+      return `${[...new Set(labels)].join('と')}がアウトになったこと`;
+    }
+    if (
+      problem.start === 'THIRD' &&
+      problem.expected.some((item) => item.action === 'GO')
+    ) {
+      return 'ホームへ進めず、得点できなかったこと';
+    }
+    if (problem.expected.some((item) => item.action === 'GO')) {
+      return '次の塁へ進めなかったこと';
+    }
+    if (problem.expected.some((item) => item.action === 'BACK')) {
+      return '元の塁へ戻ってセーフになれなかったこと';
+    }
+    return 'ランナーを安全に塁へ残せなかったこと';
   }
 
   function grade(problem) {
@@ -1172,7 +1276,7 @@
       action === 'GO' &&
       problem.autonomousDecoySteal
     ) {
-      return '1塁走者がおとりで挟まれたタイミングでのホームへのスタート';
+      return 'キャッチャーが2塁へ投げたタイミングでのホームへのスタート';
     }
     if (action === 'GO' && problem.decoySteal) {
       return field.dataset.lastThrowRoute ===
@@ -1395,7 +1499,12 @@
     const recklessPitcherGroundGo =
       isThirdBaseGroundJudgment(problem) &&
       directionForScene(problem) === 'pitcher' &&
-      result.evaluatedActions.includes('GO');
+      thirdBaseHomeAttempted() &&
+      (
+        !managerOrdersRunForPoint(problem) ||
+        state.playOutcome?.outRunnerIds?.includes('self') ||
+        state.lastSelfDefenseResult?.out === true
+      );
     const failedOutfieldTwoBaseAttempt =
       outfieldTwoBaseResult(problem)?.out === true;
     const recklessLeftFlySecondTagUp =
@@ -1470,7 +1579,9 @@
         .filter((action) => action !== 'GO')
         .map((action) => evaluationPhrase(problem, action));
       missedItems = [
-        'ピッチャーゴロでホームへ突っ込まない判断（セーフでも無謀なプレー）'
+        managerOrdersRunForPoint(problem)
+          ? 'ピッチャーゴロでホームへ進み、アウトになった無謀なプレー'
+          : 'ピッチャーゴロでホームへ突っ込まない判断（セーフでも無謀なプレー）'
       ];
     } else if (recklessLeftFlySecondTagUp) {
       didItems = completedActions
@@ -1511,7 +1622,7 @@
       : [];
     const playMissedItems = playSucceeded
       ? []
-      : [result.outcome?.failure || '想定したプレー結果にできなかったこと'];
+      : [result.outcome?.failure || playResultFailure(problem)];
     const didGroups = [
       { label: 'プレー結果', items: playDidItems },
       { label: '走り方', items: didItems }
@@ -1654,6 +1765,13 @@
       !currentProblem().autonomousDecoySteal ||
       event.detail?.runnerId === 'self'
     ) return;
+    state.autonomousDecoyStartedAt = Math.max(
+      0,
+      performance.now() - state.startedAt
+    );
+  });
+  field.addEventListener('runner-decoy-throw-to-second', () => {
+    if (!currentProblem().autonomousDecoySteal) return;
     state.autonomousDecoyStartedAt = Math.max(
       0,
       performance.now() - state.startedAt
