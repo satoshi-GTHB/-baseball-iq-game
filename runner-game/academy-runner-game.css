@@ -410,6 +410,18 @@ button {
   border: 2px solid #efb2a3;
 }
 
+.feedback-axis-title {
+  margin-top: .45rem;
+  margin-left: -1rem;
+  list-style: none;
+  font-weight: 800;
+  color: #17324d;
+}
+
+.feedback-axis-title:first-child {
+  margin-top: 0;
+}
+
 .feedback-panel h3 {
   margin: 0 0 7px;
   color: var(--game-navy);

@@ -1408,23 +1408,49 @@
         .map((item) => `<li>${item}</li>`)
         .join('');
     };
+    const renderFeedbackGroups = (selector, groups) => {
+      document.querySelector(selector).innerHTML = groups
+        .map(({ label, items }) => [
+          `<li class="feedback-axis-title">（${label}）</li>`,
+          ...(items.length ? items : ['なし'])
+            .map((item) => `<li>${item}</li>`)
+        ].join(''))
+        .join('');
+    };
     renderFeedbackList('#best-story-list', bestStoryItems(problem));
-    let didItems = completedActions.map((action) =>
-      evaluationPhrase(problem, action)
+    const personalActions = new Set(
+      problem.expected
+        .filter((item) => item.axis !== 'strategy')
+        .map((item) => item.action)
     );
-    let missedItems = missingActions.map((action) =>
-      evaluationPhrase(problem, action)
+    const strategyActions = new Set(
+      problem.expected
+        .filter((item) => item.axis === 'strategy')
+        .map((item) => item.action)
     );
+    let didItems = completedActions
+      .filter((action) => personalActions.has(action))
+      .map((action) => evaluationPhrase(problem, action));
+    let missedItems = missingActions
+      .filter((action) => personalActions.has(action))
+      .map((action) => evaluationPhrase(problem, action));
+    let strategyDidItems = completedActions
+      .filter((action) => strategyActions.has(action))
+      .map((action) => evaluationPhrase(problem, action));
+    let strategyMissedItems = missingActions
+      .filter((action) => strategyActions.has(action))
+      .map((action) => evaluationPhrase(problem, action));
     if (pickoffOut) {
       didItems = [];
-      missedItems = [
+      strategyDidItems = [];
+      strategyMissedItems = [
         '投球に合わせる正しいタイミングでのスタート（スタートが早すぎて、けん制でアウトになった）'
       ];
     } else if (stealStart) {
-      didItems = stealSucceeded
+      strategyDidItems = stealSucceeded
         ? ['投球に合わせるタイミングでの盗塁スタート']
         : [];
-      missedItems = stealSucceeded
+      strategyMissedItems = stealSucceeded
         ? []
         : [
             stealWasOut
@@ -1435,7 +1461,8 @@
           ];
     } else if (usedForbiddenSecondaryLead) {
       didItems = [];
-      missedItems = [
+      strategyDidItems = [];
+      strategyMissedItems = [
         '2アウト・3ボール2ストライクで、投球と同時にスタートすること'
       ];
     } else if (recklessPitcherGroundGo) {
@@ -1474,21 +1501,31 @@
         }
       });
     }
-    if (result.outcome && !pickoffOut) {
-      if (result.outcome.met) {
-        didItems.unshift(result.outcome.success);
-      } else {
-        missedItems.unshift(result.outcome.failure);
-      }
+    const playSucceeded = result.outcome
+      ? result.outcome.met
+      : result.play === null
+        ? result.exact
+        : result.play === result.playMax;
+    const playDidItems = playSucceeded
+      ? [result.outcome?.success || '想定したプレー結果にできたこと']
+      : [];
+    const playMissedItems = playSucceeded
+      ? []
+      : [result.outcome?.failure || '想定したプレー結果にできなかったこと'];
+    const didGroups = [
+      { label: 'プレー結果', items: playDidItems },
+      { label: '走り方', items: didItems }
+    ];
+    const missedGroups = [
+      { label: 'プレー結果', items: playMissedItems },
+      { label: '走り方', items: missedItems }
+    ];
+    if (result.strategy !== null) {
+      didGroups.push({ label: '監督指示', items: strategyDidItems });
+      missedGroups.push({ label: '監督指示', items: strategyMissedItems });
     }
-    renderFeedbackList(
-      '#feedback-did',
-      didItems.length ? didItems : ['なし']
-    );
-    renderFeedbackList(
-      '#feedback-missed',
-      missedItems.length ? missedItems : ['なし']
-    );
+    renderFeedbackGroups('#feedback-did', didGroups);
+    renderFeedbackGroups('#feedback-missed', missedGroups);
     document.querySelector('#next-question').textContent =
       state.index === 9 ? '結果を見る' : '次の問題へ';
     resultOverlay.hidden = false;
