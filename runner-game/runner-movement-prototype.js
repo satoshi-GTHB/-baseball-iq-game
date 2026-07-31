@@ -392,6 +392,16 @@ function runForward(continuous) {
 
 function chooseGo() {
   if (state.special || state.out) return;
+  if (
+    state.startKey === 'BATTER' &&
+    state.activeScene !== 'extra' &&
+    state.baseIndex >= 1 &&
+    state.segmentIndex === null
+  ) {
+    status.textContent =
+      '長打ではないので、バッターランナーは1塁で止まります。';
+    return;
+  }
 
   if (state.moving) {
     captureSegmentProgress();
@@ -410,6 +420,54 @@ function chooseGo() {
   }
 
   runForward(false);
+}
+
+function startFirstBaseOverrun() {
+  if (
+    state.startKey !== 'BATTER' ||
+    !state.batterContacted ||
+    state.out
+  ) return;
+  if (state.moving) captureSegmentProgress();
+  const progress = state.segmentIndex === 0
+    ? state.segmentProgress
+    : state.baseIndex >= 1
+      ? 1
+      : 0;
+  if (progress >= 1) {
+    finishAtBase(1);
+    status.textContent =
+      '1塁をオーバーランして、1塁で止まりました。';
+    return;
+  }
+  state.roundFirst = false;
+  animateSegment(0, progress, 1, () => {
+    finishAtBase(1);
+    const animation = selfRunner.animate(
+      [
+        {
+          left: pct(rules.BASE_POINTS.FIRST[0]),
+          top: pct(rules.BASE_POINTS.FIRST[1])
+        },
+        {
+          left: pct(rules.ROUND_FIRST_POINT[0]),
+          top: pct(rules.ROUND_FIRST_POINT[1]),
+          offset: .45
+        },
+        {
+          left: pct(rules.BASE_POINTS.FIRST[0]),
+          top: pct(rules.BASE_POINTS.FIRST[1])
+        }
+      ],
+      { duration: 720, easing: 'ease-out' }
+    );
+    animation.onfinish = () => {
+      animation.cancel();
+      placeSelf();
+      status.textContent =
+        '1塁をオーバーランして、1塁で止まりました。';
+    };
+  });
 }
 
 function stopAtNearestBase() {
@@ -1229,10 +1287,14 @@ kakenukeButton.addEventListener('click', startKakenuke);
 
 roundButton.addEventListener('click', () => {
   leaveKakenukeForRound();
-  if (state.moving) captureSegmentProgress();
-  state.roundFirst = true;
-  status.textContent = '1塁を回り、2塁まで走ります。';
-  runForward(true);
+  if (state.activeScene === 'extra') {
+    if (state.moving) captureSegmentProgress();
+    state.roundFirst = true;
+    status.textContent = '長打なので、1塁を回って2塁まで走ります。';
+    runForward(true);
+  } else {
+    startFirstBaseOverrun();
+  }
   notifyAcceptedAction('ROUND');
 });
 

@@ -72,9 +72,9 @@
     makeProblem('BG-01', 'beginner', {
       start: 'BATTER', title: 'バッターランナー・内野ゴロ',
       prompt: '打ったあとは、1塁でどう走る？',
-      expected: [point('KAKENUK', 3)],
-      good: '1塁は止まらず、ベースの先まで走り切れたね。',
-      next: '内野ゴロでは「かけぬけ」で1塁を全力で通り過ぎよう。'
+      expected: [point('ROUND', 3)],
+      good: '1塁をオーバーランして、1塁で止まれたね。',
+      next: '長打以外では、1塁をオーバーランして1塁で止まろう。'
     }),
     makeProblem('BG-02', 'beginner', {
       start: 'FIRST', direction: 'right', title: '1塁走者・後ろが詰まったゴロ',
@@ -111,9 +111,9 @@
       start: 'BATTER', scene: 'popup', direction: 'center',
       title: 'バッターランナー・内野フライ',
       prompt: '内野フライでも、1塁まで全力で走ろう。',
-      expected: [point('KAKENUK', 3)],
-      good: '内野フライでも1塁まで走り切れたね。',
-      next: '内野フライでも「かけぬけ」で1塁まで全力で走ろう。'
+      expected: [point('ROUND', 3)],
+      good: '内野フライでも1塁をオーバーランできたね。',
+      next: '長打以外では、1塁をオーバーランして1塁で止まろう。'
     }),
     makeProblem('BG-07', 'beginner', {
       start: 'BATTER', scene: 'fly', direction: 'left',
@@ -124,7 +124,7 @@
     makeProblem('BG-08', 'beginner', {
       start: 'BATTER', direction: 'right', title: '一塁側の内野ゴロ',
       prompt: 'ボールとランナーがほぼ同時に1塁へ来る。1塁を走り切ろう。',
-      expected: [point('KAKENUK', 3)]
+      expected: [point('ROUND', 3)]
     }),
     makeProblem('BG-09', 'beginner', {
       start: 'FIRST', direction: 'left-center', title: '1塁走者・二塁へ',
@@ -190,7 +190,7 @@
     makeProblem('BA-10', 'basic', {
       start: 'BATTER', scene: 'passed', balls: 0, strikes: 2,
       title: '振り逃げ', prompt: '2ストライク。捕手がボールを後ろへそらした。',
-      expected: [point('GO', 3, 'strategy'), point('KAKENUK', 1)]
+      expected: [point('GO', 3, 'strategy'), point('ROUND', 1)]
     }),
 
     makeProblem('MI-01', 'middle', {
@@ -239,8 +239,8 @@
     }),
     makeProblem('MI-09', 'middle', {
       start: 'BATTER', scene: 'single', direction: 'right',
-      title: 'バッターランナー・ライト前ヒット', prompt: '1塁を回って、次の塁へ行けるか見よう。',
-      expected: [point('ROUND', 3), point('STOP', 1)]
+      title: 'バッターランナー・ライト前ヒット', prompt: '1塁をオーバーランして、1塁で止まろう。',
+      expected: [point('ROUND', 3)]
     }),
     makeProblem('MI-10', 'middle', {
       start: 'BATTER', scene: 'extra', direction: 'left-center',
