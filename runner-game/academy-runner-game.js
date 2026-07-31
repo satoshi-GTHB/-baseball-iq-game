@@ -1151,15 +1151,15 @@
     if (problem.resultGoal === 'score-self') {
       return {
         met: reachedHome(selfRunner),
-        success: '監督がねらった1点を取れたこと',
-        failure: '監督がねらった1点を取れなかったこと'
+        success: 'ねらった1点を取れた',
+        failure: 'ねらった1点を取れなかった'
       };
     }
     if (problem.resultGoal === 'score-third') {
       return {
         met: reachedHome(thirdRunner),
-        success: '3塁走者をホームへ返せたこと',
-        failure: '3塁走者をホームへ返せなかったこと'
+        success: '3塁走者がホームに帰れた',
+        failure: '3塁走者がホームに帰れなかった'
       };
     }
     if (problem.resultGoal === 'decoy-success') {
@@ -1176,15 +1176,15 @@
       return {
         met: stealSucceeded || thirdScored,
         success: thirdScored
-          ? 'おとりの盗塁で3塁走者をホームへ返せたこと'
-          : '捕手が送球しない間に2塁へ盗塁できたこと',
-        failure: '盗塁も3塁走者の得点も成功しなかったこと'
+          ? 'おとりの盗塁で、3塁走者がホームに帰れた'
+          : 'キャッチャーが投げない間に、2塁へ盗塁できた',
+        failure: '盗塁できず、3塁走者もホームに帰れなかった'
       };
     }
     return {
       met: Boolean(selfRunner),
-      success: '監督の指示どおりランナーを残せたこと',
-      failure: 'ランナーをアウトにしてしまったこと'
+      success: '監督の指示どおり、ランナーを塁に残せた',
+      failure: 'ランナーがアウトになった'
     };
   }
 
@@ -1198,7 +1198,7 @@
       return {
         met: false,
         success: '',
-        failure: `${runnerLabelForId(problem, 'self')}がアウトになったこと`
+        failure: `${runnerLabelForId(problem, 'self')}がアウトになった`
       };
     }
     const playEndedByAnotherOut =
@@ -1218,8 +1218,8 @@
         met: true,
         uncontrollable: true,
         success: caughtBallThirdOut
-          ? `フライが捕られて3アウトになったため、${runnerLabelForId(problem, 'self')}のプレー結果は減点しない`
-          : `ほかのアウトでプレーが終了したため、${runnerLabelForId(problem, 'self')}のプレー結果は減点しない`,
+          ? `フライを取られて3アウト。走者のミスではないので、点は引かない`
+          : `ほかの走者のアウトで終了。自分のミスではないので、点は引かない`,
         failure: ''
       };
     }
@@ -1255,10 +1255,10 @@
       4: 'ホーム'
     }[targetBaseIndex] || '元の塁';
     const success = targetBaseIndex >= 4
-      ? `${runnerLabelForId(problem, 'self')}がホームまで進み、得点できたこと`
+      ? `${runnerLabelForId(problem, 'self')}がホームまで進み、得点できた`
       : targetBaseIndex === startBaseIndex
-        ? `${runnerLabelForId(problem, 'self')}が元の塁に残り、セーフだったこと`
-        : `${runnerLabelForId(problem, 'self')}が${targetLabel}まで進み、セーフだったこと`;
+        ? `${runnerLabelForId(problem, 'self')}が元の塁に残り、セーフだった`
+        : `${runnerLabelForId(problem, 'self')}が${targetLabel}まで進み、セーフだった`;
     return {
       met,
       success,
@@ -1320,52 +1320,52 @@
   function intendedGoalForAction(problem, action) {
     const destination = expectedDestinationLabel(problem);
     if (problem.resultGoal === 'score-self') {
-      return 'ホームへ進んで得点すること';
+      return 'ホームに帰って1点を取る';
     }
     if (problem.resultGoal === 'decoy-success') {
-      return 'おとりの盗塁か3塁走者の得点を成功させること';
+      return '盗塁するか、3塁走者が1点を取る';
     }
     if (problem.resultGoal === 'keep-self-safe') {
-      return 'ランナーをアウトにせず塁へ残すこと';
+      return 'アウトにならず、塁に残る';
     }
     if (
       ['fly', 'popup', 'liner'].includes(problem.scene) &&
       action === 'GO'
     ) {
       return successfulTagUpAdvance(problem)
-        ? `元の塁へ戻ってから、${destination}へ進んでセーフになること`
-        : '元の塁へ戻ってセーフになること';
+        ? `元の塁へ戻ってから、${destination}へ進む`
+        : '元の塁へ戻ってセーフになる';
     }
     if (action === 'BACK') {
-      return `${destination}へ進んでセーフになること`;
+      return `${destination}へ進んでセーフになる`;
     }
     if (action === 'STOP') {
-      return '安全な塁まで進むこと';
+      return '安全な塁で止まる';
     }
     if (problem.start === 'BATTER') {
-      return '1塁に安全に残ること';
+      return '1塁でセーフになる';
     }
-    return `${destination}でセーフになること`;
+    return `${destination}でセーフになる`;
   }
 
   function defenseLocationDescription(problem) {
     const direction = directionForScene(problem);
     const position = {
-      'third-line': '三塁線を守る3塁手の近く',
-      third: '3塁手の正面',
-      short: '遊撃手の近く',
+      'third-line': '三塁線を守るサードの近く',
+      third: 'サードの正面',
+      short: 'ショートの近く',
       pitcher: 'ピッチャーの正面',
-      second: '2塁手の近く',
-      first: '1塁手の正面',
-      'first-line': '一塁線を守る1塁手の近く',
-      'left-line': 'レフト線を守る左翼手の近く',
-      left: '左翼手の正面',
-      'left-center': '左中間の左翼手と中堅手の間',
-      center: '中堅手の正面',
-      'right-center': '右中間の中堅手と右翼手の間',
-      right: '右翼手の正面',
-      'right-line': 'ライト線を守る右翼手の近く'
-    }[direction] || '打球を処理する守備者の近く';
+      second: 'セカンドの近く',
+      first: 'ファーストの正面',
+      'first-line': '一塁線を守るファーストの近く',
+      'left-line': 'レフト線を守るレフトの近く',
+      left: 'レフトの正面',
+      'left-center': '左中間のレフトとセンターの間',
+      center: 'センターの正面',
+      'right-center': '右中間のセンターとライトの間',
+      right: 'ライトの正面',
+      'right-line': 'ライト線を守るライトの近く'
+    }[direction] || 'ボールを取る人の近く';
     if (problem.start === 'SECOND') {
       const relative = [
         'third-line', 'third', 'short', 'pitcher'
@@ -1390,18 +1390,18 @@
     const selfPosition = runnerLabelForId(problem, 'self');
     const destination = expectedDestinationLabel(problem);
     if (action === 'GO') {
-      return `自分は${selfPosition}。目的は「${intendedGoal}」。${location}への${situation}で、${destination}へ進む判断をした`;
+      return `${selfPosition}。ねらいは「${intendedGoal}」。${location}への${situation}で、${destination}へ進んでアウトになった`;
     }
     if (action === 'BACK') {
-      return `自分は${selfPosition}。目的は「${intendedGoal}」。${location}への${situation}で、元の塁へ戻る判断をした`;
+      return `${selfPosition}。ねらいは「${intendedGoal}」。${location}への${situation}で、元の塁へ戻ってアウトになった`;
     }
     if (action === 'STOP') {
-      return `自分は${selfPosition}。目的は「${intendedGoal}」。${location}への${situation}で、塁の間に止まる判断をした`;
+      return `${selfPosition}。ねらいは「${intendedGoal}」。${location}への${situation}で、塁の間に止まってアウトになった`;
     }
     if (action === 'HALFWAY') {
-      return `自分は${selfPosition}。目的は「${intendedGoal}」。${location}への${situation}で、塁を離れるタイミングを選んだ`;
+      return `${selfPosition}。ねらいは「${intendedGoal}」。${location}への${situation}で、早く塁を離れてアウトになった`;
     }
-    return `自分は${selfPosition}。目的は「${intendedGoal}」。${location}への${situation}で「${ACTION_LABELS[action]}」を選んだ`;
+    return `${selfPosition}。ねらいは「${intendedGoal}」。${location}への${situation}で「${ACTION_LABELS[action]}」を選び、アウトになった`;
   }
 
   function missedActionFeedback(problem, action) {
@@ -1417,18 +1417,18 @@
       ? `、${selfPosition}がアウトになった`
       : '';
     if (action === 'GO') {
-      return `自分は${selfPosition}。目的は「${intendedGoal}」。${location}への${situation}で${destination}へ進まなかった${outFact}`;
+      return `${selfPosition}。ねらいは「${intendedGoal}」。${location}への${situation}で、${destination}へ進まなかった${outFact}`;
     }
     if (action === 'BACK') {
-      return `自分は${selfPosition}。目的は「${intendedGoal}」。${location}への${situation}で元の塁へ戻らず${outFact || '、アウトになった'}`;
+      return `${selfPosition}。ねらいは「${intendedGoal}」。${location}への${situation}で、元の塁へ戻らず${outFact || '、アウトになった'}`;
     }
     if (action === 'STOP') {
-      return `自分は${selfPosition}。目的は「${intendedGoal}」。${location}への${situation}で安全な${destination}に止まらなかった${outFact}`;
+      return `${selfPosition}。ねらいは「${intendedGoal}」。${location}への${situation}で、安全な${destination}に止まらなかった${outFact}`;
     }
     if (action === 'HALFWAY') {
-      return `自分は${selfPosition}。投球に合わせて2次リードを取らなかった${outFact}`;
+      return `${selfPosition}。ピッチャーが投げたときに、2次リードをしなかった${outFact}`;
     }
-    return `自分は${selfPosition}。${location}への${situation}で「${ACTION_LABELS[action]}」を選ばなかった${outFact}`;
+    return `${selfPosition}。${location}への${situation}で「${ACTION_LABELS[action]}」を選ばなかった${outFact}`;
   }
 
   function unmatchedItemFeedback(problem, item, actions) {
@@ -1640,12 +1640,12 @@
       return field.dataset.lastThrowRoute ===
         'catcher-watches-third'
         ? [
-            '投球に合わせて盗塁のスタートを切る',
-            '捕手が3塁走者を見て送球しなければ、そのまま2塁へ盗塁する'
+            'ピッチャーが投げたら、盗塁を始める',
+            'キャッチャーが投げなければ、そのまま2塁へ走る'
           ]
         : [
-            '投球に合わせて盗塁のスタートを切る',
-            '捕手が送球したら守備を引きつけ、3塁走者がホームへかえる時間を作る'
+            'ピッチャーが投げたら、盗塁を始める',
+            'キャッチャーが2塁へ投げたら、3塁走者はホームへ走る'
           ];
     }
     return expectedActions.map((action, index) => {
@@ -1654,21 +1654,21 @@
         problem.autonomousDecoyDelay === 0 &&
         action === 'STOP'
       ) {
-        return '捕手が送球せず自分を見ていたら、3塁にとどまる';
+        return 'キャッチャーが3塁を見ていたら、3塁に止まる';
       }
       if (
         problem.autonomousDecoySteal &&
         action === 'GO'
       ) {
-        return '1塁走者が塁の間ではさまれたのを見て、ホームへゴーする';
+        return '1塁走者がはさまれたら、ホームへ走る';
       }
       if (problem.decoySteal && action === 'BACK') {
         return '塁の間で挟まれたら、元の塁の方向へ逃げる';
       }
       if (problem.decoySteal && action === 'GO') {
         return index === 0
-          ? '盗塁をしかけて守備の送球を自分へ向ける'
-          : '守備の送球を見て、次の塁の方向へ逃げる';
+          ? '盗塁をして、キャッチャーに2塁へ投げさせる'
+          : 'ボールが来たら、次の塁へにげる';
       }
       if (action === 'BACK' && caughtFly) {
         return `${situation}が上がったのを見てバックする`;
@@ -1702,7 +1702,7 @@
         return `${situation}と守る人を見てスタートを切る`;
       }
       if (action === 'HALFWAY') {
-        return '投球に合わせて2次リードをする';
+        return 'ピッチャーが投げたら、2次リードをする';
       }
       if (action === 'STOP') {
         return `${situation}と前のランナーを見てストップする`;
@@ -1721,51 +1721,85 @@
       problem.autonomousDecoyDelay === 0 &&
       action === 'STOP'
     ) {
-      return '捕手が3塁走者を見ている状況での3塁でのストップ';
+      return 'キャッチャーが3塁を見ていたので、3塁で止まれた';
     }
     if (
       action === 'GO' &&
       problem.autonomousDecoySteal
     ) {
-      return 'キャッチャーが2塁へ投げたタイミングでのホームへのスタート';
+      return 'キャッチャーが2塁へ投げたとき、ホームへ走れた';
     }
     if (action === 'GO' && problem.decoySteal) {
       return field.dataset.lastThrowRoute ===
         'catcher-watches-third'
-        ? '捕手が送球しない状況での2塁への盗塁'
-        : '3塁走者を返すための、おとりの盗塁';
+        ? 'キャッチャーが投げない間に、2塁へ盗塁できた'
+        : '3塁走者をホームへ返すため、おとりの盗塁ができた';
     }
     if (action === 'BACK' && problem.decoySteal) {
-      return 'おとりで挟まれた状況での切り返し';
+      return 'はさまれたとき、ボールと反対へにげられた';
     }
     if (action === 'BACK' && ['fly', 'popup', 'liner'].includes(problem.scene)) {
-      return `${situation}が上がった状況でのバック`;
+      return `${situation}が上がったので、元の塁へ戻れた`;
     }
     if (action === 'HALFWAY') {
-      return '投球に合わせるタイミングでの2次リード';
+      return 'ピッチャーが投げたとき、2次リードができた';
     }
     if (action === 'GO' && problem.stealSign) {
-      return '投球に合わせるタイミングでの盗塁スタート';
+      return 'ピッチャーが投げたとき、盗塁を始められた';
     }
     if (action === 'GO' && problem.immediateStart) {
-      return '監督の指示に合わせるタイミングでのスタート';
+      return '監督の指示どおり、すぐに走れた';
     }
     if (action === 'GO' && isForcedGroundAdvance(problem)) {
-      return '内野ゴロで元の塁へ戻れない状況での進塁';
+      return '内野ゴロで戻れないため、次の塁へ走れた';
     }
     if (action === 'GO') {
-      return `${situation}と守る人を見たタイミングでのスタート`;
+      return `${situation}と守る人を見て、走り始められた`;
     }
     if (action === 'STOP') {
-      return `${situation}と前のランナーを見たタイミングでのストップ`;
+      return `${situation}と前のランナーを見て、止まれた`;
     }
     if (action === 'KAKENUK') {
-      return `${situation}のような状況での1塁かけぬけ`;
+      return `${situation}を見て、1塁をかけぬけられた`;
     }
     if (action === 'ROUND') {
-      return `${situation}のような状況でのオーバーラン`;
+      return `${situation}を見て、1塁を回れた`;
     }
-    return `${situation}のような状況でのバック`;
+    return `${situation}を見て、元の塁へ戻れた`;
+  }
+
+  function easyAdviceText(text) {
+    return String(text)
+      .replaceAll('打者走者', 'バッターランナー')
+      .replaceAll('走者', 'ランナー')
+      .replaceAll('打者', 'バッター')
+      .replaceAll('一塁', '1塁')
+      .replaceAll('二塁', '2塁')
+      .replaceAll('三塁', '3塁')
+      .replaceAll('投手', 'ピッチャー')
+      .replaceAll('捕手', 'キャッチャー')
+      .replaceAll('一塁手', 'ファースト')
+      .replaceAll('1塁手', 'ファースト')
+      .replaceAll('二塁手', 'セカンド')
+      .replaceAll('2塁手', 'セカンド')
+      .replaceAll('三塁手', 'サード')
+      .replaceAll('3塁手', 'サード')
+      .replaceAll('遊撃手', 'ショート')
+      .replaceAll('左翼手', 'レフト')
+      .replaceAll('中堅手', 'センター')
+      .replaceAll('右翼手', 'ライト')
+      .replaceAll('守備者', '守る人')
+      .replaceAll('送球', 'ボールを投げること')
+      .replaceAll('捕球', 'ボールを取ること')
+      .replaceAll('進塁', '次の塁へ進むこと')
+      .replaceAll('挟殺', '塁の間ではさむプレー')
+      .replaceAll('切り返し', 'ボールと反対へにげること')
+      .replaceAll('とどまる', '止まる')
+      .replaceAll('実行', 'その動き')
+      .replaceAll('タイミングでの', 'ときの')
+      .replaceAll('状況での', 'ときの')
+      .replaceAll('無謀なプレー', 'セーフになるのがむずかしいプレー')
+      .replaceAll('想定した', 'お手本の');
   }
 
   function validateProblemAdvice() {
@@ -1979,7 +2013,7 @@
     const failedTagUp = failedTagUpAssessment(problem);
     const renderFeedbackList = (selector, items) => {
       document.querySelector(selector).innerHTML = items
-        .map((item) => `<li>${item}</li>`)
+        .map((item) => `<li>${easyAdviceText(item)}</li>`)
         .join('');
     };
     const renderFeedbackGroups = (selector, groups) => {
@@ -1987,7 +2021,7 @@
         .map(({ label, items }) => [
           `<li class="feedback-axis-title">（${label}）</li>`,
           ...(items.length ? items : ['なし'])
-            .map((item) => `<li>${item}</li>`)
+            .map((item) => `<li>${easyAdviceText(item)}</li>`)
         ].join(''))
         .join('');
     };
