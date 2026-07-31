@@ -325,7 +325,7 @@
       autonomousDecoySteal: true,
       otherBases: ['FIRST'], resultGoal: 'score-self',
       title: 'おとりの走者を見て走る',
-      instruction: '1塁走者がおとりになったら、ホームをねらえ！',
+      instruction: '盗塁でおとりになれ！',
       prompt: '1塁走者が塁の間ではさまれたのを見て、ホームへ走ろう。',
       expected: [point('GO', 3, 'strategy')]
     }),
