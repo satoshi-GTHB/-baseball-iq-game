@@ -347,14 +347,6 @@
       prompt: '守る人の位置を見て、どうするか考えよう。',
       expected: [point('STOP', 3, 'strategy')]
     }),
-    makeProblem('EX-08', 'expert', {
-      start: 'FIRST', scene: 'ground', outs: 1,
-      otherBases: ['HOME', 'THIRD'], resultGoal: 'score-third',
-      title: '塁の間ではさまれて時間を作る',
-      instruction: '3塁走者がかえるまで守備を引きつけよう。',
-      prompt: 'ボールから離れる方向へ逃げよう。',
-      expected: [point('GO', 3, 'strategy'), point('BACK', 2), point('GO', 2)]
-    }),
     makeProblem('EX-09', 'expert', {
       start: 'THIRD', scene: 'bunt', direction: 'pitcher-popup',
       otherBases: ['HOME'], resultGoal: 'keep-self-safe',
@@ -362,14 +354,6 @@
       instruction: 'スクイズで1点を取ろう。',
       prompt: 'バントが転がるか、上がるかを見よう。',
       expected: [point('GO', 3, 'strategy'), point('BACK', 2)]
-    }),
-    makeProblem('EX-10', 'expert', {
-      start: 'FIRST', scene: 'ground', outs: 1,
-      otherBases: ['HOME', 'THIRD'], resultGoal: 'score-third',
-      title: '点を取るのを助ける走り',
-      instruction: '前の走者を返すため、守備の目を引こう。',
-      prompt: '次の塁へ進み、守る人をまよわせよう。',
-      expected: [point('GO', 3, 'strategy'), point('STOP', 1)]
     })
   ];
 
@@ -435,17 +419,40 @@
   function chooseQuestions(levelId, count = 10) {
     if (levelId === 'expert') {
       const usedExpertSources = new Set();
-      const managerQuestions = shuffle(
+      const expertCandidates = shuffle(
         problemCandidates(levelId)
-      )
+      );
+      const firstManagerQuestions = expertCandidates
         .filter((problem) => {
           if (usedExpertSources.has(problem.sourceId)) {
             return false;
           }
           usedExpertSources.add(problem.sourceId);
           return true;
-        })
-        .slice(0, 9);
+        });
+      const selectedManagerIds = new Set(
+        firstManagerQuestions.map((problem) => problem.id)
+      );
+      const extraManagerQuestions = expertCandidates
+        .filter(
+          (problem) =>
+            !selectedManagerIds.has(problem.id) &&
+            firstManagerQuestions.some(
+              (selected) =>
+                selected.sourceId === problem.sourceId
+            )
+        )
+        .filter((problem, index, candidates) =>
+          candidates.findIndex(
+            (candidate) =>
+              candidate.sourceId === problem.sourceId
+          ) === index
+        )
+        .slice(0, 2);
+      const managerQuestions = [
+        ...firstManagerQuestions,
+        ...extraManagerQuestions
+      ];
       const reviewSource = shuffle(
         PROBLEMS.filter(
           (problem) => problem.level !== 'expert'
