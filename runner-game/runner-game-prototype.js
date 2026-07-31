@@ -1439,6 +1439,34 @@ function buildRunnerDefenseDecision(
   const targetPoint =
     runnerDefenseBasePoints[targetRunner.targetBaseIndex];
   if (!targetPoint) return { allStopped: true };
+  const leadTagUpInProgress = snapshots.some((runner) => (
+    runner.id !== targetRunner.id &&
+    runner.tagUpEligible &&
+    Number(runner.startBaseIndex) >= 2 &&
+    Number(runner.targetBaseIndex) >
+      Number(runner.startBaseIndex)
+  ));
+  const prohibitedFirstBaseTagUp = Boolean(
+    caughtBallScene &&
+    scene === 'fly' &&
+    Number(targetRunner.startBaseIndex) === 1 &&
+    Number(targetRunner.targetBaseIndex) === 2 &&
+    [
+      'left-center',
+      'center',
+      'right-center',
+      'right',
+      'right-line'
+    ].includes(String(direction)) &&
+    !leadTagUpInProgress
+  );
+  const prohibitedSecondBaseTagUp = Boolean(
+    caughtBallScene &&
+    scene === 'fly' &&
+    Number(targetRunner.startBaseIndex) === 2 &&
+    Number(targetRunner.targetBaseIndex) === 3 &&
+    ['left-line', 'left'].includes(String(direction))
+  );
 
   return {
     allStopped: false,
@@ -1454,6 +1482,8 @@ function buildRunnerDefenseDecision(
       targetRunner.tagUpEligible
     ),
     forceOut: Boolean(targetRunner.forceOut),
+    prohibitedFirstBaseTagUp,
+    prohibitedSecondBaseTagUp,
     rundownEligible: Boolean(
       !targetRunner.forceOut &&
       !caughtBallScene &&

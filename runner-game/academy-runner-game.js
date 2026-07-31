@@ -12,7 +12,7 @@
   const ACTION_LABELS = {
     GO: 'ゴー',
     STOP: 'ストップ',
-    HALFWAY: 'ハーフウェイ／2次リード',
+    HALFWAY: '２次リード/ハーフウェイ',
     BACK: 'バック',
     KAKENUK: 'かけぬけ',
     ROUND: 'オーバーラン'
@@ -297,6 +297,13 @@
       start: 'FIRST', scene: 'extra', direction: 'right-center',
       title: '長打と前の走者', prompt: '前の走者との間を保ちながら進もう。',
       expected: [point('ROUND', 2), point('GO', 3), point('STOP', 2)]
+    }),
+    makeProblem('AD-11', 'advanced', {
+      start: 'FIRST', scene: 'fly', direction: 'center', outs: 0,
+      otherBases: ['THIRD'],
+      title: '前の走者への送球を見て進む',
+      prompt: '3塁走者がタッチアップした。外野からホームへの送球を見て2塁をねらおう。',
+      expected: [point('BACK', 2), point('GO', 3)]
     }),
 
     makeProblem('EX-01', 'expert', {
@@ -801,6 +808,98 @@
     return { earned: earnedWeight, max };
   }
 
+  function isThirdBaseGroundJudgment(problem) {
+    return (
+      problem.start === 'THIRD' &&
+      problem.scene === 'ground' &&
+      problem.outs < 2 &&
+      !isForcedGroundAdvance(problem)
+    );
+  }
+
+  function thirdBaseRunnerScored() {
+    const selfRunner = (state.playOutcome?.runners || [])
+      .find((runner) => runner.id === 'self');
+    return (
+      !state.playOutcome?.outRunnerIds?.includes('self') &&
+      Number(selfRunner?.baseIndex ?? selfRunner?.advance) >= 4
+    );
+  }
+
+  function outfieldTwoBaseResult(problem) {
+    if (
+      !['single', 'extra'].includes(problem.scene) ||
+      !['FIRST', 'SECOND'].includes(problem.start)
+    ) return null;
+    const startBaseIndex = problem.start === 'FIRST' ? 1 : 2;
+    const targetBaseIndex = Math.min(4, startBaseIndex + 2);
+    const selfRunner = (state.playOutcome?.runners || [])
+      .find((runner) => runner.id === 'self');
+    const out =
+      state.playOutcome?.outRunnerIds?.includes('self') ||
+      state.lastSelfDefenseResult?.out === true;
+    const reachedTarget =
+      Number(selfRunner?.baseIndex ?? selfRunner?.advance) >=
+      targetBaseIndex;
+    const attemptedTarget =
+      Number(state.lastSelfDefenseResult?.targetBaseIndex) >=
+      targetBaseIndex;
+    if (!reachedTarget && !attemptedTarget) return null;
+    return {
+      safe: reachedTarget && !out,
+      out: Boolean(out)
+    };
+  }
+
+  function problemForEvaluation(problem) {
+    const lead = problem.expected.filter(
+      (item) => item.action === 'HALFWAY'
+    );
+    if (isThirdBaseGroundJudgment(problem)) {
+      const pitcherGround = directionForScene(problem) === 'pitcher';
+      const decisiveAction =
+        !pitcherGround && thirdBaseRunnerScored()
+          ? 'GO'
+          : 'BACK';
+      const decision = problem.expected.find(
+        (item) => item.action !== 'HALFWAY'
+      );
+      return {
+        ...problem,
+        expected: [
+          ...lead,
+          {
+            ...(decision || point(decisiveAction, 3)),
+            action: decisiveAction
+          }
+        ]
+      };
+    }
+    const twoBaseResult = outfieldTwoBaseResult(problem);
+    if (twoBaseResult?.safe) {
+      return {
+        ...problem,
+        expected: [
+          ...lead,
+          point('GO', 3),
+          point('GO', 2)
+        ]
+      };
+    }
+    if (twoBaseResult?.out) {
+      return {
+        ...problem,
+        expected: [
+          ...lead,
+          point('GO', 3),
+          point('STOP', 1),
+          point('BACK', 2)
+        ]
+      };
+    }
+    return problem;
+  }
+
   function roundHalf(value) {
     return Math.round((Number(value) + Number.EPSILON) * 2) / 2;
   }
@@ -1238,7 +1337,7 @@
   function showQuestionResult() {
     if (!state.active) return;
     state.active = false;
-    const problem = currentProblem();
+    const problem = problemForEvaluation(currentProblem());
     const result = grade(problem);
     state.scores.push(result);
     const mark = markFor(result.total);
@@ -1293,6 +1392,17 @@
     const usedForbiddenSecondaryLead =
       problem.secondaryLeadForbidden &&
       state.actions.includes('HALFWAY');
+    const recklessPitcherGroundGo =
+      isThirdBaseGroundJudgment(problem) &&
+      directionForScene(problem) === 'pitcher' &&
+      result.evaluatedActions.includes('GO');
+    const failedOutfieldTwoBaseAttempt =
+      outfieldTwoBaseResult(problem)?.out === true;
+    const recklessLeftFlySecondTagUp =
+      problem.start === 'SECOND' &&
+      problem.scene === 'fly' &&
+      ['left-line', 'left'].includes(problem.direction) &&
+      result.evaluatedActions.includes('GO');
     const renderFeedbackList = (selector, items) => {
       document.querySelector(selector).innerHTML = items
         .map((item) => `<li>${item}</li>`)
@@ -1327,6 +1437,27 @@
       didItems = [];
       missedItems = [
         '2アウト・3ボール2ストライクで、投球と同時にスタートすること'
+      ];
+    } else if (recklessPitcherGroundGo) {
+      didItems = completedActions
+        .filter((action) => action !== 'GO')
+        .map((action) => evaluationPhrase(problem, action));
+      missedItems = [
+        'ピッチャーゴロでホームへ突っ込まない判断（セーフでも無謀なプレー）'
+      ];
+    } else if (recklessLeftFlySecondTagUp) {
+      didItems = completedActions
+        .filter((action) => action !== 'GO')
+        .map((action) => evaluationPhrase(problem, action));
+      missedItems = [
+        'レフトフライでは3塁へタッチアップせず、2塁にとどまる判断'
+      ];
+    } else if (failedOutfieldTwoBaseAttempt) {
+      didItems = completedActions
+        .filter((action) => !['STOP', 'BACK'].includes(action))
+        .map((action) => evaluationPhrase(problem, action));
+      missedItems = [
+        '外野への打球で、途中で止まって元の塁へバックすること'
       ];
     } else if (missedForcedGroundAdvance) {
       missedItems = ['内野ゴロで元の塁へ戻れない状況での進塁'];

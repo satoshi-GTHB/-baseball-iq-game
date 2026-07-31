@@ -2066,8 +2066,13 @@ function throwAtRunner(from, decision, fallbackTarget) {
     const guaranteedHomeTagUpSafe =
       decision.tagUpEligible &&
       Number(decision.targetBaseIndex) === 4;
-    const out = guaranteedHomeTagUpSafe
-      ? false
+    const out = (
+      decision.prohibitedFirstBaseTagUp ||
+      decision.prohibitedSecondBaseTagUp
+    )
+      ? true
+      : guaranteedHomeTagUpSafe
+        ? false
       : (
           window.RUNNER_MOVEMENT_RULES?.resolveBasePlay?.({
             forceOut: Boolean(decision.forceOut),
@@ -2099,8 +2104,9 @@ function throwAtRunner(from, decision, fallbackTarget) {
       Number.isFinite(Number(decision.runnerArrivalMs))
         ? Number(decision.runnerArrivalMs)
         : 0;
-    const callDelay =
-      !decision.forceOut && out
+    const callDelay = decision.forceOut
+      ? duration
+      : !decision.forceOut && out
         ? duration + TAG_APPLICATION_DURATION
         : Math.max(duration, finiteRunnerArrival);
     scheduleAction(callDelay, () => {
