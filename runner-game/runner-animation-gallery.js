@@ -286,6 +286,8 @@ let caughtPitchReady = false;
 let caughtPitchDefenseStarted = false;
 let playCompletionSent = false;
 let defenseSequenceActive = false;
+let settlementSignature = '';
+let settlementStableSince = 0;
 const PITCH_DURATION = 1200;
 const STEAL_SIGN_DELAY = 500;
 const PRE_PITCH_WINDOW_DURATION = 500;
@@ -413,6 +415,8 @@ function resetAnimation() {
   caughtPitchReady = false;
   caughtPitchDefenseStarted = false;
   defenseSequenceActive = false;
+  settlementSignature = '';
+  settlementStableSince = 0;
   delete galleryField.dataset.rundownState;
   delete galleryField.dataset.rundownThrows;
   delete galleryField.dataset.rundownRunner;
@@ -581,7 +585,54 @@ function dispatchPlayComplete(reason = 'settled') {
 function finishSceneWhenEveryoneStops(label) {
   const runners =
     window.RUNNER_GAME_STATE_API?.playOutcome?.().runners || [];
-  const runnerStillMoving = runners.some(
+  const now = performance.now();
+  const currentSignature = runners
+    .map((runner) => [
+      runner.id,
+      runner.baseIndex ?? '',
+      Number.isFinite(Number(runner.advance))
+        ? Number(runner.advance).toFixed(3)
+        : '',
+      runner.offBase ? 1 : 0
+    ].join(':'))
+    .sort()
+    .join('|');
+  if (currentSignature !== settlementSignature) {
+    settlementSignature = currentSignature;
+    settlementStableSince = now;
+  }
+  const stableFor = now - settlementStableSince;
+  const liveDecision = requestRunnerDefenseDecision();
+  if (liveDecision?.allStopped || liveDecision?.inningOver) {
+    defenseSequenceActive = false;
+    if (activeRundown?.active) {
+      const rundownSnapshot = requestRundownSnapshot(
+        activeRundown.decision.runnerId
+      );
+      if (
+        rundownSnapshot &&
+        !rundownSnapshot.moving &&
+        !rundownSnapshot.offBase
+      ) {
+        finishRundownAtReachedBase(
+          activeRundown,
+          rundownSnapshot
+        );
+      }
+    }
+  }
+  if (
+    stableFor >= 2400 &&
+    !activeRundown?.active
+  ) {
+    defenseSequenceActive = false;
+  }
+  const staleMovingState = Boolean(
+    stableFor >= 1800 &&
+    !defenseSequenceActive &&
+    !activeRundown?.active
+  );
+  const runnerStillMoving = !staleMovingState && runners.some(
     (runner) => runner.moving
   );
   if (
