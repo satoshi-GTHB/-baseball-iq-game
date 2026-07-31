@@ -1859,6 +1859,20 @@ renderRunnerBso();
 
 window.RUNNER_GAME_STATE_API = Object.freeze({
   outs: () => runnerGameOuts,
+  playOutcome: () => ({
+    inningOver: runnerGameInningOver,
+    outs: runnerGameOuts,
+    playOuts: runnerGamePlayOuts,
+    outRunnerIds: [...runnerGameOutRunnerIds],
+    runners: allActiveRunnerSnapshots().map((snapshot) => ({
+      id: snapshot.id,
+      baseIndex: snapshot.baseIndex,
+      startBaseIndex: snapshot.startBaseIndex,
+      advance: snapshot.advance,
+      moving: snapshot.moving,
+      offBase: snapshot.offBase
+    }))
+  }),
   setOuts: (outs) => {
     runnerGameOuts = Math.max(0, Math.min(2, Number(outs) || 0));
     runnerGamePlayStartOuts = runnerGameOuts;

@@ -33,6 +33,9 @@
       scene: 'ground',
       direction: 'center',
       stealSign: false,
+      immediateStart: false,
+      secondaryLeadForbidden: false,
+      resultGoal: '',
       alignment: '通常守備',
       otherBases: null,
       title: '走り方を考えよう',
@@ -43,7 +46,11 @@
       next: 'ボールと守備の動きを最後まで見よう。',
       ...options
     };
-    if (problem.start !== 'BATTER' && !problem.stealSign) {
+    if (
+      problem.start !== 'BATTER' &&
+      !problem.stealSign &&
+      !problem.immediateStart
+    ) {
       const expectedAfterLead = problem.expected.map((item, index) =>
         index === 0 && item.action === 'STOP'
           ? { ...item, action: 'BACK' }
@@ -184,6 +191,8 @@
 
     makeProblem('MI-01', 'middle', {
       start: 'FIRST', scene: 'ground', balls: 3, strikes: 2, outs: 2,
+      immediateStart: true,
+      secondaryLeadForbidden: true,
       title: '2アウト・3ボール2ストライク',
       prompt: 'ランナーがつまっている。打球と同時に走ろう。',
       expected: [point('GO', 3, 'strategy')]
@@ -261,7 +270,7 @@
       expected: [point('GO', 3)]
     }),
     makeProblem('AD-06', 'advanced', {
-      start: 'SECOND', scene: 'bunt', direction: 'left',
+      start: 'SECOND', scene: 'bunt', direction: 'third-ground',
       title: '送りバント', prompt: 'バントがフェアになった。3塁へ進もう。',
       expected: [point('GO', 3), point('STOP', 1)]
     }),
@@ -288,68 +297,82 @@
 
     makeProblem('EX-01', 'expert', {
       start: 'THIRD', outs: 1, otherBases: ['HOME'],
+      immediateStart: true, resultGoal: 'score-self',
       title: '1点を取りにいく', instruction: 'アウトになっても1点を取りにいこう。',
       prompt: '監督の作戦どおりに動こう。',
       expected: [point('GO', 3, 'strategy')]
     }),
     makeProblem('EX-02', 'expert', {
       start: 'THIRD', otherBases: ['HOME', 'SECOND'],
+      resultGoal: 'keep-self-safe',
       title: 'ランナーをのこす', instruction: 'むりをせず、ランナーをのこそう。',
       prompt: '監督の作戦どおりに動こう。',
       expected: [point('STOP', 3, 'strategy')]
     }),
     makeProblem('EX-03', 'expert', {
       start: 'FIRST', scene: 'ground', outs: 1,
-      otherBases: ['HOME', 'THIRD'], title: 'おとりになって走る',
+      otherBases: ['HOME', 'THIRD'], resultGoal: 'score-third',
+      title: 'おとりになって走る',
       instruction: '自分がおとりになって、3塁走者を返そう。',
       prompt: '守備を引きつけよう。',
       expected: [point('GO', 3, 'strategy'), point('BACK', 2), point('GO', 2)]
     }),
     makeProblem('EX-04', 'expert', {
       start: 'THIRD', scene: 'bunt', outs: 1,
-      otherBases: ['HOME'], title: 'スクイズ・ゴロ',
+      direction: 'pitcher-ground',
+      otherBases: ['HOME'], immediateStart: true,
+      resultGoal: 'score-self',
+      title: 'スクイズ・ゴロ',
       instruction: 'スクイズで1点を取ろう。',
       prompt: '投球と同時にスタートしよう。',
       expected: [point('GO', 3, 'strategy'), point('GO', 2)]
     }),
     makeProblem('EX-05', 'expert', {
-      start: 'THIRD', scene: 'bunt', outs: 1, direction: 'left',
-      otherBases: ['HOME'], title: 'スクイズ・小フライ',
+      start: 'THIRD', scene: 'bunt', outs: 1,
+      direction: 'third-popup',
+      otherBases: ['HOME'], immediateStart: true,
+      resultGoal: 'keep-self-safe',
+      title: 'スクイズ・小フライ',
       instruction: 'スクイズで1点を取ろう。',
       prompt: '投球でスタートし、フライなら戻ろう。',
       expected: [point('GO', 3, 'strategy'), point('BACK', 3)]
     }),
     makeProblem('EX-06', 'expert', {
       start: 'FIRST', scene: 'ground', outs: 1,
-      otherBases: ['HOME', 'THIRD'], title: '遅れたスタート',
+      otherBases: ['HOME', 'THIRD'], resultGoal: 'score-third',
+      title: '遅れたスタート',
       instruction: '1塁走者、遅れてスタート。',
       prompt: '3塁走者がホームへかえる時間を作ろう。',
       expected: [point('GO', 3, 'strategy')]
     }),
     makeProblem('EX-07', 'expert', {
       start: 'THIRD', alignment: '前進守備',
-      otherBases: ['HOME', 'SECOND'], title: '1点より走者を残す',
+      otherBases: ['HOME', 'SECOND'], resultGoal: 'keep-self-safe',
+      title: '1点より走者を残す',
       instruction: 'たくさん点を取るため、むりをしない。',
       prompt: '守る人の位置を見て、どうするか考えよう。',
       expected: [point('STOP', 3, 'strategy')]
     }),
     makeProblem('EX-08', 'expert', {
       start: 'FIRST', scene: 'ground', outs: 1,
-      otherBases: ['HOME', 'THIRD'], title: '塁の間ではさまれて時間を作る',
+      otherBases: ['HOME', 'THIRD'], resultGoal: 'score-third',
+      title: '塁の間ではさまれて時間を作る',
       instruction: '3塁走者がかえるまで守備を引きつけよう。',
       prompt: 'ボールから離れる方向へ逃げよう。',
       expected: [point('GO', 3, 'strategy'), point('BACK', 2), point('GO', 2)]
     }),
     makeProblem('EX-09', 'expert', {
-      start: 'THIRD', scene: 'bunt', otherBases: ['HOME'],
-      title: 'スクイズの打球を見る',
+      start: 'THIRD', scene: 'bunt', direction: 'pitcher-popup',
+      otherBases: ['HOME'], resultGoal: 'keep-self-safe',
+      immediateStart: true, title: 'スクイズの打球を見る',
       instruction: 'スクイズで1点を取ろう。',
       prompt: 'バントが転がるか、上がるかを見よう。',
       expected: [point('GO', 3, 'strategy'), point('BACK', 2)]
     }),
     makeProblem('EX-10', 'expert', {
       start: 'FIRST', scene: 'ground', outs: 1,
-      otherBases: ['HOME', 'THIRD'], title: '点を取るのを助ける走り',
+      otherBases: ['HOME', 'THIRD'], resultGoal: 'score-third',
+      title: '点を取るのを助ける走り',
       instruction: '前の走者を返すため、守備の目を引こう。',
       prompt: '次の塁へ進み、守る人をまよわせよう。',
       expected: [point('GO', 3, 'strategy'), point('STOP', 1)]
@@ -452,7 +475,8 @@
     startedAt: 0,
     replaying: false,
     resultTimer: null,
-    lastSelfDefenseResult: null
+    lastSelfDefenseResult: null,
+    playOutcome: null
   };
 
   function shuffle(items) {
@@ -561,6 +585,7 @@
     state.startedAt = 0;
     state.replaying = false;
     state.lastSelfDefenseResult = null;
+    state.playOutcome = null;
     clearTimeout(state.resultTimer);
     playButton.disabled = false;
     playButton.textContent = '▶ プレー開始';
@@ -709,11 +734,51 @@
     return Number.isInteger(value) ? String(value) : Number(value).toFixed(1);
   }
 
+  function strategyOutcome(problem) {
+    if (!problem.resultGoal) return null;
+    const runners = state.playOutcome?.runners || [];
+    const reachedHome = (runner) =>
+      Number(runner?.baseIndex ?? runner?.advance) >= 4;
+    const selfRunner = runners.find((runner) => runner.id === 'self');
+    const thirdRunnerId =
+      problem.start === 'THIRD'
+        ? 'self'
+        : `other-${(problem.otherBases || []).indexOf('THIRD')}`;
+    const thirdRunner = runners.find(
+      (runner) => runner.id === thirdRunnerId
+    );
+    if (problem.resultGoal === 'score-self') {
+      return {
+        met: reachedHome(selfRunner),
+        success: '監督がねらった1点を取れたこと',
+        failure: '監督がねらった1点を取れなかったこと'
+      };
+    }
+    if (problem.resultGoal === 'score-third') {
+      return {
+        met: reachedHome(thirdRunner),
+        success: '3塁走者をホームへ返せたこと',
+        failure: '3塁走者をホームへ返せなかったこと'
+      };
+    }
+    return {
+      met: Boolean(selfRunner),
+      success: '監督の指示どおりランナーを残せたこと',
+      failure: 'ランナーをアウトにしてしまったこと'
+    };
+  }
+
   function grade(problem) {
     const submittedActions = actionsForGrade(problem);
     const earlyForcedGroundBack =
       hasEarlyForcedGroundBack(problem, submittedActions);
-    const evaluatedActions = earlyForcedGroundBack
+    const forcedLeadBeforeImmediateStart =
+      problem.secondaryLeadForbidden &&
+      submittedActions.includes('HALFWAY');
+    const evaluatedActions = (
+      earlyForcedGroundBack ||
+      forcedLeadBeforeImmediateStart
+    )
       ? submittedActions.filter((action) => action !== 'GO')
       : submittedActions;
     const allExpected = problem.expected.map((item) => item.action);
@@ -732,6 +797,7 @@
         play: null,
         personal: null,
         strategy: null,
+        outcome: null,
         exact,
         evaluatedActions
       };
@@ -748,25 +814,43 @@
       evaluatedActions
     );
     const hasStrategy = strategyWeight.max > 0;
-    const personalMax = hasStrategy ? 5 : 8;
-    const personalRaw = personalWeight.max
+    const expertResultFocus = problem.level === 'expert';
+    const personalMax = expertResultFocus
+      ? 2
+      : hasStrategy ? 5 : 8;
+    let personalRaw = personalWeight.max
       ? personalWeight.earned / personalWeight.max * personalMax
-      : personalMax;
+      : problem.immediateStart && strategyWeight.max
+        ? strategyWeight.earned / strategyWeight.max * personalMax
+        : personalMax;
+    if (
+      expertResultFocus &&
+      problem.immediateStart &&
+      submittedActions.includes('HALFWAY')
+    ) {
+      personalRaw *= .5;
+    }
     const strategyRaw = hasStrategy
       ? strategyWeight.earned / strategyWeight.max * 3
       : 0;
     const matchedWeight = personalWeight.earned + strategyWeight.earned;
     const totalWeight = personalWeight.max + strategyWeight.max;
     const ratio = totalWeight ? matchedWeight / totalWeight : 0;
-    const play = exact ? 2 : ratio >= .5 ? 1 : 0;
+    const outcome = strategyOutcome(problem);
+    const play = expertResultFocus
+      ? outcome?.met ? 5 : 0
+      : exact ? 2 : ratio >= .5 ? 1 : 0;
+    const playMax = expertResultFocus ? 5 : 2;
     const personal = roundHalf(personalRaw);
     const strategy = roundHalf(strategyRaw);
     return {
       total: roundHalf(play + personal + strategy),
       play,
+      playMax,
       personal,
       personalMax,
       strategy: hasStrategy ? strategy : null,
+      outcome,
       exact,
       evaluatedActions
     };
@@ -812,6 +896,9 @@
       if (action === 'GO' && problem.stealSign) {
         return 'ピッチャーが投げるのに合わせてスタートを切る';
       }
+      if (action === 'GO' && problem.immediateStart) {
+        return '監督の指示に合わせて、投球と同時にスタートを切る';
+      }
       if (
         action === 'GO' &&
         caughtFly &&
@@ -851,6 +938,9 @@
     }
     if (action === 'GO' && problem.stealSign) {
       return '投球に合わせるタイミングでの盗塁スタート';
+    }
+    if (action === 'GO' && problem.immediateStart) {
+      return '監督の指示に合わせるタイミングでのスタート';
     }
     if (action === 'GO' && isForcedGroundAdvance(problem)) {
       return '内野ゴロで元の塁へ戻れない状況での進塁';
@@ -937,6 +1027,32 @@
         ) {
           issues.push(`${problem.id}: スクイズの走者配置が違う`);
         }
+        if (
+          (
+            /アウトになっても1点|スクイズ/.test(
+              problem.instruction
+            )
+          ) &&
+          !problem.immediateStart
+        ) {
+          issues.push(`${problem.id}: すぐスタートする設定がない`);
+        }
+        if (problem.level === 'expert' && !problem.resultGoal) {
+          issues.push(`${problem.id}: 結果の目標がない`);
+        }
+        if (
+          problem.scene === 'bunt' &&
+          ![
+            'third-ground',
+            'third-popup',
+            'pitcher-ground',
+            'pitcher-popup',
+            'first-ground',
+            'first-popup'
+          ].includes(problem.direction)
+        ) {
+          issues.push(`${problem.id}: バントの打球設定が違う`);
+        }
       });
     if (issues.length) {
       throw new Error(
@@ -960,7 +1076,7 @@
       breakdown.innerHTML = `<div class="score-row"><span>基本の考え方</span><b>${displayNumber(result.total)}／10</b></div>`;
     } else {
       const rows = [
-        ['プレー結果', result.play, 2],
+        ['プレー結果', result.play, result.playMax],
         ['自分の走り方', result.personal, result.personalMax]
       ];
       if (result.strategy !== null) rows.push(['監督の作戦どおりに動けたか', result.strategy, 3]);
@@ -997,6 +1113,9 @@
     const missedForcedGroundAdvance =
       isForcedGroundAdvance(problem) &&
       missingActions.includes('GO');
+    const usedForbiddenSecondaryLead =
+      problem.secondaryLeadForbidden &&
+      state.actions.includes('HALFWAY');
     const renderFeedbackList = (selector, items) => {
       document.querySelector(selector).innerHTML = items
         .map((item) => `<li>${item}</li>`)
@@ -1030,6 +1149,11 @@
               ? '捕手にボールが届いた後のタイミングでの盗塁スタート'
               : '投球に合わせるタイミングでの盗塁スタート'
           ];
+    } else if (usedForbiddenSecondaryLead) {
+      didItems = [];
+      missedItems = [
+        '2アウト・3ボール2ストライクで、投球と同時にスタートすること'
+      ];
     } else if (missedForcedGroundAdvance) {
       missedItems = ['内野ゴロで元の塁へ戻れない状況での進塁'];
     } else {
@@ -1044,6 +1168,13 @@
           );
         }
       });
+    }
+    if (result.outcome) {
+      if (result.outcome.met) {
+        didItems.unshift(result.outcome.success);
+      } else {
+        missedItems.unshift(result.outcome.failure);
+      }
     }
     renderFeedbackList(
       '#feedback-did',
@@ -1178,6 +1309,8 @@
   }, true);
   field.addEventListener('runner-play-complete', () => {
     clearTimeout(state.resultTimer);
+    state.playOutcome =
+      window.RUNNER_GAME_STATE_API?.playOutcome?.() || null;
     state.resultTimer = setTimeout(() => {
       if (state.replaying) {
         state.replaying = false;
