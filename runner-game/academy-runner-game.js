@@ -541,6 +541,7 @@
     active: false,
     started: false,
     startedAt: 0,
+    caughtBallAt: null,
     replaying: false,
     resultTimer: null,
     lastSelfDefenseResult: null,
@@ -664,6 +665,7 @@
     state.active = true;
     state.started = false;
     state.startedAt = 0;
+    state.caughtBallAt = null;
     state.replaying = false;
     state.lastSelfDefenseResult = null;
     state.playOutcome = null;
@@ -705,6 +707,38 @@
     if (!problem.stealSign) {
       const actions = [...state.actions];
       const expectedActions = problem.expected.map((item) => item.action);
+      const selfRunner = (state.playOutcome?.runners || [])
+        .find((runner) => runner.id === 'self');
+      const selfOut =
+        state.playOutcome?.outRunnerIds?.includes('self') ||
+        state.lastSelfDefenseResult?.out === true;
+      const reachedExpectedBase = Boolean(
+        !selfOut &&
+        Number(selfRunner?.baseIndex ?? selfRunner?.advance) >=
+          expectedDestinationBaseIndex(problem)
+      );
+      if (reachedExpectedBase) {
+        const expectedGoCount = expectedActions.filter(
+          (action) => action === 'GO'
+        ).length;
+        let recordedGoCount = actions.filter(
+          (action) => action === 'GO'
+        ).length;
+        while (recordedGoCount < expectedGoCount) {
+          const stopIndex = actions.lastIndexOf('STOP');
+          if (stopIndex >= 0) actions.splice(stopIndex, 0, 'GO');
+          else actions.push('GO');
+          recordedGoCount += 1;
+        }
+        if (
+          expectedActions.includes('STOP') &&
+          !actions.includes('STOP') &&
+          !selfRunner?.moving &&
+          !selfRunner?.offBase
+        ) {
+          actions.push('STOP');
+        }
+      }
       const safeFlyReturn =
         ['fly', 'popup', 'liner'].includes(problem.scene) &&
         expectedActions.includes('BACK') &&
@@ -885,10 +919,64 @@
     };
   }
 
+  function isReachableExtraBaseHit(problem) {
+    return Boolean(
+      problem.scene === 'extra' &&
+      ['left-center', 'right-center'].includes(problem.direction)
+    );
+  }
+
+  function successfulTagUpAdvance(problem) {
+    if (
+      !['fly', 'popup', 'liner'].includes(problem.scene) ||
+      !['FIRST', 'SECOND', 'THIRD'].includes(problem.start)
+    ) return false;
+    const startBaseIndex = {
+      FIRST: 1,
+      SECOND: 2,
+      THIRD: 3
+    }[problem.start];
+    const selfRunner = (state.playOutcome?.runners || [])
+      .find((runner) => runner.id === 'self');
+    const reachedBaseIndex = Number(
+      selfRunner?.baseIndex ?? selfRunner?.advance
+    );
+    const selfOut =
+      state.playOutcome?.outRunnerIds?.includes('self') ||
+      state.lastSelfDefenseResult?.out === true;
+    return Boolean(
+      !selfOut &&
+      state.lastSelfDefenseResult?.tagUpEligible &&
+      Number.isFinite(reachedBaseIndex) &&
+      reachedBaseIndex > startBaseIndex
+    );
+  }
+
   function problemForEvaluation(problem) {
     const lead = problem.expected.filter(
       (item) => item.action === 'HALFWAY'
     );
+    if (
+      problem.start === 'BATTER' &&
+      problem.scene === 'extra' &&
+      !isReachableExtraBaseHit(problem)
+    ) {
+      return {
+        ...problem,
+        expected: [point('ROUND', 3)]
+      };
+    }
+    if (successfulTagUpAdvance(problem)) {
+      const alreadyExpectsGo = problem.expected.some(
+        (item) => item.action === 'GO'
+      );
+      return {
+        ...problem,
+        expected: alreadyExpectsGo
+          ? problem.expected
+          : [...problem.expected, point('GO', 2)]
+      };
+    }
     const thirdBasePitcherFly =
       problem.start === 'THIRD' &&
       (
@@ -1073,7 +1161,7 @@
     if (twoBaseResult) {
       targetBaseIndex = Math.min(4, startBaseIndex + 2);
     } else if (problem.start === 'BATTER') {
-      targetBaseIndex = problem.scene === 'extra' ? 2 : 1;
+      targetBaseIndex = isReachableExtraBaseHit(problem) ? 2 : 1;
     } else if (
       problem.expected.some((item) => item.action === 'GO')
     ) {
@@ -1124,7 +1212,38 @@
     }[otherBase] || 'ほかのランナー';
   }
 
+  function expectedDestinationBaseIndex(problem) {
+    const startBaseIndex = {
+      BATTER: 0,
+      FIRST: 1,
+      SECOND: 2,
+      THIRD: 3
+    }[problem.start] ?? 0;
+    const expectedGoCount = problem.expected.filter(
+      (item) => item.action === 'GO'
+    ).length;
+    return (
+      problem.start === 'BATTER' &&
+      isReachableExtraBaseHit(problem)
+        ? 2
+        : problem.start === 'BATTER'
+          ? 1
+          : Math.min(4, startBaseIndex + expectedGoCount)
+    );
+  }
+
+  function expectedDestinationLabel(problem) {
+    const targetBaseIndex = expectedDestinationBaseIndex(problem);
+    return {
+      1: '1塁',
+      2: '2塁',
+      3: '3塁',
+      4: 'ホーム'
+    }[targetBaseIndex] || '目標の塁';
+  }
+
   function intendedGoalForAction(problem, action) {
+    const destination = expectedDestinationLabel(problem);
     if (problem.resultGoal === 'score-self') {
       return 'ホームへ進んで得点すること';
     }
@@ -1138,10 +1257,12 @@
       ['fly', 'popup', 'liner'].includes(problem.scene) &&
       action === 'GO'
     ) {
-      return '元の塁へ戻ってセーフになること';
+      return successfulTagUpAdvance(problem)
+        ? `元の塁へ戻ってから、${destination}へ進んでセーフになること`
+        : '元の塁へ戻ってセーフになること';
     }
     if (action === 'BACK') {
-      return '次の塁へ進んでセーフになること';
+      return `${destination}へ進んでセーフになること`;
     }
     if (action === 'STOP') {
       return '安全な塁まで進むこと';
@@ -1149,7 +1270,7 @@
     if (problem.start === 'BATTER') {
       return '1塁に安全に残ること';
     }
-    return '次の塁でセーフになること';
+    return `${destination}でセーフになること`;
   }
 
   function defenseLocationDescription(problem) {
@@ -1192,8 +1313,9 @@
     const intendedGoal = intendedGoalForAction(problem, action);
     const location = defenseLocationDescription(problem);
     const selfPosition = runnerLabelForId(problem, 'self');
+    const destination = expectedDestinationLabel(problem);
     if (action === 'GO') {
-      return `自分は${selfPosition}。目的は「${intendedGoal}」。${location}への${situation}で、次の塁へ進む判断をした`;
+      return `自分は${selfPosition}。目的は「${intendedGoal}」。${location}への${situation}で、${destination}へ進む判断をした`;
     }
     if (action === 'BACK') {
       return `自分は${selfPosition}。目的は「${intendedGoal}」。${location}への${situation}で、元の塁へ戻る判断をした`;
@@ -1212,6 +1334,7 @@
     const intendedGoal = intendedGoalForAction(problem, action);
     const location = defenseLocationDescription(problem);
     const situation = sceneSituation(problem);
+    const destination = expectedDestinationLabel(problem);
     const selfOut =
       state.playOutcome?.outRunnerIds?.includes('self') ||
       state.lastSelfDefenseResult?.out === true;
@@ -1219,13 +1342,13 @@
       ? `、${selfPosition}がアウトになった`
       : '';
     if (action === 'GO') {
-      return `自分は${selfPosition}。目的は「${intendedGoal}」。${location}への${situation}で次の塁へ進まなかった${outFact}`;
+      return `自分は${selfPosition}。目的は「${intendedGoal}」。${location}への${situation}で${destination}へ進まなかった${outFact}`;
     }
     if (action === 'BACK') {
       return `自分は${selfPosition}。目的は「${intendedGoal}」。${location}への${situation}で元の塁へ戻らず${outFact || '、アウトになった'}`;
     }
     if (action === 'STOP') {
-      return `自分は${selfPosition}。目的は「${intendedGoal}」。${location}への${situation}で安全な塁に止まらなかった${outFact}`;
+      return `自分は${selfPosition}。目的は「${intendedGoal}」。${location}への${situation}で安全な${destination}に止まらなかった${outFact}`;
     }
     if (action === 'HALFWAY') {
       return `自分は${selfPosition}。投球に合わせて2次リードを取らなかった${outFact}`;
@@ -1248,12 +1371,46 @@
       return 'ホームへ進めず、得点できなかったこと';
     }
     if (problem.expected.some((item) => item.action === 'GO')) {
-      return '次の塁へ進めなかったこと';
+      return `${expectedDestinationLabel(problem)}へ進めなかったこと`;
     }
     if (problem.expected.some((item) => item.action === 'BACK')) {
       return `${runnerLabelForId(problem, 'self')}がアウトになったこと`;
     }
     return 'ランナーを安全に塁へ残せなかったこと';
+  }
+
+  function failedTagUpAssessment(problem) {
+    const caughtFly =
+      ['fly', 'popup', 'liner'].includes(problem.scene) ||
+      (
+        problem.scene === 'bunt' &&
+        String(problem.direction).endsWith('-popup')
+      );
+    const selfOut =
+      state.playOutcome?.outRunnerIds?.includes('self') ||
+      state.lastSelfDefenseResult?.out === true;
+    if (
+      !caughtFly ||
+      !selfOut ||
+      !['FIRST', 'SECOND', 'THIRD'].includes(problem.start) ||
+      state.caughtBallAt === null ||
+      !Number.isFinite(Number(state.caughtBallAt))
+    ) return null;
+    const tagUpGo = state.timeline.find((item) =>
+      item.action === 'GO' &&
+      item.at >= Number(state.caughtBallAt) - 100
+    );
+    if (!tagUpGo) return null;
+    const prohibited = Boolean(
+      state.lastSelfDefenseResult?.prohibitedFirstBaseTagUp ||
+      state.lastSelfDefenseResult?.prohibitedSecondBaseTagUp
+    );
+    const delay = tagUpGo.at - Number(state.caughtBallAt);
+    return {
+      prohibited,
+      late: !prohibited && delay > 650,
+      delay
+    };
   }
 
   function grade(problem) {
@@ -1285,8 +1442,12 @@
     const stealWasOut =
       problem.stealSign &&
       state.lastSelfDefenseResult?.out === true;
+    const pickoffOut =
+      state.lastSelfDefenseResult?.out === true &&
+      state.lastSelfDefenseResult?.reason === 'pickoff';
     const exact =
       !stealWasOut &&
+      !pickoffOut &&
       evaluatedActions.length === allExpected.length &&
       evaluatedActions.every(
         (action, index) => action === allExpected[index]
@@ -1330,9 +1491,17 @@
     ) {
       personalRaw *= .5;
     }
-    const strategyRaw = hasStrategy
+    if (pickoffOut) personalRaw = 0;
+    const failedTagUp = failedTagUpAssessment(problem);
+    if (failedTagUp) {
+      personalRaw = failedTagUp.prohibited
+        ? 0
+        : Math.min(personalRaw, personalMax * .5);
+    }
+    let strategyRaw = hasStrategy
       ? strategyWeight.earned / strategyWeight.max * 3
       : 0;
+    if (pickoffOut) strategyRaw = 0;
     const outcome = actualPlayOutcome(problem);
     const play = expertResultFocus
       ? outcome?.met ? 5 : 0
@@ -1707,6 +1876,7 @@
       problem.scene === 'fly' &&
       ['left-line', 'left'].includes(problem.direction) &&
       result.evaluatedActions.includes('GO');
+    const failedTagUp = failedTagUpAssessment(problem);
     const renderFeedbackList = (selector, items) => {
       document.querySelector(selector).innerHTML = items
         .map((item) => `<li>${item}</li>`)
@@ -1746,10 +1916,13 @@
       .map((action) => missedActionFeedback(problem, action));
     if (pickoffOut) {
       didItems = [];
-      strategyDidItems = [];
-      strategyMissedItems = [
-        '投球に合わせる正しいタイミングでのスタート（スタートが早すぎて、けん制でアウトになった）'
+      missedItems = [
+        '投球前に塁を離れすぎ、けん制で挟まれてアウトになった'
       ];
+      strategyDidItems = [];
+      strategyMissedItems = result.strategy === null
+        ? []
+        : ['監督の指示を実行する前に、けん制でアウトになった'];
     } else if (stealStart) {
       strategyDidItems = stealSucceeded
         ? ['投球に合わせるタイミングでの盗塁スタート']
@@ -1784,6 +1957,18 @@
         .map((action) => evaluationPhrase(problem, action));
       missedItems = [
         'レフトフライでは3塁へタッチアップせず、2塁にとどまる判断'
+      ];
+    } else if (failedTagUp) {
+      const location = defenseLocationDescription(problem);
+      const selfPosition = runnerLabelForId(problem, 'self');
+      const destination = expectedDestinationLabel(problem);
+      didItems = [
+        `${location}へのフライを見て、タッチアップのスタートを切れた`
+      ];
+      missedItems = [
+        failedTagUp.late
+          ? `${location}へのフライで、捕球後のスタートが遅れ、${selfPosition}が${destination}に間に合わずアウトになった`
+          : `${location}から${destination}までの送球距離に対してタッチアップが無謀で、${selfPosition}がアウトになった`
       ];
     } else if (failedOutfieldTwoBaseAttempt) {
       didItems = completedActions
@@ -1991,9 +2176,24 @@
           event.detail.defenseReason ||
           event.detail.reason ||
           null,
+        prohibitedFirstBaseTagUp: Boolean(
+          event.detail.prohibitedFirstBaseTagUp
+        ),
+        prohibitedSecondBaseTagUp: Boolean(
+          event.detail.prohibitedSecondBaseTagUp
+        ),
+        tagUpEligible: Boolean(event.detail.tagUpEligible),
+        runnerArrivalMs: Number(event.detail.runnerArrivalMs),
         action: state.timeline.at(-1)?.action || null
       };
     }
+  });
+  field.addEventListener('runner-play-phase', (event) => {
+    if (event.detail?.phase !== 'catch' || !state.started) return;
+    state.caughtBallAt = Math.max(
+      0,
+      performance.now() - state.startedAt
+    );
   });
   field.addEventListener('runner-rundown-start', (event) => {
     if (

@@ -1448,6 +1448,11 @@ function buildRunnerDefenseDecision(
     Number(runner.targetBaseIndex) >
       Number(runner.startBaseIndex)
   ));
+  const leadTagUpAlreadyScored = [...resolvedTargets].some(
+    (targetKey) => String(targetKey).endsWith(':4')
+  );
+  const leadTagUpHomeThrowCompleted =
+    runnerGameField.dataset.lastThrowRoute === 'home-attempt';
   const prohibitedFirstBaseTagUp = Boolean(
     caughtBallScene &&
     scene === 'fly' &&
@@ -1460,7 +1465,9 @@ function buildRunnerDefenseDecision(
       'right',
       'right-line'
     ].includes(String(direction)) &&
-    !leadTagUpInProgress
+    !leadTagUpInProgress &&
+    !leadTagUpAlreadyScored &&
+    !leadTagUpHomeThrowCompleted
   );
   const prohibitedSecondBaseTagUp = Boolean(
     caughtBallScene &&

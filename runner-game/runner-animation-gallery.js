@@ -2071,6 +2071,9 @@ function throwAtRunner(from, decision, fallbackTarget) {
   if (receiver?.carriesBall) {
     galleryField.dataset.lastThrowRoute = 'carry-to-base';
   }
+  if (Number(decision?.targetBaseIndex) === 4) {
+    galleryField.dataset.lastThrowRoute = 'home-attempt';
+  }
   animate(
     ball,
     [
@@ -2412,6 +2415,10 @@ function selectPlayDefenseAlignment() {
 
 function playOutfieldLiner(isExtra = false) {
   const play = OUTFIELD_PLAYS[selectedDirection];
+  const deepGapExtra = Boolean(
+    isExtra &&
+    ['left-center', 'right-center'].includes(selectedDirection)
+  );
   const target = isExtra
     ? LONG_HIT_TARGETS[selectedDirection]
     : play.target;
@@ -2448,7 +2455,14 @@ function playOutfieldLiner(isExtra = false) {
         target[1] + (positionOf(play.far)[1] - target[1]) * .45
       ]
     : play.farPoint;
-  move(fielders[play.primary], positionOf(play.primary), primaryTarget, duration + 250, 80, 'ease-in');
+  move(
+    fielders[play.primary],
+    positionOf(play.primary),
+    primaryTarget,
+    deepGapExtra ? 5800 : duration + 250,
+    80,
+    'ease-in'
+  );
   move(fielders[play.backup], positionOf(play.backup), backupTarget, duration + 300, 120, 'ease-in');
   move(fielders[play.far], positionOf(play.far), farTarget, duration, 180);
   move(fielders[play.cut], positionOf(play.cut), cutPoint, 950, 550);
@@ -2456,7 +2470,9 @@ function playOutfieldLiner(isExtra = false) {
   move(fielders.pitcher, positionOf('pitcher'), [50, 40], 800, 700);
 
   if (isExtra) {
-    const pickupTime = duration + 330;
+    const pickupTime = deepGapExtra
+      ? 6000
+      : duration + 330;
     const cutReceiveDelay = pickupTime + 100;
     const cutHoldDuration = 450;
     playCatchFlash(target, pickupTime - 120);
