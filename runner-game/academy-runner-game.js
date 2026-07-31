@@ -35,6 +35,7 @@
       stealSign: false,
       immediateStart: false,
       secondaryLeadForbidden: false,
+      decoySteal: false,
       resultGoal: '',
       alignment: '通常守備',
       otherBases: null,
@@ -310,11 +311,12 @@
       expected: [point('STOP', 3, 'strategy')]
     }),
     makeProblem('EX-03', 'expert', {
-      start: 'FIRST', scene: 'ground', outs: 1,
-      otherBases: ['HOME', 'THIRD'], resultGoal: 'score-third',
+      start: 'FIRST', scene: 'swing', outs: 1,
+      immediateStart: true, decoySteal: true,
+      otherBases: ['THIRD'], resultGoal: 'score-third',
       title: 'おとりになって走る',
-      instruction: '自分がおとりになって、3塁走者を返そう。',
-      prompt: '守備を引きつけよう。',
+      instruction: '盗塁でおとりになれ！',
+      prompt: '牽制や捕手からの送球で挟まれ、3塁走者がかえる時間を作ろう。',
       expected: [point('GO', 3, 'strategy'), point('BACK', 2), point('GO', 2)]
     }),
     makeProblem('EX-04', 'expert', {
@@ -570,6 +572,12 @@
       'manager-instruction-visible',
       Boolean(problem.instruction)
     );
+    const replayCoachComment =
+      field.querySelector('.replay-coach-comment');
+    if (replayCoachComment) {
+      replayCoachComment.textContent = problem.instruction;
+      replayCoachComment.hidden = true;
+    }
     window.RUNNER_GAME_STATE_API?.setOuts?.(problem.outs);
     clickOption(`[data-start="${problem.start}"]`);
     clickOption(`[data-scene="${problem.scene}"]`);
@@ -884,6 +892,14 @@
     const caughtFly = ['fly', 'popup', 'liner'].includes(problem.scene);
     const situation = sceneSituation(problem);
     return expectedActions.map((action, index) => {
+      if (problem.decoySteal && action === 'BACK') {
+        return '塁の間で挟まれたら、元の塁の方向へ逃げる';
+      }
+      if (problem.decoySteal && action === 'GO') {
+        return index === 0
+          ? '盗塁をしかけて守備の送球を自分へ向ける'
+          : '守備の送球を見て、次の塁の方向へ逃げる';
+      }
       if (action === 'BACK' && caughtFly) {
         return `${situation}が上がったのを見てバックする`;
       }
@@ -930,6 +946,12 @@
 
   function evaluationPhrase(problem, action) {
     const situation = sceneSituation(problem);
+    if (action === 'GO' && problem.decoySteal) {
+      return '3塁走者を返すための、おとりの盗塁';
+    }
+    if (action === 'BACK' && problem.decoySteal) {
+      return 'おとりで挟まれた状況での切り返し';
+    }
     if (action === 'BACK' && ['fly', 'popup', 'liner'].includes(problem.scene)) {
       return `${situation}が上がった状況でのバック`;
     }
@@ -1041,6 +1063,16 @@
           issues.push(`${problem.id}: 結果の目標がない`);
         }
         if (
+          problem.decoySteal &&
+          (
+            problem.start !== 'FIRST' ||
+            !otherBases.has('THIRD') ||
+            problem.scene !== 'swing'
+          )
+        ) {
+          issues.push(`${problem.id}: おとり盗塁の状況が違う`);
+        }
+        if (
           problem.scene === 'bunt' &&
           ![
             'third-ground',
@@ -1087,9 +1119,12 @@
     const expectedActions = [
       ...new Set(problem.expected.map((expected) => expected.action))
     ];
-    const stealStart =
-      stealStartAssessment(problem) ||
-      lateCaughtPitchStealAssessment(problem);
+    const stealStart = problem.decoySteal
+      ? null
+      : (
+          stealStartAssessment(problem) ||
+          lateCaughtPitchStealAssessment(problem)
+        );
     const stealWasOut =
       Boolean(stealStart) &&
       state.lastSelfDefenseResult?.out === true;
@@ -1193,6 +1228,12 @@
     if (state.replaying) return;
     state.replaying = true;
     resultOverlay.hidden = true;
+    const replayCoachComment =
+      field.querySelector('.replay-coach-comment');
+    if (replayCoachComment) {
+      replayCoachComment.textContent = currentProblem().instruction;
+      replayCoachComment.hidden = !currentProblem().instruction;
+    }
     const replayTimeline = state.timeline.map((item) => ({ ...item }));
     playButton.click();
     replayTimeline.forEach((item) => {
@@ -1314,6 +1355,9 @@
     state.resultTimer = setTimeout(() => {
       if (state.replaying) {
         state.replaying = false;
+        const replayCoachComment =
+          field.querySelector('.replay-coach-comment');
+        if (replayCoachComment) replayCoachComment.hidden = true;
         resultOverlay.hidden = false;
         return;
       }
