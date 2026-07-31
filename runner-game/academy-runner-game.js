@@ -1025,6 +1025,84 @@
     };
   }
 
+  function actualPlayOutcome(problem) {
+    const runners = state.playOutcome?.runners || [];
+    const selfRunner = runners.find((runner) => runner.id === 'self');
+    const selfOut =
+      state.playOutcome?.outRunnerIds?.includes('self') ||
+      state.lastSelfDefenseResult?.out === true;
+    if (selfOut) {
+      return {
+        met: false,
+        success: '',
+        failure: `${runnerLabelForId(problem, 'self')}がアウトになったこと`
+      };
+    }
+    const playEndedByAnotherOut =
+      problem.start !== 'BATTER' &&
+      state.playOutcome?.inningOver === true;
+    if (playEndedByAnotherOut) {
+      const caughtBallThirdOut =
+        problem.outs >= 2 &&
+        (
+          ['fly', 'popup', 'liner'].includes(problem.scene) ||
+          (
+            problem.scene === 'bunt' &&
+            String(problem.direction).endsWith('-popup')
+          )
+        );
+      return {
+        met: true,
+        uncontrollable: true,
+        success: caughtBallThirdOut
+          ? `フライが捕られて3アウトになったため、${runnerLabelForId(problem, 'self')}のプレー結果は減点しない`
+          : `ほかのアウトでプレーが終了したため、${runnerLabelForId(problem, 'self')}のプレー結果は減点しない`,
+        failure: ''
+      };
+    }
+    const strategy = strategyOutcome(problem);
+    if (strategy) return strategy;
+    const startBaseIndex = {
+      BATTER: 0,
+      FIRST: 1,
+      SECOND: 2,
+      THIRD: 3
+    }[problem.start] ?? 0;
+    const twoBaseResult = outfieldTwoBaseResult(problem);
+    let targetBaseIndex = startBaseIndex;
+    if (twoBaseResult) {
+      targetBaseIndex = Math.min(4, startBaseIndex + 2);
+    } else if (problem.start === 'BATTER') {
+      targetBaseIndex = problem.scene === 'extra' ? 2 : 1;
+    } else if (
+      problem.expected.some((item) => item.action === 'GO')
+    ) {
+      targetBaseIndex = Math.min(4, startBaseIndex + 1);
+    }
+    const reachedBaseIndex = Number(
+      selfRunner?.baseIndex ?? selfRunner?.advance
+    );
+    const met =
+      Number.isFinite(reachedBaseIndex) &&
+      reachedBaseIndex >= targetBaseIndex;
+    const targetLabel = {
+      1: '1塁',
+      2: '2塁',
+      3: '3塁',
+      4: 'ホーム'
+    }[targetBaseIndex] || '元の塁';
+    const success = targetBaseIndex >= 4
+      ? `${runnerLabelForId(problem, 'self')}がホームまで進み、得点できたこと`
+      : targetBaseIndex === startBaseIndex
+        ? `${runnerLabelForId(problem, 'self')}が元の塁に残り、セーフだったこと`
+        : `${runnerLabelForId(problem, 'self')}が${targetLabel}まで進み、セーフだったこと`;
+    return {
+      met,
+      success,
+      failure: playResultFailure(problem)
+    };
+  }
+
   function runnerLabelForId(problem, runnerId) {
     if (runnerId === 'self') {
       return {
@@ -1255,13 +1333,10 @@
     const strategyRaw = hasStrategy
       ? strategyWeight.earned / strategyWeight.max * 3
       : 0;
-    const matchedWeight = personalWeight.earned + strategyWeight.earned;
-    const totalWeight = personalWeight.max + strategyWeight.max;
-    const ratio = totalWeight ? matchedWeight / totalWeight : 0;
-    const outcome = strategyOutcome(problem);
+    const outcome = actualPlayOutcome(problem);
     const play = expertResultFocus
       ? outcome?.met ? 5 : 0
-      : exact ? 2 : ratio >= .5 ? 1 : 0;
+      : outcome?.met ? 2 : 0;
     const playMax = expertResultFocus ? 5 : 2;
     const personal = roundHalf(personalRaw);
     const strategy = roundHalf(strategyRaw);
