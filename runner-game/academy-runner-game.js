@@ -1003,8 +1003,15 @@
       const selfReachedSecond =
         Number(selfRunner?.baseIndex ?? selfRunner?.advance) >= 2;
       const thirdScored = reachedHome(thirdRunner);
+      const unchallengedStealSucceeded =
+        field.dataset.lastThrowRoute === 'catcher-watches-third' &&
+        !state.playOutcome?.outRunnerIds?.includes('self') &&
+        state.lastSelfDefenseResult?.out !== true &&
+        state.actions.includes('GO');
+      const stealSucceeded =
+        selfReachedSecond || unchallengedStealSucceeded;
       return {
-        met: selfReachedSecond || thirdScored,
+        met: stealSucceeded || thirdScored,
         success: thirdScored
           ? 'おとりの盗塁で3塁走者をホームへ返せたこと'
           : '捕手が送球しない間に2塁へ盗塁できたこと',
@@ -1612,6 +1619,43 @@
         }
       });
     }
+    const alignFeedbackWithScore = (
+      did,
+      missed,
+      score,
+      max,
+      fallbackMissed
+    ) => {
+      if (score === null || max === null) return { did, missed };
+      if (Number(score) <= 0) {
+        return {
+          did: [],
+          missed: missed.length ? missed : [fallbackMissed]
+        };
+      }
+      if (Number(score) >= Number(max)) {
+        return { did, missed: [] };
+      }
+      return { did, missed };
+    };
+    const alignedPersonal = alignFeedbackWithScore(
+      didItems,
+      missedItems,
+      result.personal,
+      result.personalMax,
+      'この問題で必要な走り方ができなかったこと'
+    );
+    didItems = alignedPersonal.did;
+    missedItems = alignedPersonal.missed;
+    const alignedStrategy = alignFeedbackWithScore(
+      strategyDidItems,
+      strategyMissedItems,
+      result.strategy,
+      result.strategy === null ? null : 3,
+      '監督の指示どおりに動けなかったこと'
+    );
+    strategyDidItems = alignedStrategy.did;
+    strategyMissedItems = alignedStrategy.missed;
     const playSucceeded = result.outcome
       ? result.outcome.met
       : result.play === null
