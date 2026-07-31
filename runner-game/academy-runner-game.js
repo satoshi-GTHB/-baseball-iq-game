@@ -52,7 +52,8 @@
     if (
       problem.start !== 'BATTER' &&
       !problem.stealSign &&
-      !problem.immediateStart
+      !problem.immediateStart &&
+      !problem.secondaryLeadForbidden
     ) {
       const expectedAfterLead = problem.expected.map((item, index) =>
         index === 0 && item.action === 'STOP'
@@ -324,6 +325,7 @@
     makeProblem('EX-03B', 'expert', {
       start: 'THIRD', scene: 'swing', outs: 1,
       autonomousDecoySteal: true,
+      secondaryLeadForbidden: true,
       otherBases: ['FIRST'], resultGoal: 'score-self',
       title: 'おとりの走者を見て走る',
       instruction: '盗塁でおとりになれ！',
@@ -334,10 +336,11 @@
       start: 'THIRD', scene: 'swing', outs: 1,
       autonomousDecoySteal: true,
       autonomousDecoyDelay: 0,
+      secondaryLeadForbidden: true,
       otherBases: ['FIRST'], resultGoal: 'keep-self-safe',
       title: '捕手がこちらを見るおとり盗塁',
       instruction: '盗塁でおとりになれ！',
-      prompt: '捕手が送球せず自分を見ていたら、3塁へ戻ろう。',
+      prompt: '捕手が送球せず自分を見ていたら、3塁にとどまろう。',
       expected: [point('STOP', 3, 'strategy')]
     }),
     makeProblem('EX-04', 'expert', {
@@ -995,9 +998,9 @@
       if (
         problem.autonomousDecoySteal &&
         problem.autonomousDecoyDelay === 0 &&
-        action === 'BACK'
+        action === 'STOP'
       ) {
-        return '捕手が送球せず自分を見ていたら、3塁へバックする';
+        return '捕手が送球せず自分を見ていたら、3塁にとどまる';
       }
       if (
         problem.autonomousDecoySteal &&
@@ -1062,9 +1065,9 @@
     if (
       problem.autonomousDecoySteal &&
       problem.autonomousDecoyDelay === 0 &&
-      action === 'BACK'
+      action === 'STOP'
     ) {
-      return '捕手が3塁走者を見ている状況での3塁へのバック';
+      return '捕手が3塁走者を見ている状況での3塁でのストップ';
     }
     if (
       action === 'GO' &&
