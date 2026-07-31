@@ -268,7 +268,7 @@
     const start = Number(startBaseIndex);
     const occupied = (occupiedBaseIndexes || []).map(Number);
     if (forcedBaseIndex(start, occupied)) return true;
-    return !occupied.some((baseIndex) => baseIndex > start);
+    return !occupied.includes(start + 1);
   }
 
   function autonomousRunnerDecision(
@@ -279,7 +279,7 @@
     const start = Number(startBaseIndex);
     const occupied = (occupiedBaseIndexes || []).map(Number);
     if (forcedBaseIndex(start, occupied)) return 'GO';
-    if (!occupied.some((baseIndex) => baseIndex > start)) {
+    if (!occupied.includes(start + 1)) {
       return null;
     }
     return leadRunnerAction === 'GO' ? 'GO' : 'BACK';

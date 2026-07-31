@@ -617,6 +617,8 @@
         ? 'infield-in'
         : 'normal';
     field.dataset.managerInstruction = problem.instruction;
+    field.dataset.decoySteal =
+      String(Boolean(problem.decoySteal));
     field.dataset.autonomousDecoySteal =
       String(Boolean(problem.autonomousDecoySteal));
     field.dataset.autonomousDecoyDelay =

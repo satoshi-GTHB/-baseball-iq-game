@@ -3339,9 +3339,15 @@ function defendCaughtPitchRunner() {
       tagApplicationMs: TAG_APPLICATION_DURATION
     })
   );
+  const decoyThrowAttempt =
+    galleryField.dataset.decoySteal !== 'true' ||
+    Math.random() < .8;
   if (
     currentThirdBaseRunnerPresent &&
-    !likelyOut
+    (
+      !likelyOut ||
+      !decoyThrowAttempt
+    )
   ) {
     galleryField.dataset.lastThrowRoute =
       'catcher-watches-third';

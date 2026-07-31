@@ -1603,7 +1603,7 @@ function playAutonomousRunners(
       segmentIndexFromBase(runner.dataset.base);
     return (
       Number.isInteger(selfStartBaseIndex) &&
-      startBaseIndex < selfStartBaseIndex &&
+      selfStartBaseIndex === startBaseIndex + 1 &&
       !window.RUNNER_MOVEMENT_RULES.forcedBaseIndex(
         startBaseIndex,
         occupiedBaseIndexes
@@ -1837,7 +1837,7 @@ runnerGameField.addEventListener(
         segmentIndexFromBase(runner.dataset.base);
       if (
         !Number.isInteger(selfStartBaseIndex) ||
-        startBaseIndex >= selfStartBaseIndex ||
+        selfStartBaseIndex !== startBaseIndex + 1 ||
         window.RUNNER_MOVEMENT_RULES.forcedBaseIndex(
           startBaseIndex,
           occupiedBaseIndexes
