@@ -271,6 +271,20 @@
     return !occupied.some((baseIndex) => baseIndex > start);
   }
 
+  function autonomousRunnerDecision(
+    startBaseIndex,
+    occupiedBaseIndexes,
+    leadRunnerAction
+  ) {
+    const start = Number(startBaseIndex);
+    const occupied = (occupiedBaseIndexes || []).map(Number);
+    if (forcedBaseIndex(start, occupied)) return 'GO';
+    if (!occupied.some((baseIndex) => baseIndex > start)) {
+      return null;
+    }
+    return leadRunnerAction === 'GO' ? 'GO' : 'BACK';
+  }
+
   function shouldIgnoreNormalInfieldLeadTarget({
     scene,
     direction,
@@ -543,6 +557,7 @@
     RUNDOWN_FORMATIONS,
     SEGMENTS,
     STARTS,
+    autonomousRunnerDecision,
     autonomousRunnerMayAdvance,
     batterRunnerMustRunThrough,
     clampProgress,

@@ -339,14 +339,6 @@
       prompt: '投球でスタートし、フライなら戻ろう。',
       expected: [point('GO', 3, 'strategy'), point('BACK', 3)]
     }),
-    makeProblem('EX-06', 'expert', {
-      start: 'FIRST', scene: 'ground', outs: 1,
-      otherBases: ['HOME', 'THIRD'], resultGoal: 'score-third',
-      title: '遅れたスタート',
-      instruction: '1塁走者、遅れてスタート。',
-      prompt: '3塁走者がホームへかえる時間を作ろう。',
-      expected: [point('GO', 3, 'strategy')]
-    }),
     makeProblem('EX-07', 'expert', {
       start: 'THIRD', alignment: '前進守備',
       otherBases: ['HOME', 'SECOND'], resultGoal: 'keep-self-safe',
@@ -441,6 +433,38 @@
   }
 
   function chooseQuestions(levelId, count = 10) {
+    if (levelId === 'expert') {
+      const usedExpertSources = new Set();
+      const managerQuestions = shuffle(
+        problemCandidates(levelId)
+      )
+        .filter((problem) => {
+          if (usedExpertSources.has(problem.sourceId)) {
+            return false;
+          }
+          usedExpertSources.add(problem.sourceId);
+          return true;
+        })
+        .slice(0, 9);
+      const reviewSource = shuffle(
+        PROBLEMS.filter(
+          (problem) => problem.level !== 'expert'
+        )
+      )[0];
+      const reviewDirection = shuffle(
+        directionVariants(reviewSource)
+      )[0];
+      const reviewQuestion = {
+        ...reviewSource,
+        id: `REVIEW-${reviewSource.id}`,
+        sourceId: reviewSource.id,
+        direction: reviewDirection
+      };
+      return shuffle([
+        ...managerQuestions,
+        reviewQuestion
+      ]);
+    }
     const sourceCounts = new Map();
     return shuffle(problemCandidates(levelId))
       .filter((problem) => {

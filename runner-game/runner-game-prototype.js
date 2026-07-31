@@ -29,6 +29,7 @@ let runnerGamePlayOuts = 0;
 let runnerGamePlayStartOuts = 0;
 let runnerGameInningOver = false;
 let runnerGameDefenseAlignment = 'normal';
+let runnerGameSelfLeadAction = 'BACK';
 const runnerDefenseBasePoints = Object.freeze({
   1: [75, 60],
   2: [50, 31],
@@ -1587,14 +1588,41 @@ function playAutonomousRunners(
   const baseRunners = visibleRunners.filter(
     (runner) => runner.dataset.base !== 'HOME'
   );
-  const occupiedBaseIndexes = visibleRunners.map(
-    (runner) => segmentIndexFromBase(runner.dataset.base)
-  );
+  const selfStartBaseIndex =
+    window.RUNNER_MOVEMENT_RULES.STARTS[
+      selectedStartKey()
+    ]?.baseIndex;
+  const occupiedBaseIndexes = [
+    ...visibleRunners.map(
+      (runner) => segmentIndexFromBase(runner.dataset.base)
+    ),
+    selfStartBaseIndex
+  ].filter(Number.isInteger);
+  const followsControlledRunner = (runner) => {
+    const startBaseIndex =
+      segmentIndexFromBase(runner.dataset.base);
+    return (
+      Number.isInteger(selfStartBaseIndex) &&
+      startBaseIndex < selfStartBaseIndex &&
+      !window.RUNNER_MOVEMENT_RULES.forcedBaseIndex(
+        startBaseIndex,
+        occupiedBaseIndexes
+      )
+    );
+  };
   const baseRunnerMayAdvance = (
     runner,
     includeBatterForce = true
-  ) => window.RUNNER_MOVEMENT_RULES
-    .autonomousRunnerMayAdvance(
+  ) => {
+    if (followsControlledRunner(runner)) {
+      return window.RUNNER_MOVEMENT_RULES
+        .autonomousRunnerDecision(
+          segmentIndexFromBase(runner.dataset.base),
+          occupiedBaseIndexes,
+          runnerGameSelfLeadAction
+        ) === 'GO';
+    }
+    return window.RUNNER_MOVEMENT_RULES.autonomousRunnerMayAdvance(
       segmentIndexFromBase(runner.dataset.base),
       includeBatterForce
         ? occupiedBaseIndexes
@@ -1602,6 +1630,18 @@ function playAutonomousRunners(
             (baseIndex) => baseIndex !== 0
           )
     );
+  };
+  const returnBehindControlledRunner = (
+    runner,
+    delay = 650,
+    leadProgress = .08
+  ) => {
+    leadAndReturnAutonomousRunner(
+      runner,
+      delay,
+      leadProgress
+    );
+  };
 
   const playCaughtBallRunners = (
     catchDelay,
@@ -1617,6 +1657,14 @@ function playAutonomousRunners(
           baseIndex
         );
       if (!baseRunnerMayAdvance(runner, false)) {
+        if (followsControlledRunner(runner)) {
+          returnBehindControlledRunner(
+            runner,
+            catchDelay,
+            leadProgress
+          );
+          return;
+        }
         leadAndReturnAutonomousRunner(
           runner,
           catchDelay,
@@ -1668,7 +1716,12 @@ function playAutonomousRunners(
   if (scene === 'single' || scene === 'extra') {
     if (batterRunner) advanceAutonomousRunner(batterRunner, 100);
     baseRunners.forEach((runner) => {
-      if (!baseRunnerMayAdvance(runner)) return;
+      if (!baseRunnerMayAdvance(runner)) {
+        if (followsControlledRunner(runner)) {
+          returnBehindControlledRunner(runner);
+        }
+        return;
+      }
       const baseCount =
         scene === 'single' && runner.dataset.base === 'FIRST'
           ? 1
@@ -1688,7 +1741,12 @@ function playAutonomousRunners(
     if (
       runner !== batterRunner &&
       !baseRunnerMayAdvance(runner)
-    ) return;
+    ) {
+      if (followsControlledRunner(runner)) {
+        returnBehindControlledRunner(runner);
+      }
+      return;
+    }
     const unforcedSecondRunnerOnLeftGround =
       scene === 'ground' &&
       runner.dataset.base === 'SECOND' &&
@@ -1715,6 +1773,7 @@ function playAutonomousRunners(
 
 runnerGameField.addEventListener('runner-play-phase', (event) => {
   if (event.detail?.phase === 'prepare') {
+    runnerGameSelfLeadAction = 'BACK';
     prepareRunnerOutCount();
     resetAutonomousRunners();
     startPassingRunnerMonitor();
@@ -1730,6 +1789,54 @@ runnerGameField.addEventListener('runner-play-phase', (event) => {
     );
   }
 });
+runnerGameField.addEventListener(
+  'runner-action-accepted',
+  (event) => {
+    const action = event.detail?.action;
+    if (!['GO', 'BACK', 'STOP'].includes(action)) return;
+    runnerGameSelfLeadAction =
+      action === 'GO' ? 'GO' : 'BACK';
+
+    const selfStartBaseIndex =
+      window.RUNNER_MOVEMENT_RULES.STARTS[
+        selectedStartKey()
+      ]?.baseIndex;
+    const visibleRunners = runnerGameOtherRunners.filter(
+      (runner) => !runner.hidden
+    );
+    const occupiedBaseIndexes = [
+      ...visibleRunners.map(
+        (runner) =>
+          segmentIndexFromBase(runner.dataset.base)
+      ),
+      selfStartBaseIndex
+    ].filter(Number.isInteger);
+
+    visibleRunners.forEach((runner) => {
+      const startBaseIndex =
+        segmentIndexFromBase(runner.dataset.base);
+      if (
+        !Number.isInteger(selfStartBaseIndex) ||
+        startBaseIndex >= selfStartBaseIndex ||
+        window.RUNNER_MOVEMENT_RULES.forcedBaseIndex(
+          startBaseIndex,
+          occupiedBaseIndexes
+        )
+      ) return;
+      const decision = window.RUNNER_MOVEMENT_RULES
+        .autonomousRunnerDecision(
+          startBaseIndex,
+          occupiedBaseIndexes,
+          runnerGameSelfLeadAction
+        );
+      startAutonomousRundownLeg(
+        runner.dataset.raceId,
+        startBaseIndex,
+        decision === 'GO' ? 1 : 0
+      );
+    });
+  }
+);
 runnerGameField.addEventListener(
   'runner-defense-alignment-request',
   (event) => {
