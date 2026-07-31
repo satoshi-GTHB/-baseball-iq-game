@@ -51,6 +51,9 @@ const COURSE_IDS={
   defense:'defense',
   runner:'runner'
 };
+const RUNNER_LEVEL_NAMES=[
+  '初心者','初級','中級','上級','超上級'
+];
 
 const $=s=>document.querySelector(s);
 const $$=s=>[...document.querySelectorAll(s)];
@@ -2586,12 +2589,42 @@ function renderProfiles(){
     profileStore.profiles.length>=MAX_PROFILES;
 
   const startButton=$('[data-mode="defense"]');
+  const runnerStart=$('#runner-start');
+  const runnerLevel=$('#runner-profile-level');
 
   if(startButton){
     startButton.disabled=!activeProfile;
     startButton.textContent=activeProfile
       ?'スタート'
       :'名前を登録してください';
+  }
+
+  if(runnerStart){
+    runnerStart.classList.toggle('is-disabled',!activeProfile);
+    runnerStart.setAttribute(
+      'aria-disabled',
+      String(!activeProfile)
+    );
+    if(activeProfile){
+      runnerStart.href='runner-game/';
+      runnerStart.textContent='スタート';
+    }else{
+      runnerStart.removeAttribute('href');
+      runnerStart.textContent='名前を登録してください';
+    }
+  }
+
+  if(runnerLevel){
+    const savedLevel=Number(
+      activeProfile?.data?.courses?.runner?.userLevel || 1
+    );
+    const levelIndex=Math.max(
+      0,
+      Math.min(RUNNER_LEVEL_NAMES.length-1,savedLevel-1)
+    );
+    runnerLevel.textContent=activeProfile
+      ?`${activeProfile.name}：${RUNNER_LEVEL_NAMES[levelIndex]}`
+      :'プレイヤーを選ぶとレベルが表示されます';
   }
 }
 
@@ -2653,6 +2686,12 @@ $('#profile-form').addEventListener('submit',event=>{
 });
 
 renderProfiles();
+
+window.addEventListener('pageshow',()=>{
+  profileStore=loadProfileStore();
+  syncStateFromActiveProfile();
+  renderProfiles();
+});
 
 if(location.hash==='#game'){
   history.replaceState(

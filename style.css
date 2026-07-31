@@ -343,6 +343,18 @@ button {
     grid-column: 2;
 }
 
+.runner-profile-level {
+  color: #0b477e;
+  font-weight: 900;
+}
+
+.mode-link.is-disabled {
+  pointer-events: none;
+  color: #657585;
+  background: #d7dee4;
+  box-shadow: none;
+}
+
 .how-to-link {
     flex: 0 0 auto;
     border: 2px solid #2f80ed;

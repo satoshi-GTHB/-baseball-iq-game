@@ -2430,13 +2430,40 @@ function playOutfieldLiner(isExtra = false) {
     : play.cutPoint;
   const duration =
     (isExtra ? 1700 : 1050) * BATTED_BALL_TIME_SCALE;
+  const pickupTime = isExtra
+    ? duration + (deepGapExtra ? 2600 : 1100)
+    : duration + 250;
+  const primaryStart = positionOf(play.primary);
+  const overHeadPoint = isExtra
+    ? [
+        primaryStart[0] + (target[0] - primaryStart[0]) * .42,
+        primaryStart[1] + (target[1] - primaryStart[1]) * .28
+      ]
+    : null;
 
   animate(
     ball,
-    [
-      { left: '50%', top: '89%', opacity: 1, transform: 'scale(.78)' },
-      { left: pct(target[0]), top: pct(target[1]), opacity: 1, transform: 'scale(.76)' }
-    ],
+    isExtra
+      ? [
+          { left: '50%', top: '89%', opacity: 1, transform: 'scale(.78)' },
+          {
+            left: pct(overHeadPoint[0]),
+            top: pct(overHeadPoint[1]),
+            opacity: 1,
+            transform: 'scale(.82)',
+            offset: .68
+          },
+          {
+            left: pct(target[0]),
+            top: pct(target[1]),
+            opacity: 1,
+            transform: 'scale(.76)'
+          }
+        ]
+      : [
+          { left: '50%', top: '89%', opacity: 1, transform: 'scale(.78)' },
+          { left: pct(target[0]), top: pct(target[1]), opacity: 1, transform: 'scale(.76)' }
+        ],
     { duration, easing: 'linear' }
   );
 
@@ -2455,14 +2482,35 @@ function playOutfieldLiner(isExtra = false) {
         target[1] + (positionOf(play.far)[1] - target[1]) * .45
       ]
     : play.farPoint;
-  move(
-    fielders[play.primary],
-    positionOf(play.primary),
-    primaryTarget,
-    deepGapExtra ? 5800 : duration + 250,
-    80,
-    'ease-in'
-  );
+  if (isExtra) {
+    const chasePoint = [
+      primaryStart[0] + (primaryTarget[0] - primaryStart[0]) * .62,
+      primaryStart[1] + (primaryTarget[1] - primaryStart[1]) * .62
+    ];
+    animate(
+      fielders[play.primary],
+      [
+        { left: pct(primaryStart[0]), top: pct(primaryStart[1]) },
+        {
+          left: pct(primaryStart[0]),
+          top: pct(primaryStart[1]),
+          offset: .22
+        },
+        { left: pct(chasePoint[0]), top: pct(chasePoint[1]), offset: .72 },
+        { left: pct(primaryTarget[0]), top: pct(primaryTarget[1]) }
+      ],
+      { duration: pickupTime - 120, delay: 160, easing: 'ease-in' }
+    );
+  } else {
+    move(
+      fielders[play.primary],
+      primaryStart,
+      primaryTarget,
+      duration + 250,
+      80,
+      'ease-in'
+    );
+  }
   move(fielders[play.backup], positionOf(play.backup), backupTarget, duration + 300, 120, 'ease-in');
   move(fielders[play.far], positionOf(play.far), farTarget, duration, 180);
   move(fielders[play.cut], positionOf(play.cut), cutPoint, 950, 550);
@@ -2470,9 +2518,6 @@ function playOutfieldLiner(isExtra = false) {
   move(fielders.pitcher, positionOf('pitcher'), [50, 40], 800, 700);
 
   if (isExtra) {
-    const pickupTime = deepGapExtra
-      ? 6000
-      : duration + 330;
     const cutReceiveDelay = pickupTime + 100;
     const cutHoldDuration = 450;
     playCatchFlash(target, pickupTime - 120);

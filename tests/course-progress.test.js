@@ -43,6 +43,7 @@ assert.equal(migrated.courses.runner.highestLevel,1);
 assert.equal(migrated.courses.runner.history.answers.length,0);
 
 migrated.courses.runner.xp=15;
+migrated.courses.runner.userLevel=3;
 migrated.courses.runner.history.answers.push({
   questionId:'runner-001'
 });
@@ -58,6 +59,7 @@ const normalized=context.normalizeProfileData(migrated);
 
 assert.equal(normalized.courses.defense.xp,42);
 assert.equal(normalized.courses.runner.xp,15);
+assert.equal(normalized.courses.runner.userLevel,3);
 assert.equal(
   normalized.courses.runner.history.answers[0].questionId,
   'runner-001'

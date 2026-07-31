@@ -54,6 +54,20 @@ button {
   padding: 20px 14px 28px;
 }
 
+.title-return-link {
+  display: block;
+  width: fit-content;
+  margin: 14px auto 0;
+  padding: 10px 18px;
+  border: 2px solid var(--game-navy);
+  border-radius: 999px;
+  color: var(--game-navy);
+  background: #fff;
+  font-size: 14px;
+  font-weight: 900;
+  text-decoration: none;
+}
+
 .level-intro {
   text-align: center;
 }

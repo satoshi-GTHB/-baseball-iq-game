@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="runner-animation-gallery.css?v=17">
   <link rel="stylesheet" href="runner-movement-prototype.css?v=11">
   <link rel="stylesheet" href="runner-game-prototype.css?v=14">
-  <link rel="stylesheet" href="academy-runner-game.css?v=12">
+  <link rel="stylesheet" href="academy-runner-game.css?v=13">
 </head>
 <body>
   <main class="prototype animation-gallery runner-motion-prototype runner-game-prototype academy-runner-game">
@@ -18,6 +18,7 @@
         <strong>走り方を考えるゲーム</strong>
       </div>
       <div class="header-statuses">
+        <span id="runner-profile-name">プレイヤー：読み込み中</span>
         <span id="user-level-status">ユーザーレベル：初心者</span>
         <span id="game-header-status">レベル選択</span>
       </div>
@@ -30,7 +31,8 @@
         <p>1ゲーム10問。好きなレベルからあそべます。</p>
       </div>
       <div class="level-grid" id="level-grid"></div>
-      <p class="save-note">クリア実績とユーザーレベルは、この端末にのこります。</p>
+      <p class="save-note">クリア実績とユーザーレベルは、タイトル画面で選んだ名前ごとにのこります。</p>
+      <a class="title-return-link" href="../">タイトル画面へ戻る</a>
     </section>
 
     <section class="steal-sign-picker" aria-label="盗塁サインを選ぶ">
@@ -206,10 +208,10 @@
     </article>
   </section>
 
-  <script src="runner-animation-gallery.js?v=90"></script>
+  <script src="runner-animation-gallery.js?v=91"></script>
   <script src="runner-movement-rules.js?v=31"></script>
   <script src="runner-movement-prototype.js?v=38"></script>
   <script src="runner-game-prototype.js?v=53"></script>
-  <script src="academy-runner-game.js?v=72"></script>
+  <script src="academy-runner-game.js?v=73"></script>
 </body>
 </html>

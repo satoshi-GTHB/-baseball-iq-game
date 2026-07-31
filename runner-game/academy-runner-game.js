@@ -525,9 +525,44 @@
   const resultOverlay = document.querySelector('#result-overlay');
   const gameResultOverlay = document.querySelector('#game-result-overlay');
   const playButton = document.querySelector('#gallery-replay');
-  const savedUserLevel = Number(
+  const PROFILE_STORAGE_KEY = 'baseballIqProfilesV1';
+
+  function activeRunnerProfile() {
+    try {
+      const store = JSON.parse(
+        localStorage.getItem(PROFILE_STORAGE_KEY) || 'null'
+      );
+      const profile = store?.profiles?.find(
+        (item) => item.id === store.activeProfileId
+      );
+      return profile ? { store, profile } : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function saveRunnerUserLevel(userLevel) {
+    const context = activeRunnerProfile();
+    if (!context) return false;
+    context.profile.data ||= {};
+    context.profile.data.courses ||= {};
+    context.profile.data.courses.runner ||= {};
+    context.profile.data.courses.runner.userLevel = userLevel;
+    localStorage.setItem(
+      PROFILE_STORAGE_KEY,
+      JSON.stringify(context.store)
+    );
+    return true;
+  }
+
+  const runnerProfile = activeRunnerProfile();
+  const legacyUserLevel = Number(
     localStorage.getItem('academyRunnerUserLevel') ||
     localStorage.getItem('academyRunnerUnlocked')
+  );
+  const savedUserLevel = Number(
+    runnerProfile?.profile?.data?.courses?.runner?.userLevel ||
+    legacyUserLevel
   );
   const state = {
     userLevel: Math.max(1, Math.min(5, savedUserLevel || 1)),
@@ -548,6 +583,14 @@
     playOutcome: null,
     autonomousDecoyStartedAt: null
   };
+  if (
+    runnerProfile &&
+    !runnerProfile.profile.data?.courses?.runner?.userLevel
+  ) {
+    saveRunnerUserLevel(state.userLevel);
+    localStorage.removeItem('academyRunnerUserLevel');
+    localStorage.removeItem('academyRunnerUnlocked');
+  }
 
   function shuffle(items) {
     const copy = [...items];
@@ -577,6 +620,12 @@
   function updateUserLevelDisplay() {
     document.querySelector('#user-level-status').textContent =
       `ユーザーレベル：${LEVELS[state.userLevel - 1].name}`;
+    const profileName = document.querySelector('#runner-profile-name');
+    if (profileName) {
+      profileName.textContent = runnerProfile
+        ? `プレイヤー：${runnerProfile.profile.name}`
+        : 'プレイヤー：タイトル画面で選んでください';
+    }
   }
 
   function clickOption(selector) {
@@ -2168,10 +2217,7 @@
         state.userLevel,
         Math.min(LEVELS.length, state.levelIndex + 2)
       );
-      localStorage.setItem(
-        'academyRunnerUserLevel',
-        String(state.userLevel)
-      );
+      saveRunnerUserLevel(state.userLevel);
       updateUserLevelDisplay();
       resultText = state.userLevel > previousUserLevel
         ? `ユーザーレベルが「${LEVELS[state.userLevel - 1].name}」になりました！`
