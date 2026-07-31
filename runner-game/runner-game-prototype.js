@@ -1711,7 +1711,19 @@ function playAutonomousRunners(
     playCaughtBallRunners(1700, .18);
     return;
   }
-  if (scene === 'swing' || scene === 'take') return;
+  if (scene === 'swing' || scene === 'take') {
+    if (
+      runnerGameField.dataset.autonomousDecoySteal === 'true'
+    ) {
+      const decoyRunner = baseRunners.find(
+        (runner) => runner.dataset.base === 'FIRST'
+      );
+      if (decoyRunner) {
+        advanceAutonomousRunner(decoyRunner, 900);
+      }
+    }
+    return;
+  }
 
   if (scene === 'single' || scene === 'extra') {
     if (batterRunner) advanceAutonomousRunner(batterRunner, 100);
@@ -1901,8 +1913,10 @@ runnerGameField.addEventListener(
       event.detail
     );
     const selfAdvancing =
-      window.RUNNER_SELF_RACE_API
-        ?.advanceDuringRundown?.(event.detail);
+      runnerGameField.dataset.autonomousDecoySteal === 'true'
+        ? false
+        : window.RUNNER_SELF_RACE_API
+            ?.advanceDuringRundown?.(event.detail);
     directAutonomousRunnerAwayFromBall(event.detail);
     const autonomousAdvancing =
       startAutonomousRundownSupport(event.detail);

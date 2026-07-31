@@ -36,6 +36,7 @@
       immediateStart: false,
       secondaryLeadForbidden: false,
       decoySteal: false,
+      autonomousDecoySteal: false,
       resultGoal: '',
       alignment: '通常守備',
       otherBases: null,
@@ -319,6 +320,15 @@
       prompt: '牽制や捕手からの送球で挟まれ、3塁走者がかえる時間を作ろう。',
       expected: [point('GO', 3, 'strategy'), point('BACK', 2), point('GO', 2)]
     }),
+    makeProblem('EX-03B', 'expert', {
+      start: 'THIRD', scene: 'swing', outs: 1,
+      autonomousDecoySteal: true,
+      otherBases: ['FIRST'], resultGoal: 'score-self',
+      title: 'おとりの走者を見て走る',
+      instruction: '1塁走者がおとりになったら、ホームをねらえ！',
+      prompt: '1塁走者が塁の間ではさまれたのを見て、ホームへ走ろう。',
+      expected: [point('GO', 3, 'strategy')]
+    }),
     makeProblem('EX-04', 'expert', {
       start: 'THIRD', scene: 'bunt', outs: 1,
       direction: 'pitcher-ground',
@@ -448,7 +458,10 @@
               candidate.sourceId === problem.sourceId
           ) === index
         )
-        .slice(0, 2);
+        .slice(
+          0,
+          Math.max(0, 9 - firstManagerQuestions.length)
+        );
       const managerQuestions = [
         ...firstManagerQuestions,
         ...extraManagerQuestions
@@ -509,7 +522,8 @@
     replaying: false,
     resultTimer: null,
     lastSelfDefenseResult: null,
-    playOutcome: null
+    playOutcome: null,
+    autonomousDecoyStartedAt: null
   };
 
   function shuffle(items) {
@@ -591,6 +605,8 @@
         ? 'infield-in'
         : 'normal';
     field.dataset.managerInstruction = problem.instruction;
+    field.dataset.autonomousDecoySteal =
+      String(Boolean(problem.autonomousDecoySteal));
     const managerSign = field.querySelector('.manager-sign');
     if (managerSign) {
       managerSign.querySelector('p').textContent = problem.instruction;
@@ -625,6 +641,7 @@
     state.replaying = false;
     state.lastSelfDefenseResult = null;
     state.playOutcome = null;
+    state.autonomousDecoyStartedAt = null;
     clearTimeout(state.resultTimer);
     playButton.disabled = false;
     playButton.textContent = '▶ プレー開始';
@@ -809,6 +826,17 @@
 
   function grade(problem) {
     const submittedActions = actionsForGrade(problem);
+    const firstGoAt = state.timeline.find(
+      (item) => item.action === 'GO'
+    )?.at;
+    const earlyAutonomousDecoyGo =
+      problem.autonomousDecoySteal &&
+      Number.isFinite(Number(firstGoAt)) &&
+      (
+        state.autonomousDecoyStartedAt === null ||
+        Number(firstGoAt) <
+          Number(state.autonomousDecoyStartedAt)
+      );
     const earlyForcedGroundBack =
       hasEarlyForcedGroundBack(problem, submittedActions);
     const forcedLeadBeforeImmediateStart =
@@ -816,7 +844,8 @@
       submittedActions.includes('HALFWAY');
     const evaluatedActions = (
       earlyForcedGroundBack ||
-      forcedLeadBeforeImmediateStart
+      forcedLeadBeforeImmediateStart ||
+      earlyAutonomousDecoyGo
     )
       ? submittedActions.filter((action) => action !== 'GO')
       : submittedActions;
@@ -923,6 +952,12 @@
     const caughtFly = ['fly', 'popup', 'liner'].includes(problem.scene);
     const situation = sceneSituation(problem);
     return expectedActions.map((action, index) => {
+      if (
+        problem.autonomousDecoySteal &&
+        action === 'GO'
+      ) {
+        return '1塁走者が塁の間ではさまれたのを見て、ホームへゴーする';
+      }
       if (problem.decoySteal && action === 'BACK') {
         return '塁の間で挟まれたら、元の塁の方向へ逃げる';
       }
@@ -977,6 +1012,12 @@
 
   function evaluationPhrase(problem, action) {
     const situation = sceneSituation(problem);
+    if (
+      action === 'GO' &&
+      problem.autonomousDecoySteal
+    ) {
+      return '1塁走者がおとりで挟まれたタイミングでのホームへのスタート';
+    }
     if (action === 'GO' && problem.decoySteal) {
       return '3塁走者を返すための、おとりの盗塁';
     }
@@ -1102,6 +1143,16 @@
           )
         ) {
           issues.push(`${problem.id}: おとり盗塁の状況が違う`);
+        }
+        if (
+          problem.autonomousDecoySteal &&
+          (
+            problem.start !== 'THIRD' ||
+            !otherBases.has('FIRST') ||
+            problem.scene !== 'swing'
+          )
+        ) {
+          issues.push(`${problem.id}: おとりを見る状況が違う`);
         }
         if (
           problem.scene === 'bunt' &&
@@ -1369,6 +1420,16 @@
         action: state.timeline.at(-1)?.action || null
       };
     }
+  });
+  field.addEventListener('runner-rundown-start', (event) => {
+    if (
+      !currentProblem().autonomousDecoySteal ||
+      event.detail?.runnerId === 'self'
+    ) return;
+    state.autonomousDecoyStartedAt = Math.max(
+      0,
+      performance.now() - state.startedAt
+    );
   });
 
   playButton.addEventListener('click', () => {

@@ -1701,8 +1701,12 @@ function rundownTick() {
       );
   const rundownElapsed =
     performance.now() - rundown.startedAt;
+  const minimumEngagementMs =
+    galleryField.dataset.autonomousDecoySteal === 'true'
+      ? 3000
+      : RUNDOWN_MINIMUM_ENGAGEMENT_MS;
   const leadDecision =
-    rundownElapsed >= RUNDOWN_MINIMUM_ENGAGEMENT_MS &&
+    rundownElapsed >= minimumEngagementMs &&
     rundown.engagementTicks >= 3
       ? requestRundownLeadDecision(
           rundown,
@@ -3314,12 +3318,23 @@ function defendCaughtPitchRunner() {
   if (stealDecision?.allStopped !== false) return false;
   caughtPitchDefenseStarted = true;
   galleryField.dataset.lastThrowRoute = 'steal-attempt';
-  const start = selectedRunnerStart();
-  const target = start === 'SECOND'
-    ? [25, 60]
-    : start === 'THIRD'
-      ? [50, 89]
-      : [50, 31];
+  const autonomousStart = {
+    1: 'FIRST',
+    2: 'SECOND',
+    3: 'THIRD'
+  }[Number(stealDecision.segmentIndex)];
+  const start = stealDecision.runnerType === 'autonomous'
+    ? autonomousStart
+    : selectedRunnerStart();
+  const target =
+    stealDecision.targetPoint ||
+    (
+      start === 'SECOND'
+        ? [25, 60]
+        : start === 'THIRD'
+          ? [50, 89]
+          : [50, 31]
+    );
   moveStealCoverage(start, target);
   throwAtRunner(
     [50, 88],
@@ -3610,6 +3625,12 @@ function playSelectedScene() {
     dispatchPlayComplete('scene-settled');
   }, (
     scene.duration +
+    (
+      sceneName === 'swing' &&
+      galleryField.dataset.autonomousDecoySteal === 'true'
+        ? 5000
+        : 0
+    ) +
     pitchStartDelay +
     (beginsWithPitchOnly ? 0 : PITCH_DURATION)
   ));
