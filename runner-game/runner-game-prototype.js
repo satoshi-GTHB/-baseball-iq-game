@@ -1719,7 +1719,15 @@ function playAutonomousRunners(
         (runner) => runner.dataset.base === 'FIRST'
       );
       if (decoyRunner) {
-        advanceAutonomousRunner(decoyRunner, 900);
+        advanceAutonomousRunner(
+          decoyRunner,
+          Math.max(
+            0,
+            Number(
+              runnerGameField.dataset.autonomousDecoyDelay
+            ) || 0
+          )
+        );
       }
     }
     return;

@@ -3317,6 +3317,38 @@ function defendCaughtPitchRunner() {
   if (stealDecision?.inningOver) return false;
   if (stealDecision?.allStopped !== false) return false;
   caughtPitchDefenseStarted = true;
+  if (Number(stealDecision.targetBaseIndex) === 4) {
+    galleryField.dataset.lastThrowRoute =
+      'catcher-protects-home';
+    throwAtRunner(
+      [50, 88],
+      stealDecision,
+      [50, 89]
+    );
+    return true;
+  }
+  const expectedThrowDuration = throwDuration(
+    [50, 88],
+    stealDecision.targetPoint
+  );
+  const likelyOut = Boolean(
+    window.RUNNER_MOVEMENT_RULES?.resolveBasePlay?.({
+      forceOut: false,
+      ballArrivalMs: expectedThrowDuration,
+      runnerArrivalMs: stealDecision.runnerArrivalMs,
+      tagApplicationMs: TAG_APPLICATION_DURATION
+    })
+  );
+  if (
+    currentThirdBaseRunnerPresent &&
+    !likelyOut
+  ) {
+    galleryField.dataset.lastThrowRoute =
+      'catcher-watches-third';
+    galleryStatus.textContent =
+      '捕手はボールを持ったまま、3塁走者を見ています。';
+    return true;
+  }
   galleryField.dataset.lastThrowRoute = 'steal-attempt';
   const autonomousStart = {
     1: 'FIRST',

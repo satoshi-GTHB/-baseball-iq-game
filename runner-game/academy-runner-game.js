@@ -37,6 +37,7 @@
       secondaryLeadForbidden: false,
       decoySteal: false,
       autonomousDecoySteal: false,
+      autonomousDecoyDelay: 900,
       resultGoal: '',
       alignment: '通常守備',
       otherBases: null,
@@ -314,11 +315,11 @@
     makeProblem('EX-03', 'expert', {
       start: 'FIRST', scene: 'swing', outs: 1,
       immediateStart: true, decoySteal: true,
-      otherBases: ['THIRD'], resultGoal: 'score-third',
+      otherBases: ['THIRD'], resultGoal: 'decoy-success',
       title: 'おとりになって走る',
       instruction: '盗塁でおとりになれ！',
-      prompt: '牽制や捕手からの送球で挟まれ、3塁走者がかえる時間を作ろう。',
-      expected: [point('GO', 3, 'strategy'), point('BACK', 2), point('GO', 2)]
+      prompt: '捕手の動きを見て、おとりの盗塁を成功させよう。',
+      expected: [point('GO', 3, 'strategy')]
     }),
     makeProblem('EX-03B', 'expert', {
       start: 'THIRD', scene: 'swing', outs: 1,
@@ -328,6 +329,16 @@
       instruction: '盗塁でおとりになれ！',
       prompt: '1塁走者が塁の間ではさまれたのを見て、ホームへ走ろう。',
       expected: [point('GO', 3, 'strategy')]
+    }),
+    makeProblem('EX-03D', 'expert', {
+      start: 'THIRD', scene: 'swing', outs: 1,
+      autonomousDecoySteal: true,
+      autonomousDecoyDelay: 0,
+      otherBases: ['FIRST'], resultGoal: 'keep-self-safe',
+      title: '捕手がこちらを見るおとり盗塁',
+      instruction: '盗塁でおとりになれ！',
+      prompt: '捕手が送球せず自分を見ていたら、3塁へ戻ろう。',
+      expected: [point('STOP', 3, 'strategy')]
     }),
     makeProblem('EX-04', 'expert', {
       start: 'THIRD', scene: 'bunt', outs: 1,
@@ -439,7 +450,8 @@
           }
           usedExpertSources.add(problem.sourceId);
           return true;
-        });
+        })
+        .slice(0, 9);
       const selectedManagerIds = new Set(
         firstManagerQuestions.map((problem) => problem.id)
       );
@@ -607,6 +619,8 @@
     field.dataset.managerInstruction = problem.instruction;
     field.dataset.autonomousDecoySteal =
       String(Boolean(problem.autonomousDecoySteal));
+    field.dataset.autonomousDecoyDelay =
+      String(Number(problem.autonomousDecoyDelay) || 0);
     const managerSign = field.querySelector('.manager-sign');
     if (managerSign) {
       managerSign.querySelector('p').textContent = problem.instruction;
@@ -817,6 +831,18 @@
         failure: '3塁走者をホームへ返せなかったこと'
       };
     }
+    if (problem.resultGoal === 'decoy-success') {
+      const selfReachedSecond =
+        Number(selfRunner?.baseIndex ?? selfRunner?.advance) >= 2;
+      const thirdScored = reachedHome(thirdRunner);
+      return {
+        met: selfReachedSecond || thirdScored,
+        success: thirdScored
+          ? 'おとりの盗塁で3塁走者をホームへ返せたこと'
+          : '捕手が送球しない間に2塁へ盗塁できたこと',
+        failure: '盗塁も3塁走者の得点も成功しなかったこと'
+      };
+    }
     return {
       met: Boolean(selfRunner),
       success: '監督の指示どおりランナーを残せたこと',
@@ -951,7 +977,26 @@
     const expectedActions = problem.expected.map((item) => item.action);
     const caughtFly = ['fly', 'popup', 'liner'].includes(problem.scene);
     const situation = sceneSituation(problem);
+    if (problem.decoySteal) {
+      return field.dataset.lastThrowRoute ===
+        'catcher-watches-third'
+        ? [
+            '投球に合わせて盗塁のスタートを切る',
+            '捕手が3塁走者を見て送球しなければ、そのまま2塁へ盗塁する'
+          ]
+        : [
+            '投球に合わせて盗塁のスタートを切る',
+            '捕手が送球したら守備を引きつけ、3塁走者がホームへかえる時間を作る'
+          ];
+    }
     return expectedActions.map((action, index) => {
+      if (
+        problem.autonomousDecoySteal &&
+        problem.autonomousDecoyDelay === 0 &&
+        action === 'BACK'
+      ) {
+        return '捕手が送球せず自分を見ていたら、3塁へバックする';
+      }
       if (
         problem.autonomousDecoySteal &&
         action === 'GO'
@@ -1013,13 +1058,23 @@
   function evaluationPhrase(problem, action) {
     const situation = sceneSituation(problem);
     if (
+      problem.autonomousDecoySteal &&
+      problem.autonomousDecoyDelay === 0 &&
+      action === 'BACK'
+    ) {
+      return '捕手が3塁走者を見ている状況での3塁へのバック';
+    }
+    if (
       action === 'GO' &&
       problem.autonomousDecoySteal
     ) {
       return '1塁走者がおとりで挟まれたタイミングでのホームへのスタート';
     }
     if (action === 'GO' && problem.decoySteal) {
-      return '3塁走者を返すための、おとりの盗塁';
+      return field.dataset.lastThrowRoute ===
+        'catcher-watches-third'
+        ? '捕手が送球しない状況での2塁への盗塁'
+        : '3塁走者を返すための、おとりの盗塁';
     }
     if (action === 'BACK' && problem.decoySteal) {
       return 'おとりで挟まれた状況での切り返し';
