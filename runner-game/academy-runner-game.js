@@ -1025,29 +1025,142 @@
     };
   }
 
+  function runnerLabelForId(problem, runnerId) {
+    if (runnerId === 'self') {
+      return {
+        BATTER: 'バッターランナー',
+        FIRST: '1塁走者',
+        SECOND: '2塁走者',
+        THIRD: '3塁走者'
+      }[problem.start] || '操作したランナー';
+    }
+    const otherIndex = Number(
+      String(runnerId).replace('other-', '')
+    );
+    const otherBase = (problem.otherBases || [])[otherIndex];
+    return {
+      HOME: 'バッターランナー',
+      FIRST: '1塁走者',
+      SECOND: '2塁走者',
+      THIRD: '3塁走者'
+    }[otherBase] || 'ほかのランナー';
+  }
+
+  function intendedGoalForAction(problem, action) {
+    if (problem.resultGoal === 'score-self') {
+      return 'ホームへ進んで得点すること';
+    }
+    if (problem.resultGoal === 'decoy-success') {
+      return 'おとりの盗塁か3塁走者の得点を成功させること';
+    }
+    if (problem.resultGoal === 'keep-self-safe') {
+      return 'ランナーをアウトにせず塁へ残すこと';
+    }
+    if (
+      ['fly', 'popup', 'liner'].includes(problem.scene) &&
+      action === 'GO'
+    ) {
+      return '元の塁へ戻ってセーフになること';
+    }
+    if (action === 'BACK') {
+      return '次の塁へ進んでセーフになること';
+    }
+    if (action === 'STOP') {
+      return '安全な塁まで進むこと';
+    }
+    if (problem.start === 'BATTER') {
+      return '1塁に安全に残ること';
+    }
+    return '次の塁でセーフになること';
+  }
+
+  function defenseLocationDescription(problem) {
+    const direction = directionForScene(problem);
+    const position = {
+      'third-line': '三塁線を守る3塁手の近く',
+      third: '3塁手の正面',
+      short: '遊撃手の近く',
+      pitcher: 'ピッチャーの正面',
+      second: '2塁手の近く',
+      first: '1塁手の正面',
+      'first-line': '一塁線を守る1塁手の近く',
+      'left-line': 'レフト線を守る左翼手の近く',
+      left: '左翼手の正面',
+      'left-center': '左中間の左翼手と中堅手の間',
+      center: '中堅手の正面',
+      'right-center': '右中間の中堅手と右翼手の間',
+      right: '右翼手の正面',
+      'right-line': 'ライト線を守る右翼手の近く'
+    }[direction] || '打球を処理する守備者の近く';
+    if (problem.start === 'SECOND') {
+      const relative = [
+        'third-line', 'third', 'short', 'pitcher'
+      ].includes(direction)
+        ? '2塁走者から見て前にいる'
+        : '2塁走者から見て後ろにいる';
+      return `${relative}${position}`;
+    }
+    if (problem.start === 'THIRD') {
+      const relative = ['third-line', 'third'].includes(direction)
+        ? '3塁走者に近い'
+        : '3塁走者から離れた位置にいる';
+      return `${relative}${position}`;
+    }
+    return position;
+  }
+
+  function extraActionOutFeedback(problem, action) {
+    const situation = sceneSituation(problem);
+    const intendedGoal = intendedGoalForAction(problem, action);
+    const location = defenseLocationDescription(problem);
+    const selfPosition = runnerLabelForId(problem, 'self');
+    if (action === 'GO') {
+      return `自分は${selfPosition}。目的は「${intendedGoal}」。${location}への${situation}で、次の塁へ進む判断をした`;
+    }
+    if (action === 'BACK') {
+      return `自分は${selfPosition}。目的は「${intendedGoal}」。${location}への${situation}で、元の塁へ戻る判断をした`;
+    }
+    if (action === 'STOP') {
+      return `自分は${selfPosition}。目的は「${intendedGoal}」。${location}への${situation}で、塁の間に止まる判断をした`;
+    }
+    if (action === 'HALFWAY') {
+      return `自分は${selfPosition}。目的は「${intendedGoal}」。${location}への${situation}で、塁を離れるタイミングを選んだ`;
+    }
+    return `自分は${selfPosition}。目的は「${intendedGoal}」。${location}への${situation}で「${ACTION_LABELS[action]}」を選んだ`;
+  }
+
+  function missedActionFeedback(problem, action) {
+    const selfPosition = runnerLabelForId(problem, 'self');
+    const intendedGoal = intendedGoalForAction(problem, action);
+    const location = defenseLocationDescription(problem);
+    const situation = sceneSituation(problem);
+    const selfOut =
+      state.playOutcome?.outRunnerIds?.includes('self') ||
+      state.lastSelfDefenseResult?.out === true;
+    const outFact = selfOut
+      ? `、${selfPosition}がアウトになった`
+      : '';
+    if (action === 'GO') {
+      return `自分は${selfPosition}。目的は「${intendedGoal}」。${location}への${situation}で次の塁へ進まなかった${outFact}`;
+    }
+    if (action === 'BACK') {
+      return `自分は${selfPosition}。目的は「${intendedGoal}」。${location}への${situation}で元の塁へ戻らず${outFact || '、アウトになった'}`;
+    }
+    if (action === 'STOP') {
+      return `自分は${selfPosition}。目的は「${intendedGoal}」。${location}への${situation}で安全な塁に止まらなかった${outFact}`;
+    }
+    if (action === 'HALFWAY') {
+      return `自分は${selfPosition}。投球に合わせて2次リードを取らなかった${outFact}`;
+    }
+    return `自分は${selfPosition}。${location}への${situation}で「${ACTION_LABELS[action]}」を選ばなかった${outFact}`;
+  }
+
   function playResultFailure(problem) {
     const outRunnerIds = state.playOutcome?.outRunnerIds || [];
     if (outRunnerIds.length) {
-      const labels = outRunnerIds.map((runnerId) => {
-        if (runnerId === 'self') {
-          return {
-            BATTER: 'バッターランナー',
-            FIRST: '1塁走者',
-            SECOND: '2塁走者',
-            THIRD: '3塁走者'
-          }[problem.start] || '操作したランナー';
-        }
-        const otherIndex = Number(
-          String(runnerId).replace('other-', '')
-        );
-        const otherBase = (problem.otherBases || [])[otherIndex];
-        return {
-          HOME: 'バッターランナー',
-          FIRST: '1塁走者',
-          SECOND: '2塁走者',
-          THIRD: '3塁走者'
-        }[otherBase] || 'ほかのランナー';
-      });
+      const labels = outRunnerIds.map((runnerId) =>
+        runnerLabelForId(problem, runnerId)
+      );
       return `${[...new Set(labels)].join('と')}がアウトになったこと`;
     }
     if (
@@ -1060,7 +1173,7 @@
       return '次の塁へ進めなかったこと';
     }
     if (problem.expected.some((item) => item.action === 'BACK')) {
-      return '元の塁へ戻ってセーフになれなかったこと';
+      return `${runnerLabelForId(problem, 'self')}がアウトになったこと`;
     }
     return 'ランナーを安全に塁へ残せなかったこと';
   }
@@ -1549,13 +1662,13 @@
       .map((action) => evaluationPhrase(problem, action));
     let missedItems = missingActions
       .filter((action) => personalActions.has(action))
-      .map((action) => evaluationPhrase(problem, action));
+      .map((action) => missedActionFeedback(problem, action));
     let strategyDidItems = completedActions
       .filter((action) => strategyActions.has(action))
       .map((action) => evaluationPhrase(problem, action));
     let strategyMissedItems = missingActions
       .filter((action) => strategyActions.has(action))
-      .map((action) => evaluationPhrase(problem, action));
+      .map((action) => missedActionFeedback(problem, action));
     if (pickoffOut) {
       didItems = [];
       strategyDidItems = [];
@@ -1587,8 +1700,8 @@
         .map((action) => evaluationPhrase(problem, action));
       missedItems = [
         managerOrdersRunForPoint(problem)
-          ? 'ピッチャーゴロでホームへ進み、アウトになった無謀なプレー'
-          : 'ピッチャーゴロでホームへ突っ込まない判断（セーフでも無謀なプレー）'
+          ? 'ピッチャーゴロでホームへ突っ込んでしまい、アウトになった'
+          : 'ピッチャーゴロなのにホームへ突っ込んでしまった（セーフでも無謀なプレー）'
       ];
     } else if (recklessLeftFlySecondTagUp) {
       didItems = completedActions
@@ -1608,13 +1721,16 @@
       missedItems = ['内野ゴロで元の塁へ戻れない状況での進塁'];
     } else {
       extraActions.forEach((action) => {
-        const causedRunnerOut = state.defenseResults.some((defenseResult) =>
+        const causedRunnerOut = state.defenseResults.find((defenseResult) =>
           defenseResult.out &&
           defenseResult.action === action
         );
         if (causedRunnerOut) {
           missedItems.push(
-            `この状況での不要な「${ACTION_LABELS[action]}」`
+            extraActionOutFeedback(
+              problem,
+              action
+            )
           );
         }
       });

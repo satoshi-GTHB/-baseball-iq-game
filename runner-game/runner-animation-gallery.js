@@ -285,6 +285,7 @@ let pickoffActive = false;
 let caughtPitchReady = false;
 let caughtPitchDefenseStarted = false;
 let playCompletionSent = false;
+let defenseSequenceActive = false;
 const PITCH_DURATION = 1200;
 const STEAL_SIGN_DELAY = 500;
 const PRE_PITCH_WINDOW_DURATION = 500;
@@ -411,6 +412,7 @@ function resetAnimation() {
   pickoffActive = false;
   caughtPitchReady = false;
   caughtPitchDefenseStarted = false;
+  defenseSequenceActive = false;
   delete galleryField.dataset.rundownState;
   delete galleryField.dataset.rundownThrows;
   delete galleryField.dataset.rundownRunner;
@@ -576,6 +578,29 @@ function dispatchPlayComplete(reason = 'settled') {
   ));
 }
 
+function finishSceneWhenEveryoneStops(label) {
+  const runners =
+    window.RUNNER_GAME_STATE_API?.playOutcome?.().runners || [];
+  const runnerStillMoving = runners.some(
+    (runner) => runner.moving
+  );
+  if (
+    runnerStillMoving ||
+    defenseSequenceActive ||
+    activeRundown?.active
+  ) {
+    scheduleAction(120, () =>
+      finishSceneWhenEveryoneStops(label)
+    );
+    return;
+  }
+  galleryReplay.disabled = false;
+  galleryReplay.textContent = `↻ ${label}をもう一度見る`;
+  galleryStatus.textContent =
+    `${label}の走塁と守備の判定が終わりました。`;
+  dispatchPlayComplete('all-runners-settled');
+}
+
 function requestRunnerDefenseDecision(possessionPoint = null) {
   const detail = {
     decision: null,
@@ -717,6 +742,7 @@ function continueDefenseAfterPlay(
   retryCount = 0
 ) {
   if (outcome?.inningOver) {
+    defenseSequenceActive = false;
     showDefenseFollowup(outcome);
     finishPickoffPlay();
     return;
@@ -728,8 +754,12 @@ function continueDefenseAfterPlay(
     if (
       !nextDecision ||
       nextDecision.inningOver
-    ) return;
+    ) {
+      defenseSequenceActive = false;
+      return;
+    }
     if (nextDecision.allStopped) {
+      defenseSequenceActive = false;
       showDefenseFollowup(outcome);
       finishPickoffPlay();
       return;
@@ -744,6 +774,7 @@ function continueDefenseAfterPlay(
       resolvedSafeTargets.has(nextTargetKey)
     ) {
       if (retryCount >= 4) {
+        defenseSequenceActive = false;
         showDefenseFollowup(outcome);
         finishPickoffPlay();
         return;
@@ -1994,6 +2025,9 @@ function startRundown(decision, receiver, receivePoint) {
 }
 
 function throwAtRunner(from, decision, fallbackTarget) {
+  if (decision && decision.allStopped === false) {
+    defenseSequenceActive = true;
+  }
   if (decision?.tagAtContact) {
     const out =
       window.RUNNER_MOVEMENT_RULES?.resolveBasePlay?.({
@@ -3689,10 +3723,7 @@ function playSelectedScene() {
   }
 
   sceneTimer = setTimeout(() => {
-    galleryReplay.disabled = false;
-    galleryReplay.textContent = `↻ ${label}をもう一度見る`;
-    galleryStatus.textContent = `${label}の再生が終わりました。`;
-    dispatchPlayComplete('scene-settled');
+    finishSceneWhenEveryoneStops(label);
   }, (
     scene.duration +
     (
