@@ -3196,6 +3196,46 @@ function playPassedBall(startDelay = 0) {
     850,
     startDelay + PITCH_DURATION + 150
   );
+  const pickupDelay =
+    startDelay + PITCH_DURATION + 1000;
+  playCatchFlash(
+    passedBallPoint,
+    Math.max(0, pickupDelay - 100)
+  );
+  if (!currentThirdBaseRunnerPresent) {
+    const catcherHomePoint = positionOf('catcher');
+    const catcherReturnDuration = 650;
+    move(
+      fielders.catcher,
+      [61, 96],
+      catcherHomePoint,
+      catcherReturnDuration,
+      pickupDelay
+    );
+    animate(
+      ball,
+      [
+        {
+          left: pct(passedBallPoint[0]),
+          top: pct(passedBallPoint[1]),
+          opacity: 1,
+          transform: 'scale(.8)'
+        },
+        {
+          left: pct(catcherHomePoint[0]),
+          top: pct(catcherHomePoint[1]),
+          opacity: 1,
+          transform: 'scale(.72)'
+        }
+      ],
+      {
+        duration: catcherReturnDuration,
+        delay: pickupDelay,
+        easing: 'linear'
+      }
+    );
+    return;
+  }
   // 捕手が追い始めた後、投手がホームプレートの内野側へカバーに入る。
   move(
     fielders.pitcher,
@@ -3204,15 +3244,9 @@ function playPassedBall(startDelay = 0) {
     800,
     startDelay + PITCH_DURATION + 300
   );
-  const pickupDelay =
-    startDelay + PITCH_DURATION + 1000;
   const returnDuration = throwDuration(
     passedBallPoint,
     homeCoverPoint
-  );
-  playCatchFlash(
-    passedBallPoint,
-    Math.max(0, pickupDelay - 100)
   );
   animate(
     ball,

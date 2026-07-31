@@ -1195,12 +1195,9 @@
       evaluationPhrase(problem, action)
     );
     if (pickoffOut) {
-      const pickoffAction = state.lastSelfDefenseResult.action;
       didItems = [];
       missedItems = [
-        pickoffAction === 'GO'
-          ? 'ピッチャーが投げる前のタイミングでのスタート'
-          : 'ピッチャーが投げる前のタイミングでの2次リード'
+        '投球に合わせる正しいタイミングでのスタート（スタートが早すぎて、けん制でアウトになった）'
       ];
     } else if (stealStart) {
       didItems = stealSucceeded
@@ -1235,7 +1232,7 @@
         }
       });
     }
-    if (result.outcome) {
+    if (result.outcome && !pickoffOut) {
       if (result.outcome.met) {
         didItems.unshift(result.outcome.success);
       } else {
