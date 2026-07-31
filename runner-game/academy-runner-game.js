@@ -847,16 +847,29 @@
     const targets = problem.expected.filter((item) => item.axis === axis);
     const max = targets.reduce((sum, item) => sum + item.weight, 0);
     if (!max) return { earned: 0, max: 0 };
-    let searchFrom = 0;
+    const remainingActions = [...actions];
     let earnedWeight = 0;
     targets.forEach((target) => {
-      const foundAt = actions.indexOf(target.action, searchFrom);
+      const foundAt = remainingActions.indexOf(target.action);
       if (foundAt >= 0) {
         earnedWeight += target.weight;
-        searchFrom = foundAt + 1;
+        remainingActions.splice(foundAt, 1);
       }
     });
     return { earned: earnedWeight, max };
+  }
+
+  function unmatchedExpectedItems(problem, axis, actions) {
+    const targets = problem.expected.filter(
+      (item) => item.axis === axis
+    );
+    const remainingActions = [...actions];
+    return targets.filter((target) => {
+      const foundAt = remainingActions.indexOf(target.action);
+      if (foundAt < 0) return true;
+      remainingActions.splice(foundAt, 1);
+      return false;
+    });
   }
 
   function isThirdBaseGroundJudgment(problem) {
@@ -953,6 +966,19 @@
   }
 
   function problemForEvaluation(problem) {
+    if (
+      problem.start !== 'BATTER' &&
+      problem.expected.some((item) =>
+        ['ROUND', 'KAKENUK'].includes(item.action)
+      )
+    ) {
+      return problemForEvaluation({
+        ...problem,
+        expected: problem.expected.filter((item) =>
+          !['ROUND', 'KAKENUK'].includes(item.action)
+        )
+      });
+    }
     const lead = problem.expected.filter(
       (item) => item.action === 'HALFWAY'
     );
@@ -1354,6 +1380,18 @@
       return `自分は${selfPosition}。投球に合わせて2次リードを取らなかった${outFact}`;
     }
     return `自分は${selfPosition}。${location}への${situation}で「${ACTION_LABELS[action]}」を選ばなかった${outFact}`;
+  }
+
+  function unmatchedItemFeedback(problem, item, actions) {
+    const expectedCount = problem.expected.filter(
+      (expected) => expected.action === item.action
+    ).length;
+    const recordedCount = actions.filter(
+      (action) => action === item.action
+    ).length;
+    return recordedCount < expectedCount
+      ? missedActionFeedback(problem, item.action)
+      : '';
   }
 
   function playResultFailure(problem) {
@@ -1846,9 +1884,22 @@
     const completedActions = expectedActions.filter((action) =>
       result.evaluatedActions.includes(action)
     );
-    const missingActions = expectedActions.filter((action) =>
-      !result.evaluatedActions.includes(action)
+    const unmatchedPersonalItems = unmatchedExpectedItems(
+      problem,
+      'personal',
+      result.evaluatedActions
     );
+    const unmatchedStrategyItems = unmatchedExpectedItems(
+      problem,
+      'strategy',
+      result.evaluatedActions
+    );
+    const missingActions = [
+      ...new Set([
+        ...unmatchedPersonalItems,
+        ...unmatchedStrategyItems
+      ].map((item) => item.action))
+    ];
     const extraActions = [
       ...new Set(result.evaluatedActions.filter((action) =>
         !expectedActions.includes(action)
@@ -1905,15 +1956,27 @@
     let didItems = completedActions
       .filter((action) => personalActions.has(action))
       .map((action) => evaluationPhrase(problem, action));
-    let missedItems = missingActions
-      .filter((action) => personalActions.has(action))
-      .map((action) => missedActionFeedback(problem, action));
+    let missedItems = [
+      ...new Set(unmatchedPersonalItems.map((item) =>
+        unmatchedItemFeedback(
+          problem,
+          item,
+          result.evaluatedActions
+        )
+      ))
+    ];
     let strategyDidItems = completedActions
       .filter((action) => strategyActions.has(action))
       .map((action) => evaluationPhrase(problem, action));
-    let strategyMissedItems = missingActions
-      .filter((action) => strategyActions.has(action))
-      .map((action) => missedActionFeedback(problem, action));
+    let strategyMissedItems = [
+      ...new Set(unmatchedStrategyItems.map((item) =>
+        unmatchedItemFeedback(
+          problem,
+          item,
+          result.evaluatedActions
+        )
+      ))
+    ];
     if (pickoffOut) {
       didItems = [];
       missedItems = [
@@ -1938,6 +2001,9 @@
           ];
     } else if (usedForbiddenSecondaryLead) {
       didItems = [];
+      missedItems = [
+        '2アウト・3ボール2ストライクで、投球前に2次リードを取ってしまった'
+      ];
       strategyDidItems = [];
       strategyMissedItems = [
         '2アウト・3ボール2ストライクで、投球と同時にスタートすること'
@@ -2019,7 +2085,7 @@
       missedItems,
       result.personal,
       result.personalMax,
-      'この問題で必要な走り方ができなかったこと'
+      `自分は${runnerLabelForId(problem, 'self')}。${expectedDestinationLabel(problem)}へ進むまでの操作の順番がお手本と違った`
     );
     didItems = alignedPersonal.did;
     missedItems = alignedPersonal.missed;
