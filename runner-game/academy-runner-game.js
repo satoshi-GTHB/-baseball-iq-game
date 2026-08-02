@@ -1201,6 +1201,46 @@
         failure: `${runnerLabelForId(problem, 'self')}がアウトになった`
       };
     }
+    const autonomousBatterIndex = (problem.otherBases || [])
+      .findIndex((base) => base === 'HOME');
+    const autonomousBatterId = autonomousBatterIndex >= 0
+      ? `other-${autonomousBatterIndex}`
+      : null;
+    const autonomousBatterOut = Boolean(
+      problem.start !== 'BATTER' &&
+      autonomousBatterId &&
+      state.playOutcome?.outRunnerIds?.includes(autonomousBatterId)
+    );
+    const caughtBatterOut = Boolean(
+      problem.start !== 'BATTER' &&
+      (
+        ['fly', 'popup', 'liner'].includes(problem.scene) ||
+        (
+          problem.scene === 'bunt' &&
+          String(problem.direction).endsWith('-popup')
+        )
+      )
+    );
+    const batterForceOut = Boolean(
+      autonomousBatterOut &&
+      (
+        ['ground', 'error', 'single', 'extra'].includes(problem.scene) ||
+        (
+          problem.scene === 'bunt' &&
+          String(problem.direction).endsWith('-ground')
+        )
+      )
+    );
+    if (!problem.resultGoal && (caughtBatterOut || batterForceOut)) {
+      return {
+        met: true,
+        uncontrollable: true,
+        success: caughtBatterOut
+          ? 'バッターがフライでアウトになったことは、あなたの点数に入れていない'
+          : 'バッターランナーが1塁でアウトになったことは、あなたの点数に入れていない',
+        failure: ''
+      };
+    }
     const playEndedByAnotherOut =
       problem.start !== 'BATTER' &&
       state.playOutcome?.inningOver === true;
@@ -1218,8 +1258,8 @@
         met: true,
         uncontrollable: true,
         success: caughtBallThirdOut
-          ? `フライを取られて3アウト。走者のミスではないので、点は引かない`
-          : `ほかの走者のアウトで終了。自分のミスではないので、点は引かない`,
+          ? `バッターがフライでアウトになり3アウト。あなたの走り方とは関係ないので、点数に入れていない`
+          : `ほかのランナーがアウトになって終了。あなたの走り方とは関係ないので、点数に入れていない`,
         failure: ''
       };
     }
@@ -1526,6 +1566,22 @@
       ? submittedActions.filter((action) => action !== 'GO')
       : submittedActions;
     const allExpected = problem.expected.map((item) => item.action);
+    const decisionExact =
+      evaluatedActions.length === allExpected.length &&
+      evaluatedActions.every(
+        (action, index) => action === allExpected[index]
+      );
+    if (problem.level === 'beginner') {
+      return {
+        total: decisionExact ? 10 : 0,
+        play: null,
+        personal: null,
+        strategy: null,
+        outcome: null,
+        exact: decisionExact,
+        evaluatedActions
+      };
+    }
     const stealWasOut =
       problem.stealSign &&
       state.lastSelfDefenseResult?.out === true;
@@ -1535,21 +1591,7 @@
     const exact =
       !stealWasOut &&
       !pickoffOut &&
-      evaluatedActions.length === allExpected.length &&
-      evaluatedActions.every(
-        (action, index) => action === allExpected[index]
-      );
-    if (problem.level === 'beginner') {
-      return {
-        total: exact ? 10 : 0,
-        play: null,
-        personal: null,
-        strategy: null,
-        outcome: null,
-        exact,
-        evaluatedActions
-      };
-    }
+      decisionExact;
 
     const personalWeight = weightedAxis(
       problem,
@@ -2025,7 +2067,41 @@
         ].join(''))
         .join('');
     };
-    renderFeedbackList('#best-story-list', bestStoryItems(problem));
+    renderFeedbackList('#best-story-list', [
+      ...bestStoryItems(problem),
+      ...(
+        result.outcome?.uncontrollable && result.outcome?.success
+          ? [result.outcome.success]
+          : []
+      )
+    ]);
+    if (problem.level === 'beginner') {
+      const beginnerDidItems = result.exact
+        ? expectedActions.map((action) => evaluationPhrase(problem, action))
+        : completedActions.map((action) => evaluationPhrase(problem, action));
+      const beginnerMissedItems = result.exact
+        ? []
+        : [
+            ...new Set([
+              ...missingActions.map((action) =>
+                missedActionFeedback(problem, action)
+              ),
+              ...extraActions.map((action) =>
+                `「${ACTION_LABELS[action]}」を選んだため、お手本とちがう判断になった`
+              )
+            ])
+          ];
+      renderFeedbackGroups('#feedback-did', [
+        { label: '基本の考え方', items: beginnerDidItems }
+      ]);
+      renderFeedbackGroups('#feedback-missed', [
+        { label: '基本の考え方', items: beginnerMissedItems }
+      ]);
+      document.querySelector('#next-question').textContent =
+        state.index === 9 ? '結果を見る' : '次の問題へ';
+      resultOverlay.hidden = false;
+      return;
+    }
     const personalActions = new Set(
       problem.expected
         .filter((item) => item.axis !== 'strategy')
@@ -2186,7 +2262,7 @@
       : result.play === null
         ? result.exact
         : result.play === result.playMax;
-    const playDidItems = playSucceeded
+    const playDidItems = playSucceeded && !result.outcome?.uncontrollable
       ? [result.outcome?.success || '想定したプレー結果にできたこと']
       : [];
     const playMissedItems = playSucceeded
