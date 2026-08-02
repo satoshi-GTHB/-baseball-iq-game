@@ -468,6 +468,15 @@
   }
 
   function chooseQuestions(levelId, count = 10) {
+    if (levelId === 'beginner') {
+      const beginnerQuestions = PROBLEMS
+        .filter((problem) => problem.level === 'beginner')
+        .map((problem) => ({
+          ...problem,
+          sourceId: problem.id
+        }));
+      return shuffle(beginnerQuestions).slice(0, count);
+    }
     if (levelId === 'expert') {
       const usedExpertSources = new Set();
       const expertCandidates = shuffle(
