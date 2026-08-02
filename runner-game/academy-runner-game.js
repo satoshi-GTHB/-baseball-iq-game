@@ -269,7 +269,10 @@
     }),
 
     makeProblem('AD-01', 'advanced', {
-      start: 'FIRST', direction: 'left', title: 'ホームへ投げた間に進む',
+      start: 'FIRST', scene: 'single', direction: 'left',
+      otherBases: ['HOME', 'SECOND'],
+      secondAdvanceTrigger: 'home-throw',
+      title: 'ホームへ投げた間に進む',
       prompt: '2塁へ進み、守備がホームへ投げたら3塁を狙おう。',
       expected: [point('GO', 3), point('GO', 2)]
     }),
@@ -310,6 +313,8 @@
     }),
     makeProblem('AD-09', 'advanced', {
       start: 'SECOND', scene: 'single', direction: 'right',
+      otherBases: ['HOME', 'THIRD'],
+      secondAdvanceTrigger: 'home-throw',
       title: 'ボールを投げた先を見る', prompt: '守る人が別のランナーへ投げた。もう一つ先へ行こう。',
       expected: [point('GO', 2), point('GO', 3)]
     }),
@@ -1044,6 +1049,25 @@
   }
 
   function problemForEvaluation(problem) {
+    if (problem.secondAdvanceTrigger === 'home-throw') {
+      const homeThrowOccurred = ['home-attempt', 'direct-home'].includes(
+        field.dataset.lastThrowRoute
+      );
+      if (!homeThrowOccurred) {
+        let firstGoKept = false;
+        return {
+          ...problem,
+          expected: problem.expected.filter((item) => {
+            if (item.action !== 'GO') return true;
+            if (!firstGoKept) {
+              firstGoKept = true;
+              return true;
+            }
+            return false;
+          })
+        };
+      }
+    }
     if (
       problem.start !== 'BATTER' &&
       problem.expected.some((item) =>
@@ -1223,6 +1247,28 @@
     const selfOut =
       state.playOutcome?.outRunnerIds?.includes('self') ||
       state.lastSelfDefenseResult?.out === true;
+    const forceOutResult = state.defenseResults.find((result) =>
+      result.out && result.forceOut
+    );
+    const fairBallForceOut = Boolean(
+      !problem.resultGoal &&
+      forceOutResult &&
+      (
+        ['ground', 'error', 'single', 'extra'].includes(problem.scene) ||
+        (
+          problem.scene === 'bunt' &&
+          String(problem.direction).endsWith('-ground')
+        )
+      )
+    );
+    if (fairBallForceOut) {
+      return {
+        met: true,
+        uncontrollable: true,
+        success: '',
+        failure: ''
+      };
+    }
     if (selfOut) {
       return {
         met: false,
@@ -1230,16 +1276,7 @@
         failure: `${runnerLabelForId(problem, 'self')}がアウトになった`
       };
     }
-    const autonomousBatterIndex = (problem.otherBases || [])
-      .findIndex((base) => base === 'HOME');
-    const autonomousBatterId = autonomousBatterIndex >= 0
-      ? `other-${autonomousBatterIndex}`
-      : null;
-    const autonomousBatterOut = Boolean(
-      problem.start !== 'BATTER' &&
-      autonomousBatterId &&
-      state.playOutcome?.outRunnerIds?.includes(autonomousBatterId)
-    );
+
     const caughtBatterOut = Boolean(
       problem.start !== 'BATTER' &&
       (
@@ -1250,23 +1287,11 @@
         )
       )
     );
-    const batterForceOut = Boolean(
-      autonomousBatterOut &&
-      (
-        ['ground', 'error', 'single', 'extra'].includes(problem.scene) ||
-        (
-          problem.scene === 'bunt' &&
-          String(problem.direction).endsWith('-ground')
-        )
-      )
-    );
-    if (!problem.resultGoal && (caughtBatterOut || batterForceOut)) {
+    if (!problem.resultGoal && caughtBatterOut) {
       return {
         met: true,
         uncontrollable: true,
-        success: caughtBatterOut
-          ? 'バッターがフライでアウトになったことは、あなたの点数に入れていない'
-          : 'バッターランナーが1塁でアウトになったことは、あなたの点数に入れていない',
+        success: '',
         failure: ''
       };
     }
@@ -1274,21 +1299,10 @@
       problem.start !== 'BATTER' &&
       state.playOutcome?.inningOver === true;
     if (playEndedByAnotherOut) {
-      const caughtBallThirdOut =
-        problem.outs >= 2 &&
-        (
-          ['fly', 'popup', 'liner'].includes(problem.scene) ||
-          (
-            problem.scene === 'bunt' &&
-            String(problem.direction).endsWith('-popup')
-          )
-        );
       return {
         met: true,
         uncontrollable: true,
-        success: caughtBallThirdOut
-          ? `バッターがフライでアウトになり3アウト。あなたの走り方とは関係ないので、点数に入れていない`
-          : `ほかのランナーがアウトになって終了。あなたの走り方とは関係ないので、点数に入れていない`,
+        success: '',
         failure: ''
       };
     }
@@ -1634,14 +1648,12 @@
     );
     const hasStrategy = strategyWeight.max > 0;
     const expertResultFocus = problem.level === 'expert';
-    const personalMax = expertResultFocus
+    let personalMax = expertResultFocus
       ? 2
       : hasStrategy ? 5 : 8;
     let personalRaw = personalWeight.max
       ? personalWeight.earned / personalWeight.max * personalMax
-      : problem.immediateStart && strategyWeight.max
-        ? strategyWeight.earned / strategyWeight.max * personalMax
-        : personalMax;
+      : 0;
     if (
       expertResultFocus &&
       problem.immediateStart &&
@@ -1661,10 +1673,16 @@
       : 0;
     if (pickoffOut) strategyRaw = 0;
     const outcome = actualPlayOutcome(problem);
-    const play = expertResultFocus
-      ? outcome?.met ? 5 : 0
-      : outcome?.met ? 2 : 0;
-    const playMax = expertResultFocus ? 5 : 2;
+    const resultWeight = expertResultFocus ? 5 : 2;
+    const playIsEvaluated = !outcome?.uncontrollable;
+    const play = playIsEvaluated && outcome?.met ? resultWeight : 0;
+    const playMax = playIsEvaluated ? resultWeight : 0;
+    if (!playIsEvaluated && personalWeight.max) {
+      personalMax += resultWeight;
+      personalRaw = personalWeight.earned /
+        personalWeight.max * personalMax;
+      if (pickoffOut) personalRaw = 0;
+    }
     const personal = roundHalf(personalRaw);
     const strategy = roundHalf(strategyRaw);
     return {
@@ -1765,6 +1783,20 @@
       }
       if (action === 'GO' && problem.scene === 'bunt') {
         return 'バントが転がったのを見てスタートを切る';
+      }
+      if (
+        action === 'GO' &&
+        problem.secondAdvanceTrigger === 'home-throw'
+      ) {
+        const goNumber = expectedActions
+          .slice(0, index + 1)
+          .filter((expectedAction) => expectedAction === 'GO').length;
+        if (goNumber === 2) {
+          return '守る人がホームへ投げたのを見て、もう一つ先の塁へ進む';
+        }
+        return problem.start === 'FIRST'
+          ? 'ヒットで2塁へ進む'
+          : 'ヒットで3塁へ進む';
       }
       if (action === 'GO' && isForcedGroundAdvance(problem)) {
         return '内野ゴロで元の塁へ戻れないため、次の塁へ進む';
@@ -2011,7 +2043,7 @@
       const rows = [
         ['プレー結果', result.play, result.playMax],
         ['自分の走り方', result.personal, result.personalMax]
-      ];
+      ].filter(([, , max]) => Number(max) > 0);
       if (result.strategy !== null) rows.push(['監督の作戦どおりに動けたか', result.strategy, 3]);
       breakdown.innerHTML = rows.map(([label, score, max]) =>
         `<div class="score-row"><span>${label}</span><b>${displayNumber(score)}／${max}</b></div>`
@@ -2237,6 +2269,7 @@
       extraActions.forEach((action) => {
         const causedRunnerOut = state.defenseResults.find((defenseResult) =>
           defenseResult.out &&
+          !defenseResult.forceOut &&
           defenseResult.action === action
         );
         if (causedRunnerOut) {
@@ -2256,17 +2289,27 @@
       max,
       fallbackMissed
     ) => {
-      if (score === null || max === null) return { did, missed };
-      if (Number(score) <= 0) {
+      if (score === null || max === null || Number(max) <= 0) {
+        return { did, missed, score };
+      }
+      if (!did.length) {
         return {
           did: [],
-          missed: missed.length ? missed : [fallbackMissed]
+          missed: missed.length ? missed : [fallbackMissed],
+          score: 0
         };
       }
-      if (Number(score) >= Number(max)) {
-        return { did, missed: [] };
+      if (!missed.length) {
+        return { did, missed: [], score: Number(max) };
       }
-      return { did, missed };
+      return {
+        did,
+        missed,
+        score: Math.min(
+          Number(max) - .5,
+          Math.max(.5, Number(score))
+        )
+      };
     };
     const alignedPersonal = alignFeedbackWithScore(
       didItems,
@@ -2277,6 +2320,7 @@
     );
     didItems = alignedPersonal.did;
     missedItems = alignedPersonal.missed;
+    result.personal = alignedPersonal.score;
     const alignedStrategy = alignFeedbackWithScore(
       strategyDidItems,
       strategyMissedItems,
@@ -2286,6 +2330,7 @@
     );
     strategyDidItems = alignedStrategy.did;
     strategyMissedItems = alignedStrategy.missed;
+    result.strategy = alignedStrategy.score;
     const playSucceeded = result.outcome
       ? result.outcome.met
       : result.play === null
@@ -2297,6 +2342,28 @@
     const playMissedItems = playSucceeded
       ? []
       : [result.outcome?.failure || playResultFailure(problem)];
+    result.total = roundHalf(
+      Number(result.play || 0) +
+      Number(result.personal || 0) +
+      Number(result.strategy || 0)
+    );
+    document.querySelector('#result-mark').textContent = markFor(result.total);
+    document.querySelector('#result-score').textContent =
+      `${displayNumber(result.total)}／10点`;
+    const synchronizedRows = [
+      ['プレー結果', result.play, result.playMax],
+      ['自分の走り方', result.personal, result.personalMax]
+    ].filter(([, , max]) => Number(max) > 0);
+    if (result.strategy !== null) {
+      synchronizedRows.push([
+        '監督の作戦どおりに動けたか',
+        result.strategy,
+        3
+      ]);
+    }
+    breakdown.innerHTML = synchronizedRows.map(([label, score, max]) =>
+      `<div class="score-row"><span>${label}</span><b>${displayNumber(score)}／${max}</b></div>`
+    ).join('');
     const didGroups = [
       { label: 'プレー結果', items: playDidItems },
       { label: '走り方', items: didItems }
@@ -2414,7 +2481,9 @@
       runnerId:
         event.detail?.runnerId ||
         event.detail?.runnerType ||
-        null
+        null,
+      forceOut: Boolean(event.detail?.forceOut),
+      targetBaseIndex: Number(event.detail?.targetBaseIndex)
     });
     if (
       event.detail?.runnerId === 'self' ||
@@ -2434,6 +2503,7 @@
           event.detail.prohibitedSecondBaseTagUp
         ),
         tagUpEligible: Boolean(event.detail.tagUpEligible),
+        forceOut: Boolean(event.detail.forceOut),
         runnerArrivalMs: Number(event.detail.runnerArrivalMs),
         action: state.timeline.at(-1)?.action || null
       };
