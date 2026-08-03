@@ -49,14 +49,27 @@ const state = {
   caughtBallCaught: false,
   rundownActive: false,
   rundownSegmentIndex: null,
-  kakenukeFirstDuration: 0
+  kakenukeFirstDuration: 0,
+  lastGoSegmentIndex: null
 };
 
-function notifyAcceptedAction(action) {
+function notifyAcceptedAction(action, input = null) {
   field.dispatchEvent(new CustomEvent(
     'runner-action-accepted',
-    { detail: { action } }
+    { detail: { action, input } }
   ));
+}
+
+function actionInputSnapshot() {
+  return {
+    baseIndex: state.segmentIndex === null ? state.baseIndex : null,
+    segmentIndex: state.segmentIndex,
+    segmentProgress: state.segmentProgress,
+    moving: state.moving,
+    targetBaseIndex: state.segmentIndex === null
+      ? Math.min(4, state.baseIndex + 1)
+      : Math.min(4, state.segmentIndex + 1)
+  };
 }
 
 function currentOutCount() {
@@ -405,15 +418,6 @@ function chooseGo() {
 
   if (state.moving) {
     captureSegmentProgress();
-    const canAddNextBase =
-      state.segmentIndex !== null &&
-      state.segmentProgress >= .5;
-
-    if (canAddNextBase) {
-      runForward(true);
-      return;
-    }
-
     runForward(false);
     status.textContent = 'まず近づいている次の塁まで走ります。';
     return;
@@ -794,6 +798,7 @@ function selectStart(startKey) {
   state.rundownActive = false;
   state.rundownSegmentIndex = null;
   state.kakenukeFirstDuration = 0;
+  state.lastGoSegmentIndex = null;
   selfRunner.style.opacity = '1';
   placeSelf();
   placeOtherRunners(start);
@@ -1304,15 +1309,26 @@ goButton.addEventListener('click', () => {
     !state.out &&
     atInitialBase();
   const leadBaseIndex = state.baseIndex;
+  const input = actionInputSnapshot();
+  const goSegmentIndex = state.segmentIndex ?? state.baseIndex;
+  const duplicateGoInSameSegment =
+    state.moving &&
+    state.lastGoSegmentIndex === goSegmentIndex;
+  if (duplicateGoInSameSegment) {
+    status.textContent = 'すでに次の塁へ向かっています。';
+    return;
+  }
+  state.lastGoSegmentIndex = goSegmentIndex;
   state.roundFirst = false;
   chooseGo();
-  notifyAcceptedAction('GO');
+  notifyAcceptedAction('GO', input);
   if (leavesInitialBase) {
     notifyPrePitchLead('GO', leadBaseIndex);
   }
 });
 
 stopButton.addEventListener('click', () => {
+  state.lastGoSegmentIndex = null;
   stopAtNearestBase();
   notifyAcceptedAction('STOP');
 });
@@ -1323,6 +1339,7 @@ halfwayButton.addEventListener('click', () => {
     !state.out &&
     atInitialBase();
   const leadBaseIndex = state.baseIndex;
+  state.lastGoSegmentIndex = null;
   chooseHalfway();
   notifyAcceptedAction('HALFWAY');
   if (leavesInitialBase) {
@@ -1330,6 +1347,7 @@ halfwayButton.addEventListener('click', () => {
   }
 });
 backButton.addEventListener('click', () => {
+  state.lastGoSegmentIndex = null;
   goBack();
   notifyAcceptedAction('BACK');
 });
