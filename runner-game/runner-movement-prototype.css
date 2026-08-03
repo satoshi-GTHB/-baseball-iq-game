@@ -143,12 +143,8 @@
   background: #d76b14;
 }
 
-.movement-control-spacer {
-  grid-column: span 3;
-}
-
 .movement-controls .half {
-  grid-column: span 3;
+  grid-column: 2 / span 4;
   background: #7250a5;
   padding-inline: 0;
   line-height: 1;
