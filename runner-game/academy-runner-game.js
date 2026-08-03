@@ -1,6 +1,15 @@
 (() => {
   'use strict';
 
+  document.addEventListener('dblclick', (event) => {
+    event.preventDefault();
+  }, { passive: false });
+  ['gesturestart', 'gesturechange', 'gestureend'].forEach((type) => {
+    document.addEventListener(type, (event) => {
+      event.preventDefault();
+    }, { passive: false });
+  });
+
   const LEVELS = [
     { id: 'beginner', name: '初心者', description: '基本ルールと基本操作' },
     { id: 'basic', name: '初級', description: '内野の打球を見て考える' },
@@ -1673,6 +1682,23 @@
     };
   }
 
+  function beginnerActionsForGrade(problem, actions) {
+    const remainingExpectedCounts = new Map();
+    problem.expected.forEach((item) => {
+      remainingExpectedCounts.set(
+        item.action,
+        (remainingExpectedCounts.get(item.action) || 0) + 1
+      );
+    });
+    return actions.filter((action) => {
+      if (!remainingExpectedCounts.has(action)) return true;
+      const remaining = remainingExpectedCounts.get(action);
+      if (remaining <= 0) return false;
+      remainingExpectedCounts.set(action, remaining - 1);
+      return true;
+    });
+  }
+
   function grade(problem) {
     const submittedActions = actionsForGrade(problem);
     const firstGoAt = state.timeline.find(
@@ -1691,13 +1717,19 @@
     const forcedLeadBeforeImmediateStart =
       problem.secondaryLeadForbidden &&
       submittedActions.includes('HALFWAY');
-    const evaluatedActions = (
+    const evaluatedActionsBeforeBeginnerNormalization = (
       earlyForcedGroundBack ||
       forcedLeadBeforeImmediateStart ||
       earlyAutonomousDecoyGo
     )
       ? submittedActions.filter((action) => action !== 'GO')
       : submittedActions;
+    const evaluatedActions = problem.level === 'beginner'
+      ? beginnerActionsForGrade(
+          problem,
+          evaluatedActionsBeforeBeginnerNormalization
+        )
+      : evaluatedActionsBeforeBeginnerNormalization;
     const allExpected = problem.expected.map((item) => item.action);
     const decisionExact =
       evaluatedActions.length === allExpected.length &&
