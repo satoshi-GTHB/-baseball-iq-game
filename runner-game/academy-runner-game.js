@@ -1472,7 +1472,7 @@
         : '元の塁へ戻ってセーフになる';
     }
     if (action === 'BACK') {
-      return `${destination}へ進んでセーフになる`;
+      return '無理せず、一旦戻る';
     }
     if (action === 'STOP') {
       return '安全な塁で止まる';
