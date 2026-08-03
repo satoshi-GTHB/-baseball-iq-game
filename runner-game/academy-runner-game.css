@@ -16,13 +16,6 @@ body {
   touch-action: manipulation;
 }
 
-html,
-body,
-.academy-runner-game {
-  -webkit-text-size-adjust: 100%;
-  touch-action: manipulation;
-}
-
 .academy-runner-game {
   position: relative;
   min-height: 100svh;
@@ -703,34 +696,7 @@ button {
   }
 
   .academy-runner-game.is-playing > header {
-    min-height: 32px;
-    padding: 3px 8px;
-    border-bottom-width: 2px;
-  }
-
-  .academy-runner-game.is-playing > header small {
-    font-size: 8px;
-    line-height: 1;
-  }
-
-  .academy-runner-game.is-playing > header strong {
-    font-size: 13px;
-    line-height: 1.05;
-  }
-
-  .academy-runner-game.is-playing #runner-profile-name,
-  .academy-runner-game.is-playing #user-level-status {
-    display: none;
-  }
-
-  .academy-runner-game.is-playing .header-statuses {
-    gap: 0;
-  }
-
-  .academy-runner-game.is-playing #game-header-status {
-    padding: 3px 7px;
-    font-size: 10px;
-    line-height: 1;
+    min-height: 42px;
   }
 
   .academy-runner-game.is-playing .field-shell {

@@ -1,23 +1,4 @@
 (() => {
-  let lastTouchEndAt = 0;
-  let lastTouchTarget = null;
-  document.addEventListener('touchend', (event) => {
-    const now = performance.now();
-    if (
-      event.target === lastTouchTarget &&
-      now - lastTouchEndAt < 320
-    ) {
-      event.preventDefault();
-    }
-    lastTouchEndAt = now;
-    lastTouchTarget = event.target;
-  }, { passive: false });
-  ['gesturestart', 'gesturechange', 'gestureend'].forEach((type) => {
-    document.addEventListener(type, (event) => {
-      event.preventDefault();
-    }, { passive: false });
-  });
-
   'use strict';
 
   const LEVELS = [
@@ -803,7 +784,7 @@
     window.scrollTo({ top: 0, behavior: 'instant' });
   }
 
-  function recordAction(action, input = null) {
+  function recordAction(action) {
     if (!state.active || !state.started) return;
     const replacesBatterRun =
       ['KAKENUK', 'ROUND'].includes(action) &&
@@ -816,8 +797,7 @@
     state.actions.push(action);
     state.timeline.push({
       action,
-      at: Math.max(0, performance.now() - state.startedAt),
-      input: input ? { ...input } : null
+      at: Math.max(0, performance.now() - state.startedAt)
     });
   }
 
@@ -1234,6 +1214,7 @@
         expected: [
           ...lead,
           point('GO', 3),
+          point('STOP', 1),
           point('BACK', 2)
         ]
       };
@@ -1692,23 +1673,6 @@
     };
   }
 
-  function beginnerActionsForGrade(problem, actions) {
-    const remainingExpectedCounts = new Map();
-    problem.expected.forEach((item) => {
-      remainingExpectedCounts.set(
-        item.action,
-        (remainingExpectedCounts.get(item.action) || 0) + 1
-      );
-    });
-    return actions.filter((action) => {
-      if (!remainingExpectedCounts.has(action)) return true;
-      const remaining = remainingExpectedCounts.get(action);
-      if (remaining <= 0) return false;
-      remainingExpectedCounts.set(action, remaining - 1);
-      return true;
-    });
-  }
-
   function grade(problem) {
     const submittedActions = actionsForGrade(problem);
     const firstGoAt = state.timeline.find(
@@ -1727,19 +1691,13 @@
     const forcedLeadBeforeImmediateStart =
       problem.secondaryLeadForbidden &&
       submittedActions.includes('HALFWAY');
-    const evaluatedActionsBeforeBeginnerNormalization = (
+    const evaluatedActions = (
       earlyForcedGroundBack ||
       forcedLeadBeforeImmediateStart ||
       earlyAutonomousDecoyGo
     )
       ? submittedActions.filter((action) => action !== 'GO')
       : submittedActions;
-    const evaluatedActions = problem.level === 'beginner'
-      ? beginnerActionsForGrade(
-          problem,
-          evaluatedActionsBeforeBeginnerNormalization
-        )
-      : evaluatedActionsBeforeBeginnerNormalization;
     const allExpected = problem.expected.map((item) => item.action);
     const decisionExact =
       evaluatedActions.length === allExpected.length &&
@@ -1957,9 +1915,7 @@
         return 'ピッチャーが投げたら、2次リードをする';
       }
       if (action === 'STOP') {
-        return expectedActions.includes('GO')
-          ? `${expectedDestinationLabel(problem)}まで進み、そこで止まる`
-          : '今いる塁にとどまる';
+        return `${situation}と前のランナーを見てストップする`;
       }
       if (action === 'KAKENUK') {
         return `${situation}を見て、1塁をかけぬける`;
@@ -2027,9 +1983,7 @@
       return `${situation}と守る人を見て、走り始められた`;
     }
     if (action === 'STOP') {
-      return problem.expected.some((item) => item.action === 'GO')
-        ? `${expectedDestinationLabel(problem)}まで進み、そこで止まれた`
-        : '今いる塁にとどまれた';
+      return `${situation}と前のランナーを見て、止まれた`;
     }
     if (action === 'KAKENUK') {
       return `${situation}を見て、1塁をかけぬけられた`;
@@ -2577,6 +2531,7 @@
       setTimeout(() => {
         const selector = {
           GO: '#runner-go',
+          STOP: '#runner-stop',
           HALFWAY: '#runner-halfway',
           BACK: '#runner-back',
           KAKENUK: '#runner-kakenuke',
@@ -2632,6 +2587,7 @@
 
   const actionButtons = [
     '#runner-go',
+    '#runner-stop',
     '#runner-halfway',
     '#runner-back',
     '#runner-kakenuke',
@@ -2647,7 +2603,7 @@
   });
   field.addEventListener('runner-action-accepted', (event) => {
     if (ACTION_LABELS[event.detail?.action]) {
-      recordAction(event.detail.action, event.detail?.input);
+      recordAction(event.detail.action);
     }
   });
   field.addEventListener('runner-defense-result', (event) => {

@@ -10,6 +10,7 @@ const startButtons = [...document.querySelectorAll('[data-start]')];
 const kakenukeButton = document.querySelector('#runner-kakenuke');
 const roundButton = document.querySelector('#runner-round');
 const goButton = document.querySelector('#runner-go');
+const stopButton = document.querySelector('#runner-stop');
 const halfwayButton = document.querySelector('#runner-halfway');
 const backButton = document.querySelector('#runner-back');
 const status = document.querySelector('#runner-status');
@@ -48,30 +49,14 @@ const state = {
   caughtBallCaught: false,
   rundownActive: false,
   rundownSegmentIndex: null,
-  kakenukeFirstDuration: 0,
-  lastGoSegmentIndex: null,
-  lastBackSegmentIndex: null
+  kakenukeFirstDuration: 0
 };
 
-function notifyAcceptedAction(action, input = null) {
+function notifyAcceptedAction(action) {
   field.dispatchEvent(new CustomEvent(
     'runner-action-accepted',
-    { detail: { action, input } }
+    { detail: { action } }
   ));
-}
-
-function actionInputSnapshot(targetBaseIndex = null) {
-  return {
-    baseIndex: state.segmentIndex === null ? state.baseIndex : null,
-    segmentIndex: state.segmentIndex,
-    segmentProgress: state.segmentProgress,
-    moving: state.moving,
-    targetBaseIndex: targetBaseIndex ?? (
-      state.segmentIndex === null
-        ? Math.min(4, state.baseIndex + 1)
-        : Math.min(4, state.segmentIndex + 1)
-    )
-  };
 }
 
 function currentOutCount() {
@@ -420,6 +405,15 @@ function chooseGo() {
 
   if (state.moving) {
     captureSegmentProgress();
+    const canAddNextBase =
+      state.segmentIndex !== null &&
+      state.segmentProgress >= .5;
+
+    if (canAddNextBase) {
+      runForward(true);
+      return;
+    }
+
     runForward(false);
     status.textContent = 'まず近づいている次の塁まで走ります。';
     return;
@@ -474,6 +468,52 @@ function startFirstBaseOverrun() {
         '1塁をオーバーランして、1塁で止まりました。';
     };
   });
+}
+
+function stopAtNearestBase() {
+  if (state.special || state.out) return;
+  if (state.moving) captureSegmentProgress();
+
+  if (state.segmentIndex === null) {
+    const currentBase = rules.BASE_SEQUENCE[state.baseIndex];
+    state.continueAfterBase = false;
+    status.textContent = state.baseIndex >= 4
+      ? 'ホームで止まっています。'
+      : `${baseLabel(currentBase)}で止まっています。`;
+    updateControls();
+    return;
+  }
+
+  const segmentIndex = state.segmentIndex;
+  const fromProgress = state.segmentProgress;
+  const returnsToPrevious = fromProgress < .5;
+  const targetProgress = returnsToPrevious ? 0 : 1;
+  const destinationIndex = returnsToPrevious
+    ? segmentIndex
+    : segmentIndex + 1;
+  const destination = rules.BASE_SEQUENCE[destinationIndex];
+
+  state.continueAfterBase = false;
+  status.textContent = returnsToPrevious
+    ? `近いほうの${baseLabel(destination)}へ戻ります。`
+    : `近いほうの${baseLabel(destination)}へ進みます。`;
+
+  if (fromProgress === targetProgress) {
+    finishAtBase(destinationIndex);
+    status.textContent = `${baseLabel(destination)}で止まりました。`;
+    updateControls();
+    return;
+  }
+
+  animateSegment(
+    segmentIndex,
+    fromProgress,
+    targetProgress,
+    () => {
+      finishAtBase(destinationIndex);
+      status.textContent = `${baseLabel(destination)}で止まりました。`;
+    }
+  );
 }
 
 function stopAtHalfway(
@@ -754,8 +794,6 @@ function selectStart(startKey) {
   state.rundownActive = false;
   state.rundownSegmentIndex = null;
   state.kakenukeFirstDuration = 0;
-  state.lastGoSegmentIndex = null;
-  state.lastBackSegmentIndex = null;
   selfRunner.style.opacity = '1';
   placeSelf();
   placeOtherRunners(start);
@@ -1266,23 +1304,17 @@ goButton.addEventListener('click', () => {
     !state.out &&
     atInitialBase();
   const leadBaseIndex = state.baseIndex;
-  const input = actionInputSnapshot();
-  const goSegmentIndex = state.segmentIndex ?? state.baseIndex;
-  const duplicateGoInSameSegment =
-    state.moving &&
-    state.lastGoSegmentIndex === goSegmentIndex;
-  if (duplicateGoInSameSegment) {
-    status.textContent = 'すでに次の塁へ向かっています。';
-    return;
-  }
-  state.lastGoSegmentIndex = goSegmentIndex;
-  state.lastBackSegmentIndex = null;
   state.roundFirst = false;
   chooseGo();
-  notifyAcceptedAction('GO', input);
+  notifyAcceptedAction('GO');
   if (leavesInitialBase) {
     notifyPrePitchLead('GO', leadBaseIndex);
   }
+});
+
+stopButton.addEventListener('click', () => {
+  stopAtNearestBase();
+  notifyAcceptedAction('STOP');
 });
 
 halfwayButton.addEventListener('click', () => {
@@ -1291,8 +1323,6 @@ halfwayButton.addEventListener('click', () => {
     !state.out &&
     atInitialBase();
   const leadBaseIndex = state.baseIndex;
-  state.lastGoSegmentIndex = null;
-  state.lastBackSegmentIndex = null;
   chooseHalfway();
   notifyAcceptedAction('HALFWAY');
   if (leavesInitialBase) {
@@ -1300,27 +1330,8 @@ halfwayButton.addEventListener('click', () => {
   }
 });
 backButton.addEventListener('click', () => {
-  state.lastGoSegmentIndex = null;
-  const backSegmentIndex = state.segmentIndex ??
-    Math.max(0, state.baseIndex - 1);
-  const movingBack =
-    state.special === 'kakenuke-back' ||
-    (
-      state.moving &&
-      state.segmentIndex !== null &&
-      state.segmentTargetProgress < state.segmentStartProgress
-    );
-  if (
-    movingBack &&
-    state.lastBackSegmentIndex === backSegmentIndex
-  ) {
-    status.textContent = 'すでに元の塁へ戻っています。';
-    return;
-  }
-  state.lastBackSegmentIndex = backSegmentIndex;
-  const input = actionInputSnapshot(backSegmentIndex);
   goBack();
-  notifyAcceptedAction('BACK', input);
+  notifyAcceptedAction('BACK');
 });
 
 selectStart(state.startKey);

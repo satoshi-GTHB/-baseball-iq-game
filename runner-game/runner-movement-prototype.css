@@ -132,7 +132,6 @@
 }
 
 .movement-controls .go {
-  grid-column: 1 / span 3;
   background: #16833e;
 }
 
@@ -144,8 +143,12 @@
   background: #d76b14;
 }
 
+.movement-controls .stop {
+  background: #68727c;
+}
+
 .movement-controls .half {
-  grid-column: 1 / span 3;
+  grid-column: span 3;
   background: #7250a5;
   padding-inline: 0;
   line-height: 1;
@@ -154,12 +157,8 @@
 }
 
 .movement-controls .back {
-  grid-column: 4 / span 3;
-  background: #0b477e;
-}
-
-.movement-control-spacer {
   grid-column: span 3;
+  background: #0b477e;
 }
 
 .runner-status {
