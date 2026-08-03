@@ -50,7 +50,8 @@ const state = {
   rundownActive: false,
   rundownSegmentIndex: null,
   kakenukeFirstDuration: 0,
-  lastGoSegmentIndex: null
+  lastGoSegmentIndex: null,
+  lastBackSegmentIndex: null
 };
 
 function notifyAcceptedAction(action, input = null) {
@@ -60,15 +61,17 @@ function notifyAcceptedAction(action, input = null) {
   ));
 }
 
-function actionInputSnapshot() {
+function actionInputSnapshot(targetBaseIndex = null) {
   return {
     baseIndex: state.segmentIndex === null ? state.baseIndex : null,
     segmentIndex: state.segmentIndex,
     segmentProgress: state.segmentProgress,
     moving: state.moving,
-    targetBaseIndex: state.segmentIndex === null
-      ? Math.min(4, state.baseIndex + 1)
-      : Math.min(4, state.segmentIndex + 1)
+    targetBaseIndex: targetBaseIndex ?? (
+      state.segmentIndex === null
+        ? Math.min(4, state.baseIndex + 1)
+        : Math.min(4, state.segmentIndex + 1)
+    )
   };
 }
 
@@ -799,6 +802,7 @@ function selectStart(startKey) {
   state.rundownSegmentIndex = null;
   state.kakenukeFirstDuration = 0;
   state.lastGoSegmentIndex = null;
+  state.lastBackSegmentIndex = null;
   selfRunner.style.opacity = '1';
   placeSelf();
   placeOtherRunners(start);
@@ -1319,6 +1323,7 @@ goButton.addEventListener('click', () => {
     return;
   }
   state.lastGoSegmentIndex = goSegmentIndex;
+  state.lastBackSegmentIndex = null;
   state.roundFirst = false;
   chooseGo();
   notifyAcceptedAction('GO', input);
@@ -1329,6 +1334,7 @@ goButton.addEventListener('click', () => {
 
 stopButton.addEventListener('click', () => {
   state.lastGoSegmentIndex = null;
+  state.lastBackSegmentIndex = null;
   stopAtNearestBase();
   notifyAcceptedAction('STOP');
 });
@@ -1340,6 +1346,7 @@ halfwayButton.addEventListener('click', () => {
     atInitialBase();
   const leadBaseIndex = state.baseIndex;
   state.lastGoSegmentIndex = null;
+  state.lastBackSegmentIndex = null;
   chooseHalfway();
   notifyAcceptedAction('HALFWAY');
   if (leavesInitialBase) {
@@ -1348,8 +1355,26 @@ halfwayButton.addEventListener('click', () => {
 });
 backButton.addEventListener('click', () => {
   state.lastGoSegmentIndex = null;
+  const backSegmentIndex = state.segmentIndex ??
+    Math.max(0, state.baseIndex - 1);
+  const movingBack =
+    state.special === 'kakenuke-back' ||
+    (
+      state.moving &&
+      state.segmentIndex !== null &&
+      state.segmentTargetProgress < state.segmentStartProgress
+    );
+  if (
+    movingBack &&
+    state.lastBackSegmentIndex === backSegmentIndex
+  ) {
+    status.textContent = 'すでに元の塁へ戻っています。';
+    return;
+  }
+  state.lastBackSegmentIndex = backSegmentIndex;
+  const input = actionInputSnapshot(backSegmentIndex);
   goBack();
-  notifyAcceptedAction('BACK');
+  notifyAcceptedAction('BACK', input);
 });
 
 selectStart(state.startKey);
