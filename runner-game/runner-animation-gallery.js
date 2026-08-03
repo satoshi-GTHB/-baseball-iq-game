@@ -3296,8 +3296,100 @@ function playBuntScene() {
   });
 }
 
+function throwPassedBallHomeToPitcher(
+  from,
+  homeCoverPoint,
+  decision = null
+) {
+  const duration = throwDuration(from, homeCoverPoint);
+  animate(
+    ball,
+    [
+      {
+        left: pct(from[0]),
+        top: pct(from[1]),
+        opacity: 1,
+        transform: 'scale(.8)'
+      },
+      {
+        left: pct(homeCoverPoint[0]),
+        top: pct(homeCoverPoint[1]),
+        opacity: 1,
+        transform: 'scale(.72)'
+      }
+    ],
+    { duration, easing: 'linear' }
+  );
+  playCatchFlash(homeCoverPoint, Math.max(0, duration - 100));
+  if (!decision || Number(decision.targetBaseIndex) !== 4) {
+    return duration;
+  }
+
+  galleryField.dataset.lastThrowRoute = 'home-attempt';
+  galleryField.dataset.lastDefenseReason =
+    decision.defenseReason || '';
+  const tagPoint = [50, 86];
+  animate(
+    fielders.pitcher,
+    [
+      { left: pct(homeCoverPoint[0]), top: pct(homeCoverPoint[1]) },
+      { left: pct(tagPoint[0]), top: pct(tagPoint[1]) }
+    ],
+    {
+      duration: TAG_APPLICATION_DURATION,
+      delay: duration,
+      easing: 'ease-out'
+    }
+  );
+  animate(
+    ball,
+    [
+      { left: pct(homeCoverPoint[0]), top: pct(homeCoverPoint[1]) },
+      { left: pct(tagPoint[0]), top: pct(tagPoint[1]) }
+    ],
+    {
+      duration: TAG_APPLICATION_DURATION,
+      delay: duration,
+      easing: 'ease-out'
+    }
+  );
+  const out =
+    window.RUNNER_MOVEMENT_RULES?.resolveBasePlay?.({
+      forceOut: false,
+      ballArrivalMs: duration,
+      runnerArrivalMs: decision.runnerArrivalMs,
+      tagApplicationMs: TAG_APPLICATION_DURATION
+    }) ?? (
+      duration + TAG_APPLICATION_DURATION <
+      Number(decision.runnerArrivalMs)
+    );
+  const finiteRunnerArrival = Number.isFinite(
+    Number(decision.runnerArrivalMs)
+  )
+    ? Number(decision.runnerArrivalMs)
+    : 0;
+  const callDelay = out
+    ? duration + TAG_APPLICATION_DURATION
+    : Math.max(duration, finiteRunnerArrival);
+  scheduleAction(callDelay, () => {
+    showRunnerCall(
+      out,
+      null,
+      4,
+      decision.targetPoint || tagPoint
+    );
+    const outcome = dispatchRunnerDefenseResult(
+      { ...decision, forceOut: false, targetBaseIndex: 4 },
+      out
+    );
+    continueDefenseAfterPlay(tagPoint, outcome, homeCoverPoint);
+  });
+  return duration;
+}
+
 function playPassedBall(startDelay = 0) {
   const passedBallPoint = [63, 98];
+  const catcherPickupPoint = passedBallPoint;
   const homeCoverPoint = [50, 82];
   animate(
     ball,
@@ -3344,26 +3436,25 @@ function playPassedBall(startDelay = 0) {
       easing: 'ease-out'
     }
   );
-  // 捕手がそらした後、後方へ転がるボールを追う。
   move(
     fielders.catcher,
     positionOf('catcher'),
-    [61, 96],
+    catcherPickupPoint,
     850,
     startDelay + PITCH_DURATION + 150
   );
-  const pickupDelay =
-    startDelay + PITCH_DURATION + 1000;
-  playCatchFlash(
-    passedBallPoint,
-    Math.max(0, pickupDelay - 100)
-  );
+  const pickupDelay = startDelay + PITCH_DURATION + 1000;
+  playCatchFlash(passedBallPoint, Math.max(0, pickupDelay - 100));
+
   if (!currentThirdBaseRunnerPresent) {
     const catcherHomePoint = positionOf('catcher');
-    const catcherReturnDuration = 650;
+    const catcherReturnDuration = fielderMoveDuration(
+      catcherPickupPoint,
+      catcherHomePoint
+    );
     move(
       fielders.catcher,
-      [61, 96],
+      catcherPickupPoint,
       catcherHomePoint,
       catcherReturnDuration,
       pickupDelay
@@ -3372,10 +3463,10 @@ function playPassedBall(startDelay = 0) {
       ball,
       [
         {
-          left: pct(passedBallPoint[0]),
-          top: pct(passedBallPoint[1]),
+          left: pct(catcherPickupPoint[0]),
+          top: pct(catcherPickupPoint[1]),
           opacity: 1,
-          transform: 'scale(.8)'
+          transform: 'scale(.72)'
         },
         {
           left: pct(catcherHomePoint[0]),
@@ -3392,7 +3483,7 @@ function playPassedBall(startDelay = 0) {
     );
     return;
   }
-  // 捕手が追い始めた後、投手がホームプレートの内野側へカバーに入る。
+
   move(
     fielders.pitcher,
     positionOf('pitcher'),
@@ -3400,38 +3491,22 @@ function playPassedBall(startDelay = 0) {
     800,
     startDelay + PITCH_DURATION + 300
   );
-  const returnDuration = throwDuration(
-    passedBallPoint,
-    homeCoverPoint
-  );
-  animate(
-    ball,
-    [
-      {
-        left: pct(passedBallPoint[0]),
-        top: pct(passedBallPoint[1]),
-        opacity: 1,
-        transform: 'scale(.8)'
-      },
-      {
-        left: pct(homeCoverPoint[0]),
-        top: pct(homeCoverPoint[1]),
-        opacity: 1,
-        transform: 'scale(.72)'
-      }
-    ],
-    {
-      duration: returnDuration,
-      delay: pickupDelay,
-      easing: 'linear'
-    }
-  );
-  playCatchFlash(
-    homeCoverPoint,
-    pickupDelay + returnDuration - 100
-  );
+  scheduleAction(pickupDelay, () => {
+    const defenseDecision = requestRunnerDefenseDecision(
+      passedBallPoint
+    );
+    const homeDecision =
+      defenseDecision?.allStopped === false &&
+      Number(defenseDecision.targetBaseIndex) === 4
+        ? defenseDecision
+        : null;
+    throwPassedBallHomeToPitcher(
+      passedBallPoint,
+      homeCoverPoint,
+      homeDecision
+    );
+  });
 }
-
 function selectedRunnerStart() {
   return document.querySelector(
     '[data-start][aria-pressed="true"]'
