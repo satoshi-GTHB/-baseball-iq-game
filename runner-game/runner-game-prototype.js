@@ -346,6 +346,46 @@ function leadAndReturnAutonomousRunner(
   });
 }
 
+function advanceAutonomousRunnerAfterHomeThrow(runner) {
+  const raceState = runnerGameRaceStates.get(runner);
+  const snapshot = autonomousRaceSnapshot(raceState) ||
+    autonomousRunnerSnapshot(runner);
+  if (!snapshot || Number(snapshot.startBaseIndex) !== 2) return;
+  (raceState?.animations || [raceState?.animation])
+    .filter(Boolean)
+    .forEach((animation) => animation.cancel());
+  const startProgress = Math.max(
+    0,
+    Math.min(1, Number(snapshot.advance) - 2)
+  );
+  const startPoint = snapshot.point ||
+    autonomousPointAt(2, startProgress);
+  const segment = window.RUNNER_MOVEMENT_RULES.SEGMENTS[2];
+  const duration = Math.max(
+    1,
+    Math.round(segment.duration * (1 - startProgress))
+  );
+  runner.style.left = `${startPoint[0]}%`;
+  runner.style.top = `${startPoint[1]}%`;
+  const animation = autonomousAnimation(
+    runner,
+    [
+      { left: `${startPoint[0]}%`, top: `${startPoint[1]}%` },
+      { left: `${segment.end[0]}%`, top: `${segment.end[1]}%` }
+    ],
+    { duration, easing: 'linear' }
+  );
+  runnerGameRaceStates.set(runner, {
+    kind: 'home-throw-forward',
+    runner,
+    animation,
+    animations: [animation],
+    segmentIndex: 2,
+    startProgress,
+    duration
+  });
+}
+
 function tagUpAutonomousRunner(runner, catchDelay) {
   const segmentIndex =
     segmentIndexFromBase(runner.dataset.base);
@@ -471,6 +511,42 @@ function batterOutOnCatch(runner, catchDelay, runProgress) {
 
 function autonomousRaceSnapshot(raceState) {
   if (!raceState) return null;
+  if (raceState.kind === 'home-throw-forward') {
+    const elapsed = Math.max(
+      0,
+      Number(raceState.animation.currentTime) || 0
+    );
+    const ratio = Math.min(1, elapsed / raceState.duration);
+    const progress = raceState.startProgress +
+      (1 - raceState.startProgress) * ratio;
+    if (ratio >= 1) {
+      return {
+        id: raceState.runner.dataset.raceId,
+        type: 'autonomous',
+        moving: false,
+        offBase: false,
+        baseIndex: 3,
+        startBaseIndex: 2,
+        segmentIndex: null,
+        movingForward: null,
+        advance: 3,
+        point: window.RUNNER_MOVEMENT_RULES.BASE_POINTS.THIRD
+      };
+    }
+    return {
+      id: raceState.runner.dataset.raceId,
+      type: 'autonomous',
+      moving: true,
+      offBase: true,
+      startBaseIndex: 2,
+      segmentIndex: 2,
+      movingForward: true,
+      advance: 2 + progress,
+      point: autonomousPointAt(2, progress),
+      targetBaseIndex: 3,
+      runnerArrivalMs: raceState.duration - elapsed
+    };
+  }
   if (raceState.kind === 'tag-up') {
     const elapsed = Math.max(
       0,
@@ -1951,6 +2027,32 @@ runnerGameField.addEventListener(
       event.detail
     );
     armAutonomousRundownTarget(event.detail);
+  }
+);
+runnerGameField.addEventListener(
+  'runner-defense-throw-home',
+  () => {
+    if (
+      selectedStartKey() !== 'THIRD' ||
+      selectedSceneKey() !== 'ground' ||
+      !['third-line', 'third', 'short'].includes(
+        String(
+          document.querySelector(
+            '[data-direction][aria-pressed="true"]'
+          )?.dataset.direction
+        )
+      )
+    ) return;
+    const firstRunnerPresent = runnerGameOtherRunners.some(
+      (runner) =>
+        !runner.hidden && runner.dataset.base === 'FIRST'
+    );
+    const secondRunner = runnerGameOtherRunners.find(
+      (runner) =>
+        !runner.hidden && runner.dataset.base === 'SECOND'
+    );
+    if (firstRunnerPresent || !secondRunner) return;
+    advanceAutonomousRunnerAfterHomeThrow(secondRunner);
   }
 );
 runnerGameField.addEventListener(

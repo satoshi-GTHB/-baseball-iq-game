@@ -726,6 +726,13 @@ function showRunnerCall(
   );
 }
 
+function dispatchHomeThrow(decision) {
+  galleryField.dispatchEvent(new CustomEvent(
+    'runner-defense-throw-home',
+    { detail: { decision } }
+  ));
+}
+
 function dispatchRunnerDefenseResult(decision, out) {
   const detail = {
     ...decision,
@@ -2124,6 +2131,7 @@ function throwAtRunner(from, decision, fallbackTarget) {
   }
   if (Number(decision?.targetBaseIndex) === 4) {
     galleryField.dataset.lastThrowRoute = 'home-attempt';
+    dispatchHomeThrow(decision);
   }
   animate(
     ball,
@@ -3326,6 +3334,7 @@ function throwPassedBallHomeToPitcher(
   }
 
   galleryField.dataset.lastThrowRoute = 'home-attempt';
+  dispatchHomeThrow(decision);
   galleryField.dataset.lastDefenseReason =
     decision.defenseReason || '';
   const tagPoint = [50, 86];

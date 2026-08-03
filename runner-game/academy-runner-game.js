@@ -85,6 +85,13 @@
         ...expectedAfterLead
       ];
     }
+    if (!problem.instruction) {
+      problem.expected = problem.expected.map((item) =>
+        item.axis === 'strategy'
+          ? { ...item, axis: 'personal' }
+          : item
+      );
+    }
     return problem;
   }
 
@@ -697,15 +704,23 @@
   }
 
   function configureProblem(problem) {
+
     const defaultOtherBases = {
       BATTER: [],
-      FIRST: problem.scene === 'ground' ? ['HOME'] : [],
-      SECOND: problem.scene === 'ground' ? ['HOME', 'THIRD'] : [],
-      THIRD: problem.scene === 'ground' ? ['HOME', 'SECOND'] : []
+      FIRST: [],
+      SECOND: problem.scene === 'ground' ? ['THIRD'] : [],
+      THIRD: problem.scene === 'ground' ? ['SECOND'] : []
     }[problem.start] || [];
-    field.dataset.otherBases = (
-      problem.otherBases || defaultOtherBases
-    ).join(',');
+    const configuredOtherBases = [
+      ...(problem.otherBases || defaultOtherBases)
+    ];
+    if (
+      problem.start !== 'BATTER' &&
+      !configuredOtherBases.includes('HOME')
+    ) {
+      configuredOtherBases.unshift('HOME');
+    }
+    field.dataset.otherBases = configuredOtherBases.join(',');
     field.dataset.requestedDefenseAlignment =
       problem.alignment === '前進守備'
         ? 'infield-in'
@@ -908,6 +923,26 @@
     return lateStart ? { attempted: true, onTime: false } : null;
   }
 
+  function defenseThrewHome() {
+    return ['home-attempt', 'direct-home'].includes(
+      field.dataset.lastThrowRoute
+    );
+  }
+
+  function isSecondRunnerBehindThirdOnLeftGround(problem) {
+    if (
+      problem.start !== 'SECOND' ||
+      problem.scene !== 'ground' ||
+      !['third-line', 'third', 'short'].includes(
+        String(directionForScene(problem))
+      )
+    ) return false;
+    const otherBases = new Set(
+      problem.otherBases || ['THIRD']
+    );
+    return otherBases.has('THIRD') && !otherBases.has('FIRST');
+  }
+
   function isForcedGroundAdvance(problem) {
     if (
       problem.scene !== 'ground' ||
@@ -1050,10 +1085,7 @@
 
   function problemForEvaluation(problem) {
     if (problem.secondAdvanceTrigger === 'home-throw') {
-      const homeThrowOccurred = ['home-attempt', 'direct-home'].includes(
-        field.dataset.lastThrowRoute
-      );
-      if (!homeThrowOccurred) {
+      if (!defenseThrewHome()) {
         let firstGoKept = false;
         return {
           ...problem,
@@ -1084,6 +1116,16 @@
     const lead = problem.expected.filter(
       (item) => item.action === 'HALFWAY'
     );
+    if (isSecondRunnerBehindThirdOnLeftGround(problem)) {
+      const expected = problem.outs >= 2
+        ? [...lead, point('GO', 3)]
+        : [
+            ...lead,
+            point('BACK', 2),
+            ...(defenseThrewHome() ? [point('GO', 3)] : [])
+          ];
+      return { ...problem, expected };
+    }
     if (
       problem.start === 'BATTER' &&
       problem.scene === 'extra' &&
@@ -1499,6 +1541,20 @@
     const outFact = selfOut
       ? `、${selfPosition}がアウトになった`
       : '';
+    if (
+      action === 'GO' &&
+      isSecondRunnerBehindThirdOnLeftGround(problem)
+    ) {
+      return problem.outs >= 2
+        ? '2アウトなのに、バットに当たった瞬間に3塁へ走らなかった'
+        : '守備がホームへ投げたのに、その間に3塁へ走らなかった';
+    }
+    if (
+      action === 'BACK' &&
+      isSecondRunnerBehindThirdOnLeftGround(problem)
+    ) {
+      return 'ショートやサードへのゴロで、ホーム送球を確認する前に3塁へ進み、2塁へ戻らなかった';
+    }
     if (action === 'GO') {
       return `${selfPosition}。ねらいは「${intendedGoal}」。${location}への${situation}で、${destination}へ進まなかった${outFact}`;
     }
@@ -1512,6 +1568,40 @@
       return `${selfPosition}。ピッチャーが投げたときに、2次リードをしなかった${outFact}`;
     }
     return `${selfPosition}。${location}への${situation}で「${ACTION_LABELS[action]}」を選ばなかった${outFact}`;
+  }
+
+  function specificActionDifferenceFeedback(
+    problem,
+    axis,
+    actions,
+    selectedAction = null
+  ) {
+    const expectedItems = problem.expected.filter(
+      (item) => item.axis === axis
+    );
+    const unmatched = unmatchedExpectedItems(
+      problem,
+      axis,
+      actions
+    );
+    const expectedAction = unmatched[0]?.action ||
+      expectedItems[0]?.action;
+    const allExpectedActions = problem.expected.map(
+      (item) => item.action
+    );
+    const actualAction = selectedAction || actions.find(
+      (action) => !allExpectedActions.includes(action)
+    );
+    if (expectedAction && actualAction) {
+      return `自分は${runnerLabelForId(problem, 'self')}。${defenseLocationDescription(problem)}への${sceneSituation(problem)}で「${ACTION_LABELS[expectedAction]}」をするところ、「${ACTION_LABELS[actualAction]}」を選んだ`;
+    }
+    if (expectedAction) {
+      return missedActionFeedback(problem, expectedAction);
+    }
+    if (actualAction) {
+      return `自分は${runnerLabelForId(problem, 'self')}。${defenseLocationDescription(problem)}への${sceneSituation(problem)}で「${ACTION_LABELS[actualAction]}」を選んだ`;
+    }
+    return `自分は${runnerLabelForId(problem, 'self')}。${defenseLocationDescription(problem)}への${sceneSituation(problem)}で、点になる走り方ができなかった`;
   }
 
   function unmatchedItemFeedback(problem, item, actions) {
@@ -1759,6 +1849,12 @@
           ? '盗塁をして、キャッチャーに2塁へ投げさせる'
           : 'ボールが来たら、次の塁へにげる';
       }
+      if (
+        action === 'BACK' &&
+        isSecondRunnerBehindThirdOnLeftGround(problem)
+      ) {
+        return 'ショートやサードへのゴロで、守備がホームへ投げていないため2塁へ戻る';
+      }
       if (action === 'BACK' && caughtFly) {
         return `${situation}が上がったのを見てバックする`;
       }
@@ -1768,11 +1864,22 @@
       if (action === 'BACK') {
         return `${situation}と守る人を見て元の塁へ戻る`;
       }
-      if (action === 'GO' && problem.stealSign) {
+      if (
+        action === 'GO' &&
+        isSecondRunnerBehindThirdOnLeftGround(problem)
+      ) {
+        return problem.outs >= 2
+          ? '2アウトなので、バットに当たった瞬間に3塁へ走る'
+          : '守備がホームへ投げたのを見て、3塁へ走る';
+      }
+
+    if (action === 'GO' && problem.stealSign) {
         return 'ピッチャーが投げるのに合わせてスタートを切る';
       }
       if (action === 'GO' && problem.immediateStart) {
-        return '監督の指示に合わせて、投球と同時にスタートを切る';
+        return problem.instruction
+          ? '監督の指示に合わせて、投球と同時にスタートを切る'
+          : 'ピッチャーが投げたら、すぐにスタートを切る';
       }
       if (
         action === 'GO' &&
@@ -1841,17 +1948,33 @@
     if (action === 'BACK' && problem.decoySteal) {
       return 'はさまれたとき、ボールと反対へにげられた';
     }
+    if (
+      action === 'BACK' &&
+      isSecondRunnerBehindThirdOnLeftGround(problem)
+    ) {
+      return 'ショートやサードへのゴロで、ホーム送球がなかったため2塁へ戻れた';
+    }
     if (action === 'BACK' && ['fly', 'popup', 'liner'].includes(problem.scene)) {
       return `${situation}が上がったので、元の塁へ戻れた`;
     }
     if (action === 'HALFWAY') {
       return 'ピッチャーが投げたとき、2次リードができた';
     }
+    if (
+      action === 'GO' &&
+      isSecondRunnerBehindThirdOnLeftGround(problem)
+    ) {
+      return problem.outs >= 2
+        ? '2アウトで、バットに当たった瞬間に3塁へ走れた'
+        : 'ホーム送球を見て、3塁へ走れた';
+    }
     if (action === 'GO' && problem.stealSign) {
       return 'ピッチャーが投げたとき、盗塁を始められた';
     }
     if (action === 'GO' && problem.immediateStart) {
-      return '監督の指示どおり、すぐに走れた';
+      return problem.instruction
+        ? '監督の指示どおり、すぐに走れた'
+        : 'ピッチャーが投げたら、すぐに走り始められた';
     }
     if (action === 'GO' && isForcedGroundAdvance(problem)) {
       return '内野ゴロで戻れないため、次の塁へ走れた';
@@ -2148,7 +2271,12 @@
                 missedActionFeedback(problem, action)
               ),
               ...extraActions.map((action) =>
-                `「${ACTION_LABELS[action]}」を選んだため、お手本とちがう判断になった`
+                specificActionDifferenceFeedback(
+                  problem,
+                  'personal',
+                  result.evaluatedActions,
+                  action
+                )
               )
             ])
           ];
@@ -2316,7 +2444,11 @@
       missedItems,
       result.personal,
       result.personalMax,
-      `自分は${runnerLabelForId(problem, 'self')}。${expectedDestinationLabel(problem)}へ進むまでの操作の順番がお手本と違った`
+      specificActionDifferenceFeedback(
+        problem,
+        'personal',
+        result.evaluatedActions
+      )
     );
     didItems = alignedPersonal.did;
     missedItems = alignedPersonal.missed;
