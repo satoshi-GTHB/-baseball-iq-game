@@ -143,8 +143,8 @@
   background: #d76b14;
 }
 
-.movement-controls .stop {
-  background: #68727c;
+.movement-control-spacer {
+  grid-column: span 3;
 }
 
 .movement-controls .half {

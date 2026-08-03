@@ -20,7 +20,7 @@
 
   const ACTION_LABELS = {
     GO: 'ゴー',
-    STOP: 'ストップ',
+    STOP: 'その塁で止まる',
     HALFWAY: '２次リード/ハーフウェイ',
     BACK: 'バック',
     KAKENUK: 'かけぬけ',
@@ -840,6 +840,8 @@
         if (
           expectedActions.includes('STOP') &&
           !actions.includes('STOP') &&
+          Number(selfRunner?.baseIndex ?? selfRunner?.advance) ===
+            expectedDestinationBaseIndex(problem) &&
           !selfRunner?.moving &&
           !selfRunner?.offBase
         ) {
@@ -1223,8 +1225,7 @@
         expected: [
           ...lead,
           point('GO', 3),
-          point('STOP', 1),
-          point('BACK', 2)
+          point('BACK', 3)
         ]
       };
     }
@@ -1947,7 +1948,7 @@
         return 'ピッチャーが投げたら、2次リードをする';
       }
       if (action === 'STOP') {
-        return `${situation}と前のランナーを見てストップする`;
+        return `${situation}と前のランナーを見て、${expectedDestinationLabel(problem)}で止まる`;
       }
       if (action === 'KAKENUK') {
         return `${situation}を見て、1塁をかけぬける`;
@@ -2015,7 +2016,7 @@
       return `${situation}と守る人を見て、走り始められた`;
     }
     if (action === 'STOP') {
-      return `${situation}と前のランナーを見て、止まれた`;
+      return `${situation}と前のランナーを見て、${expectedDestinationLabel(problem)}で止まれた`;
     }
     if (action === 'KAKENUK') {
       return `${situation}を見て、1塁をかけぬけられた`;
@@ -2563,7 +2564,6 @@
       setTimeout(() => {
         const selector = {
           GO: '#runner-go',
-          STOP: '#runner-stop',
           HALFWAY: '#runner-halfway',
           BACK: '#runner-back',
           KAKENUK: '#runner-kakenuke',
@@ -2619,7 +2619,6 @@
 
   const actionButtons = [
     '#runner-go',
-    '#runner-stop',
     '#runner-halfway',
     '#runner-back',
     '#runner-kakenuke',

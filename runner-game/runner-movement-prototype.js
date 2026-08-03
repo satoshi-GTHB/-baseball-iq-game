@@ -10,7 +10,6 @@ const startButtons = [...document.querySelectorAll('[data-start]')];
 const kakenukeButton = document.querySelector('#runner-kakenuke');
 const roundButton = document.querySelector('#runner-round');
 const goButton = document.querySelector('#runner-go');
-const stopButton = document.querySelector('#runner-stop');
 const halfwayButton = document.querySelector('#runner-halfway');
 const backButton = document.querySelector('#runner-back');
 const status = document.querySelector('#runner-status');
@@ -226,11 +225,6 @@ function updateControls() {
     (state.roundFirst && state.special !== 'kakenuke-running');
   goButton.disabled =
     unavailable || finished || Boolean(state.special);
-  stopButton.disabled =
-    unavailable ||
-    Boolean(state.special) ||
-    finished ||
-    state.rundownActive;
   halfwayButton.disabled =
     unavailable ||
     specialRunning ||
@@ -1310,11 +1304,6 @@ goButton.addEventListener('click', () => {
   if (leavesInitialBase) {
     notifyPrePitchLead('GO', leadBaseIndex);
   }
-});
-
-stopButton.addEventListener('click', () => {
-  stopAtNearestBase();
-  notifyAcceptedAction('STOP');
 });
 
 halfwayButton.addEventListener('click', () => {
