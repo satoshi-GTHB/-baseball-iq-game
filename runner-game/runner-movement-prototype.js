@@ -10,7 +10,6 @@ const startButtons = [...document.querySelectorAll('[data-start]')];
 const kakenukeButton = document.querySelector('#runner-kakenuke');
 const roundButton = document.querySelector('#runner-round');
 const goButton = document.querySelector('#runner-go');
-const stopButton = document.querySelector('#runner-stop');
 const halfwayButton = document.querySelector('#runner-halfway');
 const backButton = document.querySelector('#runner-back');
 const status = document.querySelector('#runner-status');
@@ -475,52 +474,6 @@ function startFirstBaseOverrun() {
         '1塁をオーバーランして、1塁で止まりました。';
     };
   });
-}
-
-function stopAtNearestBase() {
-  if (state.special || state.out) return;
-  if (state.moving) captureSegmentProgress();
-
-  if (state.segmentIndex === null) {
-    const currentBase = rules.BASE_SEQUENCE[state.baseIndex];
-    state.continueAfterBase = false;
-    status.textContent = state.baseIndex >= 4
-      ? 'ホームで止まっています。'
-      : `${baseLabel(currentBase)}で止まっています。`;
-    updateControls();
-    return;
-  }
-
-  const segmentIndex = state.segmentIndex;
-  const fromProgress = state.segmentProgress;
-  const returnsToPrevious = fromProgress < .5;
-  const targetProgress = returnsToPrevious ? 0 : 1;
-  const destinationIndex = returnsToPrevious
-    ? segmentIndex
-    : segmentIndex + 1;
-  const destination = rules.BASE_SEQUENCE[destinationIndex];
-
-  state.continueAfterBase = false;
-  status.textContent = returnsToPrevious
-    ? `近いほうの${baseLabel(destination)}へ戻ります。`
-    : `近いほうの${baseLabel(destination)}へ進みます。`;
-
-  if (fromProgress === targetProgress) {
-    finishAtBase(destinationIndex);
-    status.textContent = `${baseLabel(destination)}で止まりました。`;
-    updateControls();
-    return;
-  }
-
-  animateSegment(
-    segmentIndex,
-    fromProgress,
-    targetProgress,
-    () => {
-      finishAtBase(destinationIndex);
-      status.textContent = `${baseLabel(destination)}で止まりました。`;
-    }
-  );
 }
 
 function stopAtHalfway(
@@ -1330,13 +1283,6 @@ goButton.addEventListener('click', () => {
   if (leavesInitialBase) {
     notifyPrePitchLead('GO', leadBaseIndex);
   }
-});
-
-stopButton.addEventListener('click', () => {
-  state.lastGoSegmentIndex = null;
-  state.lastBackSegmentIndex = null;
-  stopAtNearestBase();
-  notifyAcceptedAction('STOP');
 });
 
 halfwayButton.addEventListener('click', () => {

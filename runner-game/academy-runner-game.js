@@ -1234,7 +1234,6 @@
         expected: [
           ...lead,
           point('GO', 3),
-          point('STOP', 1),
           point('BACK', 2)
         ]
       };
@@ -1958,7 +1957,9 @@
         return 'ピッチャーが投げたら、2次リードをする';
       }
       if (action === 'STOP') {
-        return `${situation}と前のランナーを見てストップする`;
+        return expectedActions.includes('GO')
+          ? `${expectedDestinationLabel(problem)}まで進み、そこで止まる`
+          : '今いる塁にとどまる';
       }
       if (action === 'KAKENUK') {
         return `${situation}を見て、1塁をかけぬける`;
@@ -2026,7 +2027,9 @@
       return `${situation}と守る人を見て、走り始められた`;
     }
     if (action === 'STOP') {
-      return `${situation}と前のランナーを見て、止まれた`;
+      return problem.expected.some((item) => item.action === 'GO')
+        ? `${expectedDestinationLabel(problem)}まで進み、そこで止まれた`
+        : '今いる塁にとどまれた';
     }
     if (action === 'KAKENUK') {
       return `${situation}を見て、1塁をかけぬけられた`;
@@ -2574,7 +2577,6 @@
       setTimeout(() => {
         const selector = {
           GO: '#runner-go',
-          STOP: '#runner-stop',
           HALFWAY: '#runner-halfway',
           BACK: '#runner-back',
           KAKENUK: '#runner-kakenuke',
@@ -2630,7 +2632,6 @@
 
   const actionButtons = [
     '#runner-go',
-    '#runner-stop',
     '#runner-halfway',
     '#runner-back',
     '#runner-kakenuke',
