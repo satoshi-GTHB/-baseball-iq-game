@@ -516,8 +516,8 @@ function stopAtHalfway(
   targetProgress = .5
 ) {
   state.continueAfterBase = false;
-  const targetLabel = targetProgress === .25
-    ? '塁間の4分の1'
+  const targetLabel = targetProgress === .3
+    ? '塁間の30％'
     : '塁間の中間地点';
   status.textContent = `${targetLabel}へ向かいます。`;
   if (fromProgress === targetProgress) {
@@ -543,7 +543,7 @@ function stopAtHalfway(
 function chooseHalfway() {
   if (state.special) return;
   if (state.moving) captureSegmentProgress();
-  const targetProgress = .25;
+  const targetProgress = .3;
 
   if (state.segmentIndex === null) {
     if (state.baseIndex >= 4) return;
