@@ -543,47 +543,18 @@ function stopAtHalfway(
 function chooseHalfway() {
   if (state.special) return;
   if (state.moving) captureSegmentProgress();
-  const usesQuarterLead =
-    state.activeScene === 'popup' ||
-    (
-      state.activeScene === 'bunt' &&
-      String(state.activeDirection).endsWith('-popup')
-    );
-  const targetProgress = usesQuarterLead ? .25 : .5;
+  const targetProgress = .25;
 
   if (state.segmentIndex === null) {
     if (state.baseIndex >= 4) return;
     stopAtHalfway(state.baseIndex, 0, targetProgress);
     return;
   }
-  if (usesQuarterLead) {
-    stopAtHalfway(
-      state.segmentIndex,
-      state.segmentProgress,
-      targetProgress
-    );
-    return;
-  }
-  if (state.segmentProgress < targetProgress) {
-    stopAtHalfway(
-      state.segmentIndex,
-      state.segmentProgress,
-      targetProgress
-    );
-    return;
-  }
-
-  const segmentIndex = state.segmentIndex;
-  status.textContent = '次の塁を通過し、その次の塁間の中間で止まります。';
-  animateSegment(segmentIndex, state.segmentProgress, 1, () => {
-    const nextBaseIndex = segmentIndex + 1;
-    finishAtBase(nextBaseIndex);
-    if (nextBaseIndex < 4) {
-      stopAtHalfway(nextBaseIndex, 0, targetProgress);
-    } else {
-      status.textContent = 'ホームへ着きました。';
-    }
-  });
+  stopAtHalfway(
+    state.segmentIndex,
+    state.segmentProgress,
+    targetProgress
+  );
 }
 
 function goBack() {
