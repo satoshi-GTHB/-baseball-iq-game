@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>走塁の基本｜ランナー編</title>
+<link rel="stylesheet" href="runner-ground-hit-prototype.css?v=7"><link rel="stylesheet" href="runner-animation-gallery.css?v=17"><link rel="stylesheet" href="runner-movement-prototype.css?v=13"><link rel="stylesheet" href="runner-game-prototype.css?v=14"><link rel="stylesheet" href="basics.css?v=1"></head>
+<body><main class="lesson-app">
+<header><div><small>フジコン 野球IQアカデミー</small><h1>走塁の基本</h1></div><p>ランナー編と同じグラウンドで学ぼう</p></header>
+<nav class="main-tabs" aria-label="大分類"><button data-main="batter" aria-pressed="true"><b>1</b><span>バッター</span><small>打ったあとの走り方</small></button><button data-main="runner" aria-pressed="false"><b>2</b><span>ランナー</span><small>塁にいるときの考え方</small></button></nav>
+
+<section class="field-card" aria-label="走塁アニメーション">
+  <div class="field-title"><div><small id="demo-kicker">バッター</small><h2 id="demo-title">内野への打球</h2></div><button id="replay" type="button">↻ もう一度</button></div>
+  <div class="field gallery-field runner-motion-field motion-v2" id="lesson-field">
+    <img class="field-image" src="assets/field-v1.png" alt="ランナー編のグラウンド">
+    <div class="field-ball-legend"><span><i class="ball-color fair"></i>ゴロ</span><span><i class="ball-color caught"></i>フライ</span></div>
+    <div class="runner-bso" aria-label="カウント"><div class="runner-bso-row"><span class="runner-bso-label">B</span><span class="runner-bso-dot b1dot"></span><span class="runner-bso-dot b2dot"></span><span class="runner-bso-dot b3dot"></span></div><div class="runner-bso-row"><span class="runner-bso-label">S</span><span class="runner-bso-dot s1dot"></span><span class="runner-bso-dot s2dot"></span></div><div class="runner-bso-row"><span class="runner-bso-label">O</span><span class="runner-bso-dot runner-out-light o1dot"></span><span class="runner-bso-dot runner-out-light o2dot"></span></div></div>
+    <div class="field-play-area">
+      <div class="fielder catcher">2</div><div class="fielder pitcher">1</div><div class="fielder first">3</div><div class="fielder second">4</div><div class="fielder short">6</div><div class="fielder third">5</div><div class="fielder left">7</div><div class="fielder center">8</div><div class="fielder right">9</div>
+      <div class="runner-dot other-runner other-a"></div><div class="runner-dot other-runner other-b"></div><div class="runner-dot other-runner other-c"></div><div class="runner-dot self-runner">自</div>
+      <svg class="board-bat" viewBox="0 0 100 20" role="img" aria-label="バット"><path class="bat-body" d="M3 8.4h43c9 0 14-3.4 22-4.8C78 2.3 89 2.4 96 3.3c3 .5 4 3 4 6.7s-1 6.2-4 6.7c-7 .9-18 1-28-.3C60 15 55 11.6 46 11.6H3Z"></path><path class="bat-grip" d="M3 8.4h40v3.2H3Z"></path><ellipse class="bat-grip" cx="2.8" cy="10" rx="2.8" ry="4"></ellipse><path class="bat-highlight" d="M69 5.1C79 3.7 89 3.8 95 4.6"></path></svg>
+      <div class="gallery-ball" aria-label="ボール"></div><div class="gallery-shadow"></div><div class="speed-trail"></div><div class="play-result-call"></div>
+      <div class="manager-sign"><img src="assets/ai-tommy-coach.png" alt="トミー監督"><p>盗塁！</p></div>
+    </div>
+  </div>
+  <p id="demo-caption" class="demo-caption" aria-live="polite">1塁のベースで止まらず、その先まで全力で走り切ろう。</p>
+</section>
+
+<section id="batter" class="main-section">
+  <div class="section-heading"><span>1</span><div><small>打った人が最初に覚える</small><h2>バッターランナーの走り方</h2></div></div>
+  <div class="batter-explanation">
+    <article><b>①</b><div><h3>内野への打球＝かけぬけ</h3><p>ゴロでもフライでも内野への打球では、1塁の先まで走り続ける。</p></div></article>
+    <article><b>②</b><div><h3>外野への打球＝オーバーラン</h3><p>1塁までの途中でふくらみ、1塁ベースを踏みながら2塁へ向かう。間に合わなければ急ブレーキして1塁へ戻る。</p></div></article>
+  </div>
+  <div class="batter-demo-controls" aria-label="バッターランナーの動きを選ぶ"><button class="kakenuke" data-demo="batter-infield" aria-pressed="true">① かけぬけ</button><button class="round" data-demo="batter-outfield" aria-pressed="false">② オーバーラン</button></div>
+  <div id="batter-demo-slot" class="demo-slot"></div>
+</section>
+
+<section id="runner" class="main-section" hidden>
+  <div class="section-heading"><span>2</span><div><small>すでに塁にいるとき</small><h2>ランナーの考え方</h2></div></div>
+  <nav class="runner-tabs" aria-label="ランナーの学習内容"><button data-sub="check" aria-pressed="true">最初に確認</button><button data-sub="lead" aria-pressed="false">２次リード</button><button data-sub="judge" aria-pressed="false">状況判断</button></nav>
+  <div id="check" class="sub-section"><h3 class="sub-title">プレー前に3つ確認</h3><div class="check-static-list">
+    <article><h3>① ランナーはどこ？</h3><p><b>詰まっている：</b>自分より後ろに、ランナーがいない空いた塁が1つもない状態です。後ろのランナーが次々に進んでくるため、ゴロでは元の塁へ戻れません。</p><p class="example-label">例：自分が2塁にいて、1塁にもランナーがいる</p><div class="field snapshot-field packed-snapshot"><img class="field-image" src="assets/field-v1.png" alt="自分より後ろに空いた塁がない例"><div class="field-play-area"><div class="fielder catcher">2</div><div class="fielder pitcher">1</div><div class="fielder first">3</div><div class="fielder second">4</div><div class="fielder short">6</div><div class="fielder third">5</div><div class="fielder left">7</div><div class="fielder center">8</div><div class="fielder right">9</div><div class="first-base-marker" aria-hidden="true"></div><div class="runner-dot self-runner">自</div><div class="runner-dot other-runner snapshot-first"></div></div></div></article>
+    <article><p><b>詰まっていない：</b>自分より後ろに、ランナーがいない空いた塁が1つでもある状態です。後ろから押し出されないため、アウトになりそうなら元の塁へ戻れます。</p><p class="example-label">例：自分が2塁にいて、1塁にランナーがいない</p><div class="field snapshot-field open-snapshot"><img class="field-image" src="assets/field-v1.png" alt="自分より後ろに空いた塁がある例"><div class="field-play-area"><div class="fielder catcher">2</div><div class="fielder pitcher">1</div><div class="fielder first">3</div><div class="fielder second">4</div><div class="fielder short">6</div><div class="fielder third">5</div><div class="fielder left">7</div><div class="fielder center">8</div><div class="fielder right">9</div><div class="first-base-marker" aria-hidden="true"></div><div class="runner-dot self-runner">自</div></div></div></article>
+    <article><h3>② カウントを頭に入れる</h3><p><b>2アウトなら、ゴロでもフライでも、バットにボールが当たった瞬間にゴー！</b></p><div class="field snapshot-field count-snapshot"><img class="field-image" src="assets/field-v1.png" alt="2アウト3ボール2ストライク"><div class="runner-bso attention-bso"><div class="runner-bso-row"><span class="runner-bso-label">B</span><span class="runner-bso-dot ball-on"></span><span class="runner-bso-dot ball-on"></span><span class="runner-bso-dot ball-on"></span></div><div class="runner-bso-row"><span class="runner-bso-label">S</span><span class="runner-bso-dot strike-on"></span><span class="runner-bso-dot strike-on"></span></div><div class="runner-bso-row"><span class="runner-bso-label">O</span><span class="runner-bso-dot out-on"></span><span class="runner-bso-dot out-on"></span></div></div><div class="field-play-area"><div class="fielder catcher">2</div><div class="fielder pitcher">1</div><div class="fielder first">3</div><div class="fielder second">4</div><div class="fielder short">6</div><div class="fielder third">5</div><div class="fielder left">7</div><div class="fielder center">8</div><div class="fielder right">9</div><div class="runner-dot self-runner snapshot-at-second">自</div><div class="runner-dot other-runner snapshot-at-first"></div></div></div><p class="snapshot-note"><b>2アウト・3ボール2ストライクで、後ろが詰まっているとき：</b>ピッチャーが投げた瞬間にゴー！ フォアボールなら自動で次の塁へ進めます。打球が飛んだときも、先の塁へ進めるチャンスが広がります。</p></article>
+    <article><h3>③ 監督の指示を聞く</h3><p>監督の指示どおりに動こう。指示どおりに挑戦した結果なら、アウトになっても気にしなくて大丈夫です。</p><div class="field snapshot-field manager-snapshot manager-instruction-visible"><img class="field-image" src="assets/field-v1.png" alt="監督から盗塁またはスクイズの指示"><div class="field-play-area"><div class="fielder catcher">2</div><div class="fielder pitcher">1</div><div class="fielder first">3</div><div class="fielder second">4</div><div class="fielder short">6</div><div class="fielder third">5</div><div class="fielder left">7</div><div class="fielder center">8</div><div class="fielder right">9</div><div class="runner-dot self-runner snapshot-at-third">自</div><div class="manager-sign attention-sign"><img src="assets/ai-tommy-coach.png" alt="トミー監督"><p>盗塁／スクイズ</p></div></div></div><p class="snapshot-note"><b>盗塁・スクイズ：</b>ピッチャーが投げた瞬間にゴー。早すぎると、ピッチャーからけん制球が来るので、ピッチャーをよく見よう。</p><p class="squeeze-note"><b>スクイズとは？</b> バッターがバントでボールを転がす間に、3塁ランナーがホームインをねらう作戦です。バントが地面につく前に捕られたら、3塁へ戻らないとアウトになります。</p></article>
+  </div></div>
+  <div id="lead" class="sub-section" hidden><h3 class="sub-title">投球と同時に2〜3歩進む</h3><div class="lesson-list"><article><h3>２次リード</h3><p>盗塁やスクイズ以外では、ピッチャーが投球したら、最初のリードから次の塁へさらに2〜3歩進み、そこで状況を判断します。</p><strong>早すぎるとアウト</strong><p>ピッチャーが投げる前に二次リードを始めると、1塁へけん制球が来ます。ピッチャーをよく見て、投球と同時に動こう。</p><strong>打球が飛ばなかったら</strong><p>キャッチャーがボールを持つので、元の塁へ戻ることも忘れない。</p></article></div><div id="lead-demo-slot" class="demo-slot"></div><button id="lead-play-start" class="lead-play-start" type="button">▶ プレー開始</button><div class="movement-controls lead-control"><button id="lead-action" class="half" type="button" disabled>２次リード/ハーフウェイ</button></div><p id="lead-help" class="lead-help">「プレー開始」を押してください。</p></div>
+  <div id="judge" class="sub-section" hidden>
+    <h3 class="sub-title">打球を見て、どこへ走るか決めよう</h3>
+    <div class="judge-intro">
+      <article class="judge-rule"><span class="ball-badge ground">① ゴロ</span><p><b>基本は、次の塁を目指します。</b>ただし、自分より後ろに空いている塁があり、目の前の守備がボールを持っていたら、無理に進まず元の塁へ戻る判断もあります。</p></article>
+      <article class="judge-rule"><span class="ball-badge fly">② フライ</span><p><b>まず元の塁へ戻ります。</b>自分が戻る前にボールを塁へ返されるとアウトです。外野が捕ったあと、元の塁にふれてから次の塁へ走ることを「タッチアップ」といいます。次の塁までの距離と、捕った外野の位置を見て、間に合いそうなときにねらおう。</p></article>
+      <article class="judge-rule"><span class="ball-badge passed">③ パスボール</span><p>ピッチャーの投げたボールをキャッチャーが捕れず、後ろへ転がすことがあります。<b>次の塁をねらうチャンス！</b> ボールを見て、一気にゴーしよう。</p></article>
+    </div>
+    <h3 class="judge-more-title">いくつかのケースの状況判断を見てみよう</h3>
+    <div id="judge-demo-slot" class="demo-slot"></div>
+    <div class="judge-case-controls" aria-label="状況判断のケース">
+      <button type="button" data-demo="judge-first-short" aria-pressed="true"><small>1塁ランナー</small>ショートゴロ</button>
+      <button type="button" data-demo="judge-second-short" aria-pressed="false"><small>2塁ランナー</small>ショートゴロ</button>
+      <button type="button" data-demo="judge-second-passed" aria-pressed="false"><small>2塁ランナー</small>パスボール</button>
+      <button type="button" data-demo="judge-second-left-fly" aria-pressed="false"><small>2塁ランナー</small>レフトフライ</button>
+      <button type="button" data-demo="judge-third-left-tag" aria-pressed="false"><small>3塁ランナー</small>レフトフライ</button>
+    </div>
+  </div>
+</section>
+<script src="basics.js?v=1"></script></main></body></html>
