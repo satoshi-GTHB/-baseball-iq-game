@@ -141,6 +141,9 @@
 /* 再生前を含め、投球として現れるボールは必ず白から始める */
 .lesson-app #lesson-field:not(.playing):not(.pickoff-out) .gallery-ball{background:#fff!important}
 .bottom-main-tabs{position:static;margin-top:4px;border-top:3px solid #bdd8e9}.bottom-main-tabs button{cursor:pointer}
+.demo-batter-infield .board-bat{animation:batterInfieldSwing 4.3s linear forwards}.demo-batter-outfield .board-bat{animation:batterOverrunSwing 9s linear forwards}
+@keyframes batterInfieldSwing{0%,18%{transform:rotate(15deg)}25%{transform:rotate(-45deg)}32%,100%{transform:rotate(15deg)}}
+@keyframes batterOverrunSwing{0%,8%{transform:rotate(15deg)}13%{transform:rotate(-45deg)}18%,100%{transform:rotate(15deg)}}
 .lesson-app .left{top:20%}.lesson-app .center{top:5%}.lesson-app .right{top:20%}
 
 .attention-bso .ball-on{background:#1478c9!important}.count-snapshot .snapshot-at-second{left:50%;top:31%}.count-snapshot .snapshot-at-first{left:75%;top:60%;display:grid}.manager-snapshot .snapshot-at-third{left:25%;top:60%}.manager-snapshot .manager-sign{display:block!important;opacity:1!important;transform:none!important}.manager-snapshot .attention-sign p{border-color:var(--gold);box-shadow:0 0 0 4px #ffca2866,0 0 15px #ffca28}.manager-snapshot .attention-sign p::after{border-color:var(--gold)}.squeeze-note{margin:10px 0 0;padding:11px;border-radius:10px;background:#eaf6ff}.squeeze-note b{color:var(--blue)}
