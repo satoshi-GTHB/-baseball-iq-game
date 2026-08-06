@@ -71,7 +71,27 @@ assert.match(
 );
 assert.match(
   academySource,
-  /!selfOut &&\s*forceOutResult/
+  /selfGroundForceOut = Boolean\([\s\S]*?selfOut &&[\s\S]*?selfForceOutResult &&[\s\S]*?groundForceScene/
+);
+assert.match(
+  academySource,
+  /otherRunnerFairBallForceOut = Boolean\([\s\S]*?!selfOut &&[\s\S]*?forceOutResult/
+);
+assert.match(
+  academySource,
+  /selfGroundForceOut \|\| otherRunnerFairBallForceOut/
+);
+assert.match(
+  academySource,
+  /selfGroundForceOut[\s\S]*?内野ゴロで次の塁へ進み、フォースアウトになった/
+);
+assert.match(
+  academySource,
+  /failedOutfieldGroundStart\(problem\)[\s\S]*?problem\.level === 'beginner'[\s\S]*?problem\.scene !== 'single'/
+);
+assert.match(
+  academySource,
+  /failedOutfieldGroundStart\(problem\)[\s\S]*?方向へ抜けるゴロで、\$\{destination\}へのスタートが遅かった/
 );
 assert.match(
   academySource,

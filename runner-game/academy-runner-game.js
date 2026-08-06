@@ -1068,6 +1068,29 @@
     };
   }
 
+  function failedOutfieldGroundStart(problem) {
+    if (
+      problem.level === 'beginner' ||
+      problem.scene !== 'single' ||
+      !['FIRST', 'SECOND', 'THIRD'].includes(problem.start)
+    ) return false;
+    const startBaseIndex = {
+      FIRST: 1,
+      SECOND: 2,
+      THIRD: 3
+    }[problem.start];
+    const nextBaseIndex = startBaseIndex + 1;
+    const selfOut =
+      state.playOutcome?.outRunnerIds?.includes('self') ||
+      state.lastSelfDefenseResult?.out === true;
+    return Boolean(
+      selfOut &&
+      Number(state.lastSelfDefenseResult?.targetBaseIndex) === nextBaseIndex &&
+      problem.expected.some((item) => item.action === 'GO') &&
+      problem.expected.some((item) => item.action === 'STOP')
+    );
+  }
+
   function isReachableExtraBaseHit(problem) {
     return Boolean(
       problem.scene === 'extra' &&
@@ -1325,8 +1348,24 @@
     const forceOutResult = state.defenseResults.find((result) =>
       result.out && result.forceOut
     );
-    const fairBallForceOut = Boolean(
-      !problem.resultGoal &&
+    const selfForceOutResult = state.defenseResults.find((result) =>
+      result.out &&
+      result.forceOut &&
+      result.runnerId === 'self'
+    );
+    const groundForceScene = Boolean(
+      problem.scene === 'ground' ||
+      (
+        problem.scene === 'bunt' &&
+        String(problem.direction).endsWith('-ground')
+      )
+    );
+    const selfGroundForceOut = Boolean(
+      selfOut &&
+      selfForceOutResult &&
+      groundForceScene
+    );
+    const otherRunnerFairBallForceOut = Boolean(
       !selfOut &&
       forceOutResult &&
       (
@@ -1337,11 +1376,17 @@
         )
       )
     );
+    const fairBallForceOut = Boolean(
+      !problem.resultGoal &&
+      (selfGroundForceOut || otherRunnerFairBallForceOut)
+    );
     if (fairBallForceOut) {
       return {
         met: true,
         uncontrollable: true,
-        success: '',
+        success: selfGroundForceOut
+          ? `${runnerLabelForId(problem, 'self')}は内野ゴロで次の塁へ進み、フォースアウトになった`
+          : '',
         failure: ''
       };
     }
@@ -1597,6 +1642,9 @@
     }
     if (action === 'STOP') {
       if (selfOut) {
+        if (failedOutfieldGroundStart(problem)) {
+          return `${selfPosition}は、${location}方向へ抜けるゴロで、${destination}へのスタートが遅かった`;
+        }
         return `${selfPosition}。${location}への${situation}で、${destination}に着く前にアウトになった`;
       }
       return `${selfPosition}。ねらいは「${intendedGoal}」。${location}への${situation}で、安全な${destination}に止まらなかった`;
