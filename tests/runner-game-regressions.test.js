@@ -34,6 +34,22 @@ const academySource = fs.readFileSync(
 );
 assert.match(
   academySource,
+  /makeProblem\('BG-07'[\s\S]*?expected: \[point\('ROUND', 3\)\]/
+);
+assert.match(
+  academySource,
+  /makeProblem\('MI-09'[\s\S]*?expected: \[point\('ROUND', 3\), point\('BACK', 3\)\]/
+);
+const movementSource = fs.readFileSync(
+  path.join(__dirname, '../runner-game/runner-movement-prototype.js'),
+  'utf8'
+);
+assert.match(
+  movementSource,
+  /function startFirstBaseOverrun\(\)[\s\S]*?state\.roundFirst = true;[\s\S]*?runForward\(false\);/
+);
+assert.match(
+  academySource,
   /makeProblem\('MI-01'[\s\S]*?secondaryLeadForbidden: true[\s\S]*?expected: \[point\('GO', 3, 'strategy'\)\]/
 );
 assert.match(
@@ -64,6 +80,10 @@ assert.match(
 assert.match(
   academySource,
   /\$\{destination\}に着く前にアウトになった/
+);
+assert.match(
+  academySource,
+  /lastSelfDefenseResult\?\.out === true[\s\S]*?runnerLabelForId\(problem, 'self'\)/
 );
 assert.doesNotMatch(
   academySource,

@@ -231,7 +231,10 @@ function updateControls() {
     finished ||
     specialEnded ||
     state.rundownActive;
-  backButton.disabled = unavailable || !canBack;
+  backButton.disabled =
+    unavailable ||
+    !canBack ||
+    (state.startKey === 'BATTER' && state.segmentIndex === 0);
 }
 
 function cancelAnimation() {
@@ -430,13 +433,20 @@ function startFirstBaseOverrun() {
       : 0;
   if (progress >= 1) {
     finishAtBase(1);
+    state.roundFirst = true;
+    runForward(false);
     status.textContent =
       '1塁をオーバーランして、1塁で止まりました。';
+    status.textContent =
+      '\u0031\u5841\u3092\u56de\u308a\u3001\u0032\u5841\u3078\u5411\u304b\u3063\u3066\u3044\u307e\u3059\u3002\u623b\u308b\u3068\u304d\u306f\u300c\u30d0\u30c3\u30af\u300d\u3092\u62bc\u305d\u3046\u3002';
     return;
   }
   state.roundFirst = false;
   animateSegment(0, progress, 1, () => {
     finishAtBase(1);
+    state.roundFirst = true;
+    runForward(false);
+    return;
     const animation = selfRunner.animate(
       [
         {

@@ -276,7 +276,7 @@
     makeProblem('MI-09', 'middle', {
       start: 'BATTER', scene: 'single', direction: 'right',
       title: 'バッターランナー・ライト前ヒット', prompt: '1塁をオーバーランして、1塁で止まろう。',
-      expected: [point('ROUND', 3)]
+      expected: [point('ROUND', 3), point('BACK', 3)]
     }),
     makeProblem('MI-10', 'middle', {
       start: 'BATTER', scene: 'extra', direction: 'left-center',
@@ -1659,6 +1659,9 @@
         runnerLabelForId(problem, runnerId)
       );
       return `${[...new Set(labels)].join('と')}がアウトになったこと`;
+    }
+    if (state.lastSelfDefenseResult?.out === true) {
+      return `${runnerLabelForId(problem, 'self')}\u304c\u30a2\u30a6\u30c8\u306b\u306a\u3063\u305f\u3053\u3068`;
     }
     if (
       problem.start === 'THIRD' &&
