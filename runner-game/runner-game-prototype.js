@@ -2162,7 +2162,8 @@ runnerGameField.addEventListener(
   'runner-decoy-throw-to-second',
   () => {
     if (
-      runnerGameField.dataset.autonomousDecoySteal !== 'true'
+      runnerGameField.dataset.autonomousDecoySteal !== 'true' &&
+      runnerGameField.dataset.decoySteal !== 'true'
     ) return;
     const thirdRunner = runnerGameOtherRunners.find(
       (runner) =>

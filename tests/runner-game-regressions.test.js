@@ -117,4 +117,16 @@ assert.match(
   academySource,
   /スクイズなのに、投球と同時にゴーせず、2次リードを選んだ/
 );
+assert.match(
+  academySource,
+  /expectedPointFor\('GO', 3\)[\s\S]*?expectedPointFor\('BACK', 3\)/
+);
+assert.match(
+  academySource,
+  /problem\.resultGoal === 'keep-self-safe'[\s\S]*?problem\.autonomousDecoySteal[\s\S]*?firstRunnerStoleSecond[\s\S]*?selfSafe && firstRunnerStoleSecond/
+);
+assert.match(
+  runnerPrototypeSource,
+  /runner-decoy-throw-to-second[\s\S]*?autonomousDecoySteal !== 'true' &&[\s\S]*?decoySteal !== 'true'/
+);
 console.log('Runner game regression tests passed');

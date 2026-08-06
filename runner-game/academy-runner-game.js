@@ -1220,16 +1220,22 @@
       const strategyAxis = problem.expected.some(
         (item) => item.axis === 'strategy'
       ) ? 'strategy' : 'personal';
+      const expectedPointFor = (action, fallbackWeight) => {
+        const defined = problem.expected.find(
+          (item) => item.action === action
+        );
+        return defined || point(action, fallbackWeight, strategyAxis);
+      };
       return {
         ...problem,
         expected: problem.immediateStart
           ? [
-              point('GO', 3, strategyAxis),
-              point('BACK', 3, strategyAxis)
+              expectedPointFor('GO', 3),
+              expectedPointFor('BACK', 3)
             ]
           : [
               ...lead,
-              point('BACK', 3, strategyAxis)
+              expectedPointFor('BACK', 3)
             ]
       };
     }
@@ -1299,6 +1305,12 @@
     const thirdRunner = runners.find(
       (runner) => runner.id === thirdRunnerId
     );
+    const runnerWasOut = (runnerId) => Boolean(
+      state.playOutcome?.outRunnerIds?.includes(runnerId) ||
+      state.defenseResults.some((result) =>
+        result.out && result.runnerId === runnerId
+      )
+    );
     if (problem.resultGoal === 'score-self') {
       return {
         met: reachedHome(selfRunner),
@@ -1330,6 +1342,34 @@
           ? 'おとりの盗塁で、3塁走者がホームに帰れた'
           : 'キャッチャーが投げない間に、2塁へ盗塁できた',
         failure: '盗塁できず、3塁走者もホームに帰れなかった'
+      };
+    }
+    if (problem.resultGoal === 'keep-self-safe') {
+      const selfSafe = Boolean(selfRunner) && !runnerWasOut('self');
+      if (
+        problem.autonomousDecoySteal &&
+        field.dataset.lastThrowRoute === 'catcher-watches-third'
+      ) {
+        const firstRunnerId =
+          `other-${(problem.otherBases || []).indexOf('FIRST')}`;
+        const firstRunner = runners.find(
+          (runner) => runner.id === firstRunnerId
+        );
+        const firstRunnerStoleSecond = Boolean(
+          firstRunner &&
+          Number(firstRunner.baseIndex ?? firstRunner.advance) >= 2 &&
+          !runnerWasOut(firstRunnerId)
+        );
+        return {
+          met: selfSafe && firstRunnerStoleSecond,
+          success: 'キャッチャーが2塁へ投げない間に1塁走者が盗塁し、3塁走者も3塁に残れた',
+          failure: '1塁走者が盗塁できないか、3塁走者がアウトになった'
+        };
+      }
+      return {
+        met: selfSafe,
+        success: '監督の指示どおり、3塁走者を3塁に残せた',
+        failure: '3塁走者がアウトになった'
       };
     }
     return {
