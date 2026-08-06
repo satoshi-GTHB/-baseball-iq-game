@@ -16,13 +16,10 @@ const demos={
 let current="batter-infield",timers=[],pitchReleased=false,leadPlayActive=false,leadFailed=false;const later=(fn,ms)=>timers.push(setTimeout(fn,ms));
 function clearField(){timers.forEach(clearTimeout);timers=[];pitchReleased=false;leadPlayActive=false;leadFailed=false;boardBat.getAnimations().forEach(animation=>animation.cancel());boardBat.style.transform="rotate(15deg)";field.className="field gallery-field runner-motion-field motion-v2";fieldCard.classList.remove("lead-mode");field.querySelectorAll(".runner-dot,.gallery-ball,.fielder").forEach(n=>n.removeAttribute("style"));field.querySelectorAll(".fielder").forEach(n=>n.classList.remove("is-receiving","is-moving"));field.querySelectorAll(".other-runner").forEach(n=>n.style.display="none");field.querySelectorAll(".runner-bso-dot").forEach(n=>n.classList.remove("is-on"));field.querySelector(".play-result-call").textContent="";field.querySelector(".manager-sign").style.display="none";leadAction.disabled=true;leadPlayStart.disabled=false;if(leadHelp)leadHelp.textContent="「プレー開始」を押してください。"}
 function playBatterSwing(id){const infield=id==="batter-infield",duration=infield?4300:9000,contact=infield?.25:.13,windup=infield?.18:.08,reset=infield?.32:.18;boardBat.animate([{transform:"rotate(15deg)",offset:0},{transform:"rotate(15deg)",offset:windup},{transform:"rotate(-45deg)",offset:contact},{transform:"rotate(15deg)",offset:reset},{transform:"rotate(15deg)",offset:1}],{duration,easing:"linear",fill:"forwards"})}
-function setupOverrunBack(id){const self=field.querySelector(".self-runner"),back=document.querySelector("#batter-overrun-back");self.getAnimations().forEach(animation=>animation.cancel());back.hidden=id!=="batter-outfield";back.disabled=true;if(id==="batter-outfield")later(()=>{back.disabled=false},5400)}
-document.querySelector("#batter-overrun-back").addEventListener("click",()=>{if(current!=="batter-outfield")return;const self=field.querySelector(".self-runner"),back=document.querySelector("#batter-overrun-back"),style=getComputedStyle(self);self.getAnimations().forEach(animation=>animation.cancel());self.style.left=style.left;self.style.top=style.top;back.disabled=true;self.animate([{left:style.left,top:style.top},{left:"75%",top:"60%"}],{duration:900,easing:"linear",fill:"forwards"});caption.textContent="\u0032\u5841\u3078\u306e\u9001\u7403\u3092\u898b\u3066\u300c\u30d0\u30c3\u30af\u300d\u3002\u0031\u5841\u3078\u623b\u308a\u307e\u3059\u3002";later(()=>{field.querySelector(".play-result-call").textContent="\u0031\u5841\u30bb\u30fc\u30d5\uff01"},900)})
 function configure(id){const self=field.querySelector(".self-runner"),other=field.querySelector(".other-a");if(["check-runners","check-outs","check-sign","judge-first-short"].includes(id)){self.style.left="75%";self.style.top="60%"}if(id==="secondary-lead"){self.style.left="70%";self.style.top="54.2%"}if(["judge-second-short","judge-second-left-fly","judge-second-passed"].includes(id)){self.style.left="50%";self.style.top="31%"}if(id==="judge-third-left-tag"){self.style.left="25%";self.style.top="60%"}if(["batter-infield","batter-outfield"].includes(id)){self.style.left="50%";self.style.top="89%"}if(["check-runners","judge-first-short","judge-second-short","judge-second-left-fly","judge-third-left-tag"].includes(id)){other.style.display="grid";other.style.left="50%";other.style.top="89%"}if(id==="check-outs"){field.querySelector(".o1dot").classList.add("is-on");field.querySelector(".o2dot").classList.add("is-on")}if(id==="check-sign"){field.querySelector(".manager-sign").style.display="flex"}}
 function play(id,scrollDemo=true){
   current=id;const d=demos[id];clearField();configure(id);
   kicker.textContent=d.k;title.textContent=d.t;caption.textContent=d.c;
-  setupOverrunBack(id);
   if(id==="secondary-lead"){
     fieldCard.classList.add("lead-mode");const self=field.querySelector(".self-runner");self.style.left="75%";self.style.top="60%";leadAction.disabled=true;leadPlayStart.disabled=false;leadHelp.textContent="「プレー開始」を押してください。";if(scrollDemo)field.scrollIntoView({behavior:"smooth",block:"center"});return;
   }else{
@@ -39,7 +36,7 @@ function play(id,scrollDemo=true){
       if(id.includes("left"))later(()=>field.querySelector(".left").classList.add("is-receiving"),4300);
     }
     if(d.receive)later(()=>field.querySelector("."+d.receive).classList.add("is-receiving"),d.delay-1100);
-    if(d.result&&id!=="batter-outfield")later(()=>{field.querySelector(".play-result-call").textContent=d.result},d.delay);
+    if(d.result)later(()=>{field.querySelector(".play-result-call").textContent=d.result},d.delay);
   }
   if(scrollDemo)field.scrollIntoView({behavior:"smooth",block:"center"});
 }
@@ -49,11 +46,15 @@ document.querySelectorAll(".watch").forEach(b=>b.addEventListener("click",()=>pl
 const batterControls=[...document.querySelectorAll(".batter-demo-controls button")];batterControls.forEach(b=>b.addEventListener("click",()=>{batterControls.forEach(x=>x.setAttribute("aria-pressed",String(x===b)));play(b.dataset.demo)}));
 const judgeControls=[...document.querySelectorAll(".judge-case-controls button")];judgeControls.forEach(b=>b.addEventListener("click",()=>{judgeControls.forEach(x=>x.setAttribute("aria-pressed",String(x===b)));play(b.dataset.demo)}));
 const mainTabs=[...document.querySelectorAll("[data-main]")];mainTabs.forEach(b=>b.addEventListener("click",()=>{mainTabs.forEach(x=>x.setAttribute("aria-pressed",String(x.dataset.main===b.dataset.main)));document.querySelector("#batter").hidden=b.dataset.main!=="batter";document.querySelector("#runner").hidden=b.dataset.main!=="runner";document.querySelector("#batter-demo-slot").append(fieldCard);if(b.dataset.main==="batter"){play("batter-infield",false);window.scrollTo({top:0,behavior:"instant"});return}const selected=document.querySelector("[data-sub][aria-pressed='true']").dataset.sub;if(selected==="lead"){document.querySelector("#lead-demo-slot").append(fieldCard);play("secondary-lead")}else if(selected==="judge"){document.querySelector("#judge-demo-slot").append(fieldCard);play("judge-first-short")}}));
+mainTabs.forEach(b=>b.addEventListener("click",()=>requestAnimationFrame(()=>{if(b.dataset.main==="batter"){window.scrollTo({top:0,behavior:"instant"});return}document.querySelector("#runner").scrollIntoView({behavior:"instant",block:"start"})})));
 const subTabs=[...document.querySelectorAll("[data-sub]")];subTabs.forEach(b=>b.addEventListener("click",()=>{subTabs.forEach(x=>x.setAttribute("aria-pressed",String(x.dataset.sub===b.dataset.sub)));["check","lead","judge"].forEach(id=>document.querySelector("#"+id).hidden=id!==b.dataset.sub);if(b.dataset.sub==="check"){document.querySelector("#batter-demo-slot").append(fieldCard);return}if(b.dataset.sub==="lead"){document.querySelector("#lead-demo-slot").append(fieldCard);play("secondary-lead");return}document.querySelector("#judge-demo-slot").append(fieldCard);play("judge-first-short")}));
+subTabs.forEach(b=>b.addEventListener("click",()=>requestAnimationFrame(()=>document.querySelector("#"+b.dataset.sub).scrollIntoView({behavior:"instant",block:"start"}))));
 document.querySelector("#batter-demo-slot").append(fieldCard);
 if("scrollRestoration" in history)history.scrollRestoration="manual";
 play(current,false);
 const showPageTop=()=>requestAnimationFrame(()=>window.scrollTo({top:0,behavior:"instant"}));
 window.addEventListener("pageshow",showPageTop);
+window.addEventListener("load",showPageTop);
+setTimeout(showPageTop,100);
 showPageTop();
 })();
