@@ -3879,12 +3879,12 @@ function playSelectedScene() {
     );
   }
 
+  scheduleRunnerPhase(
+    'pitch',
+    sceneName,
+    pitchStartDelay
+  );
   if (beginsWithPitchOnly) {
-    scheduleRunnerPhase(
-      'pitch',
-      sceneName,
-      pitchStartDelay
-    );
     if (sceneName === 'passed') {
       playPassedBall(pitchStartDelay);
     } else {

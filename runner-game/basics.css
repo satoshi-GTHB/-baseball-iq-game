@@ -141,9 +141,7 @@
 /* 再生前を含め、投球として現れるボールは必ず白から始める */
 .lesson-app #lesson-field:not(.playing):not(.pickoff-out) .gallery-ball{background:#fff!important}
 .bottom-main-tabs{position:static;margin-top:4px;border-top:3px solid #bdd8e9}.bottom-main-tabs button{cursor:pointer}
-.demo-batter-infield .board-bat{animation:batterInfieldSwing 4.3s linear forwards}.demo-batter-outfield .board-bat{animation:batterOverrunSwing 9s linear forwards}
-@keyframes batterInfieldSwing{0%,18%{transform:rotate(15deg)}25%{transform:rotate(-45deg)}32%,100%{transform:rotate(15deg)}}
-@keyframes batterOverrunSwing{0%,8%{transform:rotate(15deg)}13%{transform:rotate(-45deg)}18%,100%{transform:rotate(15deg)}}
+.demo-batter-infield .board-bat,.demo-batter-outfield .board-bat{animation:none!important}
 @media(max-width:480px){#lesson-field .board-bat{z-index:19;width:96px;height:19px;filter:drop-shadow(0 1px 1px #000) drop-shadow(0 0 2px #fff)}}
 .lesson-app .left{top:20%}.lesson-app .center{top:5%}.lesson-app .right{top:20%}
 

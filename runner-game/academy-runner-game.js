@@ -352,7 +352,10 @@
       immediateStart: true, resultGoal: 'score-self',
       title: '1点を取りにいく', instruction: 'アウトになっても1点を取りにいこう。',
       prompt: '監督の作戦どおりに動こう。',
-      expected: [point('GO', 3, 'strategy')]
+      expected: [
+        point('HALFWAY', 2),
+        point('GO', 3, 'strategy')
+      ]
     }),
     makeProblem('EX-02', 'expert', {
       start: 'THIRD', otherBases: ['HOME', 'SECOND'],
@@ -741,6 +744,10 @@
       String(Boolean(problem.autonomousDecoySteal));
     field.dataset.autonomousDecoyDelay =
       String(Number(problem.autonomousDecoyDelay) || 0);
+    field.dataset.secondaryLeadForbidden = String(Boolean(
+      problem.secondaryLeadForbidden ||
+      problem.stealSign
+    ));
     const managerSign = field.querySelector('.manager-sign');
     if (managerSign) {
       managerSign.querySelector('p').textContent = problem.instruction;
@@ -1147,7 +1154,23 @@
         expected: [point('ROUND', 3)]
       };
     }
-    if (successfulTagUpAdvance(problem)) {
+    const sacrificeBuntAdvance =
+      problem.start === 'SECOND' &&
+      problem.scene === 'bunt' &&
+      String(problem.direction).endsWith('-ground');
+    const selfWasOutOnSacrifice = sacrificeBuntAdvance && (
+      state.playOutcome?.outRunnerIds?.includes('self') ||
+      state.lastSelfDefenseResult?.out === true ||
+      state.defenseResults.some((result) =>
+        result.out && result.runnerId === 'self'
+      )
+    );
+    if (selfWasOutOnSacrifice) {
+      return {
+        ...problem,
+        expected: [...lead, point('GO', 3)]
+      };
+    }    if (successfulTagUpAdvance(problem)) {
       const alreadyExpectsGo = problem.expected.some(
         (item) => item.action === 'GO'
       );
@@ -1304,6 +1327,7 @@
     );
     const fairBallForceOut = Boolean(
       !problem.resultGoal &&
+      !selfOut &&
       forceOutResult &&
       (
         ['ground', 'error', 'single', 'extra'].includes(problem.scene) ||
@@ -1572,9 +1596,11 @@
       return `${selfPosition}。ねらいは「${intendedGoal}」。${location}への${situation}で、元の塁へ戻らず${outFact || '、アウトになった'}`;
     }
     if (action === 'STOP') {
-      return `${selfPosition}。ねらいは「${intendedGoal}」。${location}への${situation}で、安全な${destination}に止まらなかった${outFact}`;
-    }
-    if (action === 'HALFWAY') {
+      if (selfOut) {
+        return `${selfPosition}。${location}への${situation}で、${destination}に着く前にアウトになった`;
+      }
+      return `${selfPosition}。ねらいは「${intendedGoal}」。${location}への${situation}で、安全な${destination}に止まらなかった`;
+    }    if (action === 'HALFWAY') {
       return `${selfPosition}。ピッチャーが投げたときに、2次リードをしなかった${outFact}`;
     }
     return `${selfPosition}。${location}への${situation}で「${ACTION_LABELS[action]}」を選ばなかった${outFact}`;
@@ -1779,7 +1805,7 @@
       : 0;
     if (
       expertResultFocus &&
-      problem.immediateStart &&
+      problem.secondaryLeadForbidden &&
       submittedActions.includes('HALFWAY')
     ) {
       personalRaw *= .5;
@@ -1917,6 +1943,13 @@
       if (
         action === 'GO' &&
         caughtFly &&
+        problem.outs >= 2
+      ) {
+        return '2アウトなので、フライを取るのを待たずに次の塁へ走る';
+      }
+      if (
+        action === 'GO' &&
+        caughtFly &&
         expectedActions.slice(0, index).includes('BACK')
       ) {
         return '守る人がボールを取ったのを見てスタートを切る';
@@ -2000,6 +2033,13 @@
       return problem.outs >= 2
         ? '2アウトで、バットに当たった瞬間に3塁へ走れた'
         : 'ホーム送球を見て、3塁へ走れた';
+    }
+    if (
+      action === 'GO' &&
+      problem.outs >= 2 &&
+      ['fly', 'popup', 'liner'].includes(problem.scene)
+    ) {
+      return '2アウトなので、フライを取るのを待たずに次の塁へ走れた';
     }
     if (action === 'GO' && problem.stealSign) {
       return 'ピッチャーが投げたとき、盗塁を始められた';
@@ -2253,6 +2293,11 @@
     const usedForbiddenSecondaryLead =
       problem.secondaryLeadForbidden &&
       state.actions.includes('HALFWAY');
+    const usedSecondaryLeadOnSqueeze =
+      problem.scene === 'bunt' &&
+      problem.immediateStart &&
+      /スクイズ/.test(problem.instruction || '') &&
+      state.actions.includes('HALFWAY');
     const recklessPitcherGroundGo =
       isThirdBaseGroundJudgment(problem) &&
       directionForScene(problem) === 'pitcher' &&
@@ -2380,16 +2425,33 @@
               ? '捕手にボールが届いた後のタイミングでの盗塁スタート'
               : '投球に合わせるタイミングでの盗塁スタート'
           ];
-    } else if (usedForbiddenSecondaryLead) {
+    } else if (usedSecondaryLeadOnSqueeze) {
       didItems = [];
       missedItems = [
-        '2アウト・3ボール2ストライクで、投球前に2次リードを取ってしまった'
+        'スクイズなのに、投球と同時にゴーせず、2次リードを選んだ'
       ];
       strategyDidItems = [];
-      strategyMissedItems = [
-        '2アウト・3ボール2ストライクで、投球と同時にスタートすること'
-      ];
-    } else if (recklessPitcherGroundGo) {
+      strategyMissedItems = [];
+    } else if (usedForbiddenSecondaryLead) {
+      didItems = [];
+      strategyDidItems = [];
+      if (problem.autonomousDecoySteal) {
+        const catcherWatchedThird =
+          field.dataset.lastThrowRoute === 'catcher-watches-third';
+        missedItems = [];
+        strategyMissedItems = [
+          catcherWatchedThird
+            ? 'キャッチャーが3塁走者を見ていたので、3塁にとどまるところ、2次リードを選んだ'
+            : 'おとりの1塁走者が走り始めたらホームへゴーするところ、2次リードを選んだ'
+        ];
+      } else {
+        missedItems = [
+          '2アウト・3ボール2ストライクで、2次リードを選んだ'
+        ];
+        strategyMissedItems = [
+          '2アウト・3ボール2ストライクでは、投球と同時にゴーすること'
+        ];
+      }    } else if (recklessPitcherGroundGo) {
       didItems = completedActions
         .filter((action) => action !== 'GO')
         .map((action) => evaluationPhrase(problem, action));

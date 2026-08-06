@@ -1,0 +1,16 @@
+/* スマホを横向きにしても、縦向きと同じ幅の一列レイアウトを保つ。 */
+@media (orientation: landscape) and (max-height: 600px) and (pointer: coarse) {
+  html { min-width: 0; background: #dceefa; }
+  body { min-width: 0 !important; overflow-x: hidden !important; }
+  body > main {
+    box-sizing: border-box;
+    width: min(100vw, 430px) !important;
+    width: min(100vw, 100svh, 430px) !important;
+    max-width: min(100vw, 430px) !important;
+    max-width: min(100vw, 100svh, 430px) !important;
+    min-height: 100dvh;
+    margin-right: auto !important;
+    margin-left: auto !important;
+    overflow-x: hidden;
+  }
+}

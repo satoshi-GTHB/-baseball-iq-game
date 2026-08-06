@@ -21,6 +21,7 @@ const runnerGameOutLights = [
 ];
 let runnerGameAutonomousAnimations = [];
 const runnerGameRaceStates = new Map();
+const AUTONOMOUS_SECONDARY_LEAD_PROGRESS = .3;
 const runnerGameRundownSupportIds = new Set();
 const runnerGameOutRunnerIds = new Set();
 let runnerGamePassingTimer = null;
@@ -207,34 +208,87 @@ function autonomousPointAt(segmentIndex, progress) {
   return window.RUNNER_MOVEMENT_RULES.pointAt(segmentIndex, progress);
 }
 
+function autonomousSecondaryLeadProgress(runner) {
+  const raceState = runnerGameRaceStates.get(runner);
+  return raceState?.kind === 'secondary-lead'
+    ? AUTONOMOUS_SECONDARY_LEAD_PROGRESS
+    : 0;
+}
+
+function takeAutonomousSecondaryLeads(scene, stealSign) {
+  if (!window.RUNNER_MOVEMENT_RULES
+    .shouldAutonomousRunnerTakeSecondaryLead(
+      scene,
+      stealSign,
+      runnerGameField.dataset.secondaryLeadForbidden === 'true'
+    )) return;
+  runnerGameOtherRunners
+    .filter((runner) => !runner.hidden && runner.dataset.base !== 'HOME')
+    .forEach((runner) => {
+      const segmentIndex = segmentIndexFromBase(runner.dataset.base);
+      const segment = window.RUNNER_MOVEMENT_RULES.SEGMENTS[segmentIndex];
+      if (!segment) return;
+      const target = autonomousPointAt(
+        segmentIndex,
+        AUTONOMOUS_SECONDARY_LEAD_PROGRESS
+      );
+      const duration = Math.max(
+        220,
+        Math.round(
+          segment.duration * AUTONOMOUS_SECONDARY_LEAD_PROGRESS
+        )
+      );
+      const animation = autonomousAnimation(
+        runner,
+        [
+          { left: `${segment.start[0]}%`, top: `${segment.start[1]}%` },
+          { left: `${target[0]}%`, top: `${target[1]}%` }
+        ],
+        { duration, easing: 'linear' }
+      );
+      runnerGameRaceStates.set(runner, {
+        kind: 'secondary-lead',
+        runner,
+        animation,
+        duration,
+        segmentIndex,
+        leadProgress: AUTONOMOUS_SECONDARY_LEAD_PROGRESS
+      });
+    });
+}
+
 function advanceAutonomousRunner(runner, delay, baseCount = 1) {
   const startSegmentIndex = segmentIndexFromBase(runner.dataset.base);
-  const segments = window.RUNNER_MOVEMENT_RULES.SEGMENTS.slice(
+  const startProgress = autonomousSecondaryLeadProgress(runner);
+  const priorState = runnerGameRaceStates.get(runner);
+  cancelRaceStateAnimations(priorState);
+  const sourceSegments = window.RUNNER_MOVEMENT_RULES.SEGMENTS.slice(
     startSegmentIndex,
     startSegmentIndex + baseCount
   );
-  if (!segments.length) return;
-
+  if (!sourceSegments.length) return;
+  const segments = sourceSegments.map((segment, index) => ({
+    ...segment,
+    duration: index === 0
+      ? segment.duration * (1 - startProgress)
+      : segment.duration
+  }));
   const totalDuration = segments.reduce(
     (sum, segment) => sum + segment.duration,
     0
   );
   let elapsed = 0;
-  const frames = [
-    {
-      left: `${
-        startSegmentIndex === 0
-          ? window.RUNNER_MOVEMENT_RULES.BATTER_BOX_POINT[0]
-          : segments[0].start[0]
-      }%`,
-      top: `${
-        startSegmentIndex === 0
-          ? window.RUNNER_MOVEMENT_RULES.BATTER_BOX_POINT[1]
-          : segments[0].start[1]
-      }%`,
-      offset: 0
-    }
-  ];
+  const startPoint = autonomousPointAt(
+    startSegmentIndex,
+    startProgress
+  );
+  runner.style.left = `${startPoint[0]}%`;
+  runner.style.top = `${startPoint[1]}%`;
+  const frames = [{
+    left: `${startPoint[0]}%`,
+    top: `${startPoint[1]}%`,
+    offset: 0
+  }];
   segments.forEach((segment) => {
     elapsed += segment.duration;
     frames.push({
@@ -254,11 +308,11 @@ function advanceAutonomousRunner(runner, delay, baseCount = 1) {
     animation,
     delay,
     startSegmentIndex,
+    startProgress,
     segments,
     totalDuration
   });
 }
-
 function armAutonomousBatterRunnerRunThrough(runner) {
   const raceState = runnerGameRaceStates.get(runner);
   if (
@@ -311,8 +365,17 @@ function leadAndReturnAutonomousRunner(
   const segmentIndex = segmentIndexFromBase(runner.dataset.base);
   const segment = window.RUNNER_MOVEMENT_RULES.SEGMENTS[segmentIndex];
   if (!segment) return;
-  const lead = autonomousPointAt(segmentIndex, leadProgress);
-  const leadDuration = Math.max(250, segment.duration * leadProgress);
+  const startProgress = autonomousSecondaryLeadProgress(runner);
+  cancelRaceStateAnimations(runnerGameRaceStates.get(runner));
+  const startPoint = autonomousPointAt(segmentIndex, startProgress);
+  runner.style.left = `${startPoint[0]}%`;
+  runner.style.top = `${startPoint[1]}%`;
+  const effectiveLeadProgress = Math.max(startProgress, leadProgress);
+  const lead = autonomousPointAt(segmentIndex, effectiveLeadProgress);
+  const leadDuration = Math.max(
+    80,
+    segment.duration * (effectiveLeadProgress - startProgress)
+  );
 
   const leadAnimation = autonomousAnimation(
     runner,
@@ -342,7 +405,7 @@ function leadAndReturnAutonomousRunner(
     returnDelay: catchDelay,
     returnDuration: leadDuration,
     segmentIndex,
-    leadProgress
+    leadProgress: effectiveLeadProgress
   });
 }
 
@@ -393,26 +456,24 @@ function tagUpAutonomousRunner(runner, catchDelay) {
     window.RUNNER_MOVEMENT_RULES.SEGMENTS[segmentIndex];
   if (!segment) return;
 
-  const leadDelay = 80;
-  const leadDuration = 200;
+  const secondaryLeadProgress = autonomousSecondaryLeadProgress(runner);
+  cancelRaceStateAnimations(runnerGameRaceStates.get(runner));
+  const leadDelay = 0;
+  const leadDuration = 1;
   const returnDelay = leadDelay + leadDuration;
-  const returnDuration = 200;
-  const leadProgress = Math.min(
-    .08,
-    leadDuration / segment.duration
+  const returnDuration = Math.max(
+    200,
+    segment.duration * secondaryLeadProgress
   );
-  const lead = autonomousPointAt(
-    segmentIndex,
-    leadProgress
-  );
+  const leadProgress = Math.max(.08, secondaryLeadProgress);
+  const lead = autonomousPointAt(segmentIndex, leadProgress);
+  runner.style.left = `${lead[0]}%`;
+  runner.style.top = `${lead[1]}%`;
 
   const leadAnimation = autonomousAnimation(
     runner,
     [
-      {
-        left: `${segment.start[0]}%`,
-        top: `${segment.start[1]}%`
-      },
+      { left: `${lead[0]}%`, top: `${lead[1]}%` },
       { left: `${lead[0]}%`, top: `${lead[1]}%` }
     ],
     {
@@ -511,6 +572,27 @@ function batterOutOnCatch(runner, catchDelay, runProgress) {
 
 function autonomousRaceSnapshot(raceState) {
   if (!raceState) return null;
+  if (raceState.kind === 'secondary-lead') {
+    const elapsed = Math.max(0, Math.min(
+      raceState.duration,
+      Number(raceState.animation.currentTime) || 0
+    ));
+    const ratio = raceState.duration ? elapsed / raceState.duration : 1;
+    const progress = raceState.leadProgress * ratio;
+    return {
+      id: raceState.runner.dataset.raceId,
+      type: 'autonomous',
+      moving: ratio < 1,
+      offBase: progress > 0,
+      startBaseIndex: raceState.segmentIndex,
+      segmentIndex: raceState.segmentIndex,
+      movingForward: ratio < 1 ? true : null,
+      advance: raceState.segmentIndex + progress,
+      point: autonomousPointAt(raceState.segmentIndex, progress),
+      targetBaseIndex: raceState.segmentIndex,
+      runnerArrivalMs: null
+    };
+  }
   if (raceState.kind === 'home-throw-forward') {
     const elapsed = Math.max(
       0,
@@ -752,15 +834,20 @@ function autonomousRaceSnapshot(raceState) {
         id: raceState.runner.dataset.raceId,
         type: 'autonomous',
         moving: false,
-        offBase: false,
-        baseIndex: raceState.startSegmentIndex,
+        offBase: (raceState.startProgress || 0) > 0,
+        baseIndex: (raceState.startProgress || 0) > 0
+          ? null
+          : raceState.startSegmentIndex,
         startBaseIndex: raceState.startSegmentIndex,
-        segmentIndex: null,
+        segmentIndex: (raceState.startProgress || 0) > 0
+          ? raceState.startSegmentIndex
+          : null,
         movingForward: null,
-        advance: raceState.startSegmentIndex,
+        advance: raceState.startSegmentIndex +
+          (raceState.startProgress || 0),
         point: autonomousPointAt(
           raceState.startSegmentIndex,
-          0
+          raceState.startProgress || 0
         )
       };
     }
@@ -769,9 +856,13 @@ function autonomousRaceSnapshot(raceState) {
     let completedSegments = 0;
     for (const segment of raceState.segments) {
       if (elapsed <= segment.duration) {
-        const progress = segment.duration
+        const segmentRatio = segment.duration
           ? elapsed / segment.duration
           : 1;
+        const progress = completedSegments === 0
+          ? (raceState.startProgress || 0) +
+            (1 - (raceState.startProgress || 0)) * segmentRatio
+          : segmentRatio;
         const currentSegmentIndex =
           raceState.startSegmentIndex +
           completedSegments;
@@ -1691,9 +1782,10 @@ function applyRunnerDefenseResult(detail) {
 
 function playAutonomousRunners(
   scene = selectedSceneKey(),
-  direction = null
+  direction = null,
+  preserveSecondaryLead = false
 ) {
-  resetAutonomousRunners();
+  if (!preserveSecondaryLead) resetAutonomousRunners();
   const visibleRunners = runnerGameOtherRunners.filter(
     (runner) => !runner.hidden
   );
@@ -1914,13 +2006,24 @@ runnerGameField.addEventListener('runner-play-phase', (event) => {
     startPassingRunnerMonitor();
     return;
   }
-  if (
-    event.detail?.phase === 'contact' ||
-    event.detail?.phase === 'pitch'
-  ) {
+  if (event.detail?.phase === 'pitch') {
+    takeAutonomousSecondaryLeads(
+      event.detail?.scene,
+      event.detail?.stealSign
+    );
+    if (['passed', 'swing', 'take'].includes(event.detail?.scene)) {
+      playAutonomousRunners(
+        event.detail?.scene,
+        event.detail?.direction
+      );
+    }
+    return;
+  }
+  if (event.detail?.phase === 'contact') {
     playAutonomousRunners(
       event.detail?.scene,
-      event.detail?.direction
+      event.detail?.direction,
+      true
     );
   }
 });

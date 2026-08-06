@@ -191,6 +191,20 @@
     );
   }
 
+  function shouldAutonomousRunnerTakeSecondaryLead(
+    scene,
+    stealSign = false,
+    secondaryLeadForbidden = false
+  ) {
+    const battedBall = !['passed', 'swing', 'take'].includes(
+      String(scene)
+    );
+    return Boolean(
+      battedBall &&
+      !stealSign &&
+      !secondaryLeadForbidden
+    );
+  }
   function runnerContactPlan(
     outs,
     scene,
@@ -572,6 +586,7 @@
     planRundownSupport,
     pointAt,
     runnerContactPlan,
+    shouldAutonomousRunnerTakeSecondaryLead,
     rotateRundownLines,
     resolveBasePlay,
     rundownCollision,
