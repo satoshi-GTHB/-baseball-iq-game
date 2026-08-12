@@ -12,6 +12,7 @@ const roundButton = document.querySelector('#runner-round');
 const goButton = document.querySelector('#runner-go');
 const halfwayButton = document.querySelector('#runner-halfway');
 const backButton = document.querySelector('#runner-back');
+const swapControlsButton = document.querySelector('#runner-swap-controls');
 const status = document.querySelector('#runner-status');
 const routeTime = document.querySelector('#route-time');
 const integratedRunnerGame = field.id === 'gallery-field';
@@ -21,8 +22,56 @@ const KAKENUK_EXTENSION_DURATION =
   rules.SEGMENTS[0].duration * .22;
 const KAKENUK_BACK_DURATION = 1080;
 const CONTACT_LEAD_DURATION = 200;
+const RUNNER_CONTROL_PROFILE_STORAGE_KEY = 'baseballIqProfilesV1';
 let batterOutTimer;
 let tagUpTimer;
+
+function savedGoBackSwap() {
+  try {
+    const store = JSON.parse(
+      localStorage.getItem(RUNNER_CONTROL_PROFILE_STORAGE_KEY) || 'null'
+    );
+    const profile = store?.profiles?.find(
+      (item) => item.id === store.activeProfileId
+    );
+    return profile?.data?.courses?.runner?.goBackButtonsSwapped === true;
+  } catch (error) {
+    return false;
+  }
+}
+
+function saveGoBackSwap(swapped) {
+  try {
+    const store = JSON.parse(
+      localStorage.getItem(RUNNER_CONTROL_PROFILE_STORAGE_KEY) || 'null'
+    );
+    const profile = store?.profiles?.find(
+      (item) => item.id === store.activeProfileId
+    );
+    if (!profile) return;
+    profile.data ||= {};
+    profile.data.courses ||= {};
+    profile.data.courses.runner ||= {};
+    profile.data.courses.runner.goBackButtonsSwapped = swapped;
+    localStorage.setItem(
+      RUNNER_CONTROL_PROFILE_STORAGE_KEY,
+      JSON.stringify(store)
+    );
+  } catch (error) {
+    // 保存できない環境でも、そのゲーム中の入れ替えは続ける。
+  }
+}
+
+function applyGoBackSwap(swapped, persist = false) {
+  const controls = swapControlsButton.parentElement;
+  controls.classList.toggle('go-back-swapped', swapped);
+  controls.insertBefore(
+    swapped ? backButton : goButton,
+    swapped ? goButton : backButton
+  );
+  swapControlsButton.setAttribute('aria-pressed', String(swapped));
+  if (persist) saveGoBackSwap(swapped);
+}
 
 const state = {
   startKey: 'BATTER',
@@ -1304,6 +1353,12 @@ backButton.addEventListener('click', () => {
   notifyAcceptedAction('BACK');
 });
 
+swapControlsButton.addEventListener('click', () => {
+  const controls = swapControlsButton.parentElement;
+  applyGoBackSwap(!controls.classList.contains('go-back-swapped'), true);
+});
+
+applyGoBackSwap(savedGoBackSwap());
 selectStart(state.startKey);
 
 window.RUNNER_SELF_RACE_API = Object.freeze({
