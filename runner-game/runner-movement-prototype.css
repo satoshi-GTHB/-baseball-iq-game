@@ -160,6 +160,7 @@
 .movement-controls .swap-controls {
   grid-column: 1 / -1;
   min-height: 32px;
+  margin-top: 12px;
   color: #244865;
   background: #e8f0f6;
   font-size: 13px;
