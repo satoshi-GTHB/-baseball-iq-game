@@ -3,7 +3,7 @@
   const $ = q => document.querySelector(q);
   const uid = prefix => `${prefix}-${Date.now().toString(36)}-${crypto.getRandomValues(new Uint32Array(1))[0].toString(36)}`;
   const positions = ["投手","捕手","一塁手","二塁手","三塁手","遊撃手","左翼手","中堅手","右翼手","指名打者"];
-  let teams = [], players = [], extraction = null, photoUrl = null;
+  let teams = [], players = [], extraction = null, rosterExtraction = null, photoUrl = null;
 
   const normalize = value => (value || "").normalize("NFKC").toLowerCase().replace(/[\s・･.．]/g, "").replace(/[﨑]/g,"崎").replace(/[髙]/g,"高").replace(/[邊邉]/g,"辺").replace(/[ヵ-ヶ]/g, c => String.fromCharCode(c.charCodeAt(0)-0x60));
   function distance(a, b) {
@@ -55,6 +55,22 @@
   function downloadRoster() { ScorebookStore.exportAll().then(data=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:"application/json"}));a.download="scorebook-roster.json";a.click();URL.revokeObjectURL(a.href);}); }
   async function importRoster(file) { try{await ScorebookStore.importAll(JSON.parse(await file.text()));await load();toast("名簿を読み込みました");}catch(e){toast(e.message);} }
 
+  function rosterPrompt(){return `添付した野球チームの名簿PDFから選手情報を読み取ってください。推測で補わず、不明な値は空文字にしてください。説明やMarkdownのコード枠を付けず、次の形のJSONだけを返してください。\n{"teamName":"","players":[{"canonicalName":"","nameKana":"","aliases":[],"uniformNumber":"","preferredPositions":[],"active":true,"warnings":[]}]}\nplayersはPDFに記載された全選手です。preferredPositionsは投手、捕手、一塁手、二塁手、三塁手、遊撃手、左翼手、中堅手、右翼手、指名打者のいずれかを使ってください。氏名・背番号・守備位置を行ごとに対応させ、読めない箇所はwarningsへ理由を書いてください。`;}
+  async function copyRosterPrompt(){try{await navigator.clipboard.writeText(rosterPrompt());toast("名簿読取の指示文をコピーしました");}catch{$("#rosterChatgptJson").value=rosterPrompt();toast("指示文を貼付け欄へ表示しました");}}
+  function validRosterExtraction(value){return value&&typeof value.teamName==="string"&&Array.isArray(value.players)&&value.players.length<=100&&value.players.every(p=>typeof p.canonicalName==="string"&&typeof p.uniformNumber==="string"&&Array.isArray(p.preferredPositions||[])&&Array.isArray(p.aliases||[]));}
+  function importRosterChatgptJson(){try{const raw=$("#rosterChatgptJson").value.trim().replace(/^```(?:json)?\s*/i,"").replace(/\s*```$/,"");rosterExtraction=JSON.parse(raw);if(!validRosterExtraction(rosterExtraction))throw new Error("JSON形式が正しくありません");renderRosterExtraction();toast("読取結果を読み込みました。全員を確認してください");}catch(error){toast(`読み込めません：${error.message}`);}}
+  function renderRosterExtraction(){
+    $("#rosterExtractionRows").innerHTML=`<label>読取チーム名<input id="rosterExtractedTeam" value="${escapeHtml(rosterExtraction.teamName)}"></label><div class="roster-extraction-heading"><b>背番号</b><b>選手名</b><b>かな</b><b>主な守備</b></div>`+rosterExtraction.players.map((p,i)=>`<div class="roster-extraction-row" data-roster-row="${i}"><input aria-label="背番号" inputmode="numeric" data-roster-field="uniformNumber" value="${escapeHtml(p.uniformNumber)}"><input aria-label="選手名" data-roster-field="canonicalName" value="${escapeHtml(p.canonicalName)}"><input aria-label="氏名かな" data-roster-field="nameKana" value="${escapeHtml(p.nameKana||"")}"><input aria-label="主な守備位置" data-roster-field="preferredPositions" value="${escapeHtml((p.preferredPositions||[]).join("、"))}"><small class="warning">${escapeHtml((p.warnings||[]).join("／"))}</small></div>`).join("");
+    $("#confirmRosterExtraction").hidden=false;
+  }
+  async function confirmRosterExtraction(){
+    const rows=[...document.querySelectorAll("[data-roster-row]")].map(el=>({canonicalName:el.querySelector('[data-roster-field="canonicalName"]').value.trim(),nameKana:el.querySelector('[data-roster-field="nameKana"]').value.trim(),uniformNumber:el.querySelector('[data-roster-field="uniformNumber"]').value.trim(),preferredPositions:el.querySelector('[data-roster-field="preferredPositions"]').value.split(/[,、]/).map(x=>x.trim()).filter(Boolean)}));
+    if(!rows.length||rows.some(p=>!p.canonicalName)){toast("選手名が空欄の行を確認してください");return;}
+    const teamName=$("#rosterExtractedTeam").value.trim();let team=teams[0]||{id:uid("team")};if(teamName)team.name=teamName;await ScorebookStore.put("teams",team);
+    for(const row of rows){const existing=players.find(p=>(row.uniformNumber&&String(p.uniformNumber)===row.uniformNumber)||normalize(p.canonicalName)===normalize(row.canonicalName));await ScorebookStore.put("players",{id:existing?.id||uid("player"),teamId:team.id,canonicalName:row.canonicalName,nameKana:row.nameKana,aliases:existing?.aliases||[],uniformNumber:row.uniformNumber,preferredPositions:row.preferredPositions,active:true});}
+    await load();toast(`${rows.length}名を名簿へ登録しました`);
+  }
+
   async function handlePhoto(file) {
     if(!file)return; if(!/^image\/(jpeg|png|webp)$/.test(file.type)||file.size>10*1024*1024){toast("JPEG・PNG・WebP（10MB以下）を選択してください");return;}
     if(photoUrl)URL.revokeObjectURL(photoUrl); photoUrl=URL.createObjectURL(file); $("#orderPreview").src=photoUrl; $("#orderPreview").hidden=false;
@@ -83,7 +99,7 @@
     $("#positionChoices").innerHTML=positions.map(p=>`<label><input type="checkbox" name="positions" value="${p}">${p}</label>`).join("");
     document.querySelectorAll("[data-open-panel]").forEach(b=>b.onclick=()=>showPanel(b.dataset.openPanel)); document.querySelectorAll("[data-close-panel]").forEach(b=>b.onclick=()=>showPanel(null));
     $("#saveTeam").onclick=saveTeam; $("#playerForm").onsubmit=savePlayer; $("#rosterRows").onclick=e=>{if(e.target.dataset.editPlayer)editPlayer(e.target.dataset.editPlayer);};
-    $("#exportRoster").onclick=downloadRoster; $("#importRoster").onchange=e=>importRoster(e.target.files[0]); $("#startManualOrder").onclick=startManualOrder; $("#showChatgptSteps").onclick=()=>{$("#chatgptWorkflow").hidden=false;toast("番号順に操作してください");}; $("#orderImage").onchange=e=>handlePhoto(e.target.files[0]); $("#copyPrompt").onclick=copyPrompt; $("#shareOrderImage").onclick=shareOrderImage; $("#importChatgptJson").onclick=importChatgptJson; $("#confirmOrder").onclick=confirmOrder; $("#substitutionForm").onsubmit=submitSubstitution;
+    $("#exportRoster").onclick=downloadRoster; $("#importRoster").onchange=e=>importRoster(e.target.files[0]); $("#showRosterPdfSteps").onclick=()=>{$("#rosterPdfWorkflow").hidden=false;toast("PDFを選択し、番号順に操作してください");}; $("#rosterPdf").onchange=e=>{const file=e.target.files[0];if(!file)return;if(file.type!=="application/pdf"||file.size>20*1024*1024){toast("20MB以下のPDFを選択してください");e.target.value="";return;}$("#rosterPdfName").textContent=`選択済み：${file.name}`;$("#copyRosterPrompt").disabled=false;toast("PDFを確認しました。次に指示文をコピーします");}; $("#copyRosterPrompt").onclick=copyRosterPrompt; $("#importRosterChatgptJson").onclick=importRosterChatgptJson; $("#confirmRosterExtraction").onclick=confirmRosterExtraction; $("#startManualOrder").onclick=startManualOrder; $("#showChatgptSteps").onclick=()=>{$("#chatgptWorkflow").hidden=false;toast("番号順に操作してください");}; $("#orderImage").onchange=e=>handlePhoto(e.target.files[0]); $("#copyPrompt").onclick=copyPrompt; $("#shareOrderImage").onclick=shareOrderImage; $("#importChatgptJson").onclick=importChatgptJson; $("#confirmOrder").onclick=confirmOrder; $("#substitutionForm").onsubmit=submitSubstitution;
     load().catch(e=>toast(`保存領域を開けません：${e.message}`));
   }
   document.readyState==="loading"?document.addEventListener("DOMContentLoaded",setup):setup();

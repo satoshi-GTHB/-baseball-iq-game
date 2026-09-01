@@ -25,7 +25,7 @@
       pitcherA: {id:"pitcherA", name:"投手A", pitchCount:0},
       pitcherB: {id:"pitcherB", name:"投手B", pitchCount:0}
     },
-    contact: null, fielders: [], plateResult: null, runnerMode: false, playMode: "plate", eventReason: null,
+    contact: null, fielders: [], plateResult: null, pitchSequence: [], runnerMode: false, playMode: "plate", eventReason: null,
     pitchEventAvailable: false, selected: null, pendingTarget: null, decisions: [], runEvents: [], log: []
   });
 
@@ -84,7 +84,7 @@
       text = `${location}${state.contact === "ゴロ" ? "ゴロ" : state.contact === "ライナー" ? "直" : state.contact === "フライ" ? "飛" : "OUT"}`;
       tone = "out";
     }
-    state.plateAppearances[team][batterIndex].push({text, tone});
+    state.plateAppearances[team][batterIndex].push({text, tone, score:{result,contact:state.contact,fielders:[...state.fielders],pitches:[...(state.pitchSequence||[])],decisions:clone(state.decisions),outNumber:batterDecision?.result==="OUT"?Math.min(3,state.outs+1):null}});
   }
 
   function save() { undoStack.push(clone(state)); }
@@ -95,7 +95,7 @@
     render();
   }
   function resetPlay() {
-    state.balls = 0; state.strikes = 0; state.contact = null; state.fielders = []; state.plateResult = null;
+    state.balls = 0; state.strikes = 0; state.contact = null; state.fielders = []; state.plateResult = null; state.pitchSequence = [];
     state.runnerMode = false; state.playMode = "plate"; state.eventReason = null; state.pitchEventAvailable = false;
     state.selected = null; state.pendingTarget = null; state.decisions = [];
   }
@@ -136,6 +136,7 @@
     act(kind, () => {
       currentPitcher().pitchCount += 1;
       state.pitchEventAvailable = true;
+      state.pitchSequence.push(({ボール:"●",見逃し:"○",空振り:"×",ファウル:"∨",死球:"DB"})[kind]||"");
       if (kind === "死球") { forceFirst("死球"); return; }
       if (kind === "ボール") {
         state.balls += 1;
@@ -144,6 +145,19 @@
         if (state.strikes < 2) state.strikes += 1;
       } else state.strikes += 1;
       if (state.strikes === 3) queueBatterOut("三振アウト", "strikeout");
+    });
+  }
+
+  function droppedThirdStrike() {
+    if (state.runnerMode) return;
+    act("振り逃げ", () => {
+      currentPitcher().pitchCount += 1;
+      state.pitchEventAvailable = true;
+      state.pitchSequence.push("×");
+      state.strikes = 3;
+      state.plateResult = "振り逃げ";
+      startDecisionMode(false);
+      state.selected = "batter";
     });
   }
 
@@ -412,6 +426,7 @@
     });
 
     $$("[data-pitch]").forEach(b => b.onclick = () => pitch(b.dataset.pitch));
+    $("#droppedThirdStrike").onclick = droppedThirdStrike;
     $$("[data-run-event]").forEach(b => b.onclick = () => startRunnerEvent(b.dataset.runEvent));
     $$("[data-contact]").forEach(b => b.onclick = () => { if (!state.runnerMode) act(b.dataset.contact, () => { if (!state.contact) currentPitcher().pitchCount += 1; state.contact=b.dataset.contact; state.fielders=[]; }); });
     const hitButton = $('[data-result="安打"]');

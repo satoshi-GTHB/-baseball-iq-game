@@ -1,0 +1,20 @@
+/* The field coordinate system is intentionally unchanged. */
+header{padding:calc(5px + env(safe-area-inset-top)) 12px 6px}
+.counts{margin-top:3px}
+body .game-top{gap:6px!important}
+body .game-top #inning,body .game-top #score,body .batter-summary #batter{font-size:1.08rem!important;line-height:1.15!important}
+body .batter-summary #batter{font-size:1rem!important}
+.counts #pitcher{font-size:.82rem!important}
+#paHistory{min-height:18px!important;margin-top:2px!important;gap:2px!important}
+#paHistory .pa-box{min-width:30px!important;height:18px!important;padding:0 3px!important;font-size:8px!important}
+.manage-nav{margin-top:4px!important;gap:5px!important}
+.manage-nav button{min-height:30px!important;font-size:.8rem}
+.base{min-width:38px!important;min-height:38px!important;border-radius:9px!important;font-size:.62rem!important}
+.field-controls{width:21%!important;height:42%!important;gap:3px!important}
+.field-controls button{min-height:32px!important;padding:2px!important;font-size:11px!important}
+.field-popup{right:24%!important;width:32%!important}
+.bso-board{padding:2px 3px!important;border-radius:6px!important}
+.bso-board div{gap:1px!important;height:12px!important}
+.bso-board b{width:9px!important;font-size:8px!important}
+.bso-board i{width:8px!important;height:8px!important;border-width:1.5px!important}
+@media(max-width:390px){.field-controls{width:22%!important;gap:3px!important}.field-controls button{min-height:30px!important;font-size:10px!important}.field-popup{right:25%!important;width:34%!important}}

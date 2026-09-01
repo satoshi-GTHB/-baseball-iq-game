@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="management.css">
 <link rel="stylesheet" href="chatgpt-workflow.css">
 <link rel="stylesheet" href="manual-order.css">
+<link rel="stylesheet" href="scorebook-view.css">
 </head>
 <body>
 <main class="app">
@@ -30,7 +31,7 @@
 </span>
 <strong id="pitcher">投手：投手B　0球</strong>
 </div>
-<nav class="manage-nav"><button data-open-panel="rosterPanel">名簿</button><button data-open-panel="orderPanel">オーダー票</button><button data-open-panel="substitutionPanel">選手交代</button></nav>
+<nav class="manage-nav"><button data-open-panel="rosterPanel">名簿</button><button data-open-panel="orderPanel">オーダー票</button><button data-open-panel="substitutionPanel">選手交代</button><button id="openScorebook">スコアブック表示</button></nav>
 </header>
 <style>.game-top{display:grid!important;grid-template-columns:auto minmax(58px,.7fr) minmax(145px,1.5fr);gap:8px!important;align-items:center}.game-top #score{margin:0!important;text-align:center}.batter-summary{min-width:0;text-align:right}.batter-summary #batter{display:block;font-size:.95rem;white-space:nowrap}.counts #pitcher{margin-left:0;font-size:.95rem}#paHistory{display:flex;justify-content:flex-end;gap:3px;min-height:24px;margin-top:4px;overflow-x:auto}#paHistory .pa-box{display:grid;place-items:center;flex:0 0 auto;min-width:34px;height:22px;padding:0 4px;border:1px solid #fff;border-radius:7px;color:#18211c;font-size:9px;font-weight:800;white-space:nowrap}.pa-hit{background:#74d9ee}.pa-out{background:#f2a3b6}.pa-neutral{background:#fff}</style>
 <section class="field-wrap">
@@ -92,6 +93,7 @@
 <button data-pitch="空振り">空振り</button>
 <button data-pitch="ファウル">ファウル</button>
 <button data-pitch="死球">死球</button>
+<button id="droppedThirdStrike">振り逃げ</button>
 </div>
 </section>
 <section>
@@ -124,16 +126,20 @@
 <li>まだ操作はありません</li>
 </ol>
 </section>
-<section id="rosterPanel" class="management-panel" hidden><button class="panel-close" data-close-panel>×</button><h2>自チーム名簿</h2><label>チーム名<input id="teamName"></label><button id="saveTeam">チームを保存</button><form id="playerForm"><input type="hidden" name="id"><label>正式氏名<input name="canonicalName" required></label><label>氏名かな<input name="nameKana"></label><label>別名・旧字体<textarea name="aliases"></textarea></label><label>背番号<input name="uniformNumber" inputmode="numeric"></label><fieldset><legend>主な守備位置</legend><div id="positionChoices" class="position-choices"></div></fieldset><button type="submit">選手を保存</button></form><div class="data-actions"><button id="exportRoster">JSON書き出し</button><label class="file-button">JSON読込み<input id="importRoster" type="file" accept="application/json"></label></div><div id="rosterRows"></div></section>
+<section id="rosterPanel" class="management-panel" hidden><button class="panel-close" data-close-panel>×</button><h2>自チーム名簿</h2><label>チーム名<input id="teamName"></label><button id="saveTeam">チームを保存</button><div class="roster-methods"><button id="showRosterPdfSteps">PDFをChatGPTで読取</button></div><div id="rosterPdfWorkflow" hidden><ol class="order-steps"><li>名簿PDFを選択します。</li><li>指示文をコピーします。</li><li>ChatGPTを開き、PDFと指示文を送ります。</li><li>返されたJSONをこの画面へ貼り付けます。</li><li>内容を修正してから名簿へ登録します。</li></ol><label class="file-button">① 名簿PDFを選択<input id="rosterPdf" type="file" accept="application/pdf"></label><p id="rosterPdfName"></p><div class="chatgpt-actions"><button id="copyRosterPrompt" disabled>② 指示文をコピー</button><a href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer">③ ChatGPTを開く</a></div><p class="privacy-note">PDFは利用者自身がChatGPTへ送信します。このアプリや運営者のサーバーには送信・保存されません。登録前に氏名・背番号を必ず確認してください。</p><label>④ ChatGPTのJSONを貼り付け<textarea id="rosterChatgptJson" rows="8" spellcheck="false"></textarea></label><button id="importRosterChatgptJson">⑤ JSONを読み込む</button><div id="rosterExtractionRows"></div><button id="confirmRosterExtraction" hidden>確認した名簿を登録</button></div><form id="playerForm"><input type="hidden" name="id"><label>正式氏名<input name="canonicalName" required></label><label>氏名かな<input name="nameKana"></label><label>別名・旧字体<textarea name="aliases"></textarea></label><label>背番号<input name="uniformNumber" inputmode="numeric"></label><fieldset><legend>主な守備位置</legend><div id="positionChoices" class="position-choices"></div></fieldset><button type="submit">選手を保存</button></form><div class="data-actions"><button id="exportRoster">JSON書き出し</button><label class="file-button">JSON読込み<input id="importRoster" type="file" accept="application/json"></label></div><div id="rosterRows"></div></section>
 <section id="orderPanel" class="management-panel" hidden><button class="panel-close" data-close-panel>×</button><h2>試合前オーダー票</h2><div class="side-choice"><label><input type="radio" name="orderSide" value="own" checked>自チーム</label><label><input type="radio" name="orderSide" value="opponent">相手チーム</label></div><div class="order-methods"><button id="startManualOrder">手入力で作成</button><button id="showChatgptSteps">ChatGPTで読取</button></div><p>手入力はアカウント・通信・画像送信が不要です。</p><div id="chatgptWorkflow" hidden><ol class="order-steps"><li>オーダー票を撮影します。</li><li>「指示文をコピー」を押します。</li><li>「ChatGPTを開く」を押し、写真と指示文を送ります。</li><li>返されたJSON全体をコピーします。</li><li>この画面へ戻り、JSONを貼り付けます。</li></ol><label class="file-button">① 撮影・画像を選択<input id="orderImage" type="file" accept="image/jpeg,image/png,image/webp" capture="environment"></label><img id="orderPreview" alt="選択したオーダー票" hidden><div class="chatgpt-actions"><button id="copyPrompt" disabled>② 指示文をコピー</button><button id="shareOrderImage" disabled>写真を共有</button><a href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer">③ ChatGPTを開く</a></div><p class="privacy-note">写真は利用者自身がChatGPTへ送信します。運営者のサーバーへは送信しません。撮影・送信前に必要な同意を確認してください。</p><label>④ ChatGPTのJSONを貼り付け<textarea id="chatgptJson" rows="9" spellcheck="false" placeholder="{ &quot;teamNameRaw&quot;: ... }"></textarea></label><button id="importChatgptJson">⑤ JSONを読み込む</button></div><p id="imageWarnings" class="warning"></p><div id="extractionRows"></div><button id="confirmOrder">確認済みオーダーを確定</button></section>
 <section id="substitutionPanel" class="management-panel" hidden><button class="panel-close" data-close-panel>×</button><h2>選手交代・守備変更</h2><form id="substitutionForm"><label>種別<select name="type"><option value="pitcher">投手交代</option><option value="pinchHitter">代打</option><option value="pinchRunner">代走</option><option value="defense">守備交代</option><option value="positionChange">守備位置変更</option><option value="exit">試合から退く</option></select></label><label>チーム<select name="side"><option value="own">自チーム</option><option value="opponent">相手チーム</option></select></label><label>打順<input name="battingOrder" type="number" min="1" max="9"></label><label>塁（代走のみ）<select name="base"><option value="">－</option><option value="1">一塁</option><option value="2">二塁</option><option value="3">三塁</option></select></label><label>交代前選手ID<input name="outgoingPlayerId"></label><label>交代後選手ID<input name="incomingPlayerId"></label><label>変更前守備<input name="fromPosition"></label><label>変更後守備<input name="toPosition"></label><button type="submit">交代を記録</button></form><p>「投手から野手へ移る」と「試合から退く」は別イベントです。再出場可否は大会規則に応じて判断してください。</p></section>
 <p id="manageStatus" role="status"></p>
 </main>
+<section id="scorebookView" class="scorebook-view" hidden aria-label="スコアブック表示"><div class="scorebook-toolbar"><button id="closeScorebook">閉じる</button><strong id="scorebookSideLabel">先攻</strong><button id="toggleScorebookSide">後攻へ</button><button id="exportScorebook">出力</button></div><p class="landscape-hint">スマホを横向きにすると見やすくなります。</p><div class="scorebook-scroll"><div id="scorebookSheet" class="scorebook-sheet"></div></div></section>
+<link rel="stylesheet" href="compact-field.css">
 <script src="data-store.js">
 </script>
 <script src="scorebook.js">
 </script>
 <script src="management.js">
+</script>
+<script src="scorebook-view.js">
 </script>
 </body>
 </html>
