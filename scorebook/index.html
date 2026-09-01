@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>野球スコアブック入力 Sprint1</title>
+<link rel="stylesheet" href="scorebook.css">
+<link rel="stylesheet" href="management.css">
+<link rel="stylesheet" href="chatgpt-workflow.css">
+<link rel="stylesheet" href="manual-order.css">
+</head>
+<body>
+<main class="app">
+<header>
+<div class="game-top">
+<strong id="inning">1回表</strong>
+<strong id="score">0 - 0</strong>
+<div class="batter-summary">
+<strong id="batter">1番 山田</strong>
+<div id="paHistory" aria-label="当日の打席結果">
+</div>
+</div>
+</div>
+<div class="counts">
+<span>B <b id="balls">0</b>
+</span>
+<span>S <b id="strikes">0</b>
+</span>
+<span>O <b id="outs">0</b>
+</span>
+<strong id="pitcher">投手：投手B　0球</strong>
+</div>
+<nav class="manage-nav"><button data-open-panel="rosterPanel">名簿</button><button data-open-panel="orderPanel">オーダー票</button><button data-open-panel="substitutionPanel">選手交代</button></nav>
+</header>
+<style>.game-top{display:grid!important;grid-template-columns:auto minmax(58px,.7fr) minmax(145px,1.5fr);gap:8px!important;align-items:center}.game-top #score{margin:0!important;text-align:center}.batter-summary{min-width:0;text-align:right}.batter-summary #batter{display:block;font-size:.95rem;white-space:nowrap}.counts #pitcher{margin-left:0;font-size:.95rem}#paHistory{display:flex;justify-content:flex-end;gap:3px;min-height:24px;margin-top:4px;overflow-x:auto}#paHistory .pa-box{display:grid;place-items:center;flex:0 0 auto;min-width:34px;height:22px;padding:0 4px;border:1px solid #fff;border-radius:7px;color:#18211c;font-size:9px;font-weight:800;white-space:nowrap}.pa-hit{background:#74d9ee}.pa-out{background:#f2a3b6}.pa-neutral{background:#fff}</style>
+<section class="field-wrap">
+<div class="field">
+<img src="../assets/field-v1.png" alt="野球グラウンド">
+<div id="fielders">
+</div>
+<button class="base home" data-base="0">ホーム</button>
+<button class="base first" data-base="1">1塁<i>
+</i>
+</button>
+<button class="base second" data-base="2">2塁<i>
+</i>
+</button>
+<button class="base third" data-base="3">3塁<i>
+</i>
+</button>
+<div class="field-controls contact-controls" aria-label="打球種類">
+<b>打球</b>
+<button data-contact="ゴロ">ゴロ</button>
+<button data-contact="フライ">フライ</button>
+<button data-contact="ライナー">ライナー</button>
+<button data-contact="バント">バント</button>
+</div>
+<div class="field-controls result-controls" aria-label="打者結果">
+<b>結果</b>
+<button data-result="安打">安打</button>
+<button data-result="アウト">アウト</button>
+<button data-result="セーフ">セーフ</button>
+<button data-result="エラー">エラー</button>
+</div>
+<div id="hitChoices" class="field-popup" hidden>
+<b>安打の種類</b>
+<div>
+<button data-hit="単打">単打</button>
+<button data-hit="二塁打">二塁打</button>
+<button data-hit="三塁打">三塁打</button>
+<button data-hit="本塁打">本塁打</button>
+</div>
+</div>
+<div id="errorChoices" class="field-popup" hidden>
+<b>エラーの種類</b>
+<div>
+<button data-error="捕球エラー">捕球エラー</button>
+<button data-error="送球エラー">送球エラー</button>
+</div>
+</div>
+</div>
+<p id="status">投球または打球種類を入力してください</p>
+<p id="sequence">打球・守備：未入力</p>
+</section>
+<style>.field-controls{position:absolute;z-index:7;bottom:2.5%;display:flex;flex-direction:column;gap:3px;width:19%}.field-controls b{padding:2px 0;border-radius:5px;color:#fff;background:#173424dd;font-size:10px;text-align:center}.field-controls button,.field-popup button{min-height:30px;padding:2px;border:2px solid #fff;border-radius:8px;color:#17211c;background:#f8faf8eF;font-size:11px;font-weight:800;box-shadow:0 1px 4px #0005}.field-controls button:active,.field-controls button.active{color:#fff;background:#dd7711}.contact-controls{left:2%}.result-controls{right:2%}.field-popup{position:absolute;right:22%;bottom:3%;z-index:12;width:30%;padding:7px;border:2px solid #fff;border-radius:10px;background:#173424f2;box-shadow:0 4px 12px #0007}.field-popup>b{display:block;margin-bottom:5px;color:#fff;font-size:11px;text-align:center}.field-popup>div{display:grid;grid-template-columns:repeat(2,1fr);gap:4px}.field-popup button{min-height:36px}.fielder,.base{z-index:5}@media(max-width:390px){.field-controls{width:20%;gap:2px}.field-controls button{min-height:28px;font-size:10px}.field-popup{right:23%;width:32%}}</style>
+<style>.runner-mark[hidden]{display:none!important}.counts>span{display:none}.bso-board{position:absolute;left:2.5%;top:2.5%;z-index:10;padding:6px 8px;border:2px solid #ffffffcc;border-radius:9px;color:#fff;background:#10251dcc;box-shadow:0 2px 7px #0006}.bso-board div{display:flex;align-items:center;gap:4px;height:19px}.bso-board b{width:14px;font-size:12px}.bso-board i{display:block;width:12px;height:12px;border:2px solid #ffffffbb;border-radius:50%;background:#25342d}.bso-board [data-count="b"].on{background:#2389ff}.bso-board [data-count="s"].on{background:#ffd321}.bso-board [data-count="o"].on{background:#e32d2d}</style>
+<section>
+<h2>投球</h2>
+<div class="grid five">
+<button data-pitch="ボール">ボール</button>
+<button data-pitch="見逃し">見逃し</button>
+<button data-pitch="空振り">空振り</button>
+<button data-pitch="ファウル">ファウル</button>
+<button data-pitch="死球">死球</button>
+</div>
+</section>
+<section>
+<h2>走者イベント</h2>
+<div class="grid five">
+<button data-run-event="盗塁">盗塁</button>
+<button data-run-event="牽制">牽制</button>
+<button data-run-event="暴投">暴投</button>
+<button data-run-event="捕逸">捕逸</button>
+<button data-run-event="ボーク">ボーク</button>
+</div>
+</section>
+<section id="runnerPanel" class="confirm-panel" hidden>
+<div id="judgement" class="judgement-popup" hidden>
+<p id="judgementText">塁上の判定</p>
+<div class="grid two">
+<button data-judge="OUT">OUT</button>
+<button data-judge="SAFE">SAFE</button>
+</div>
+</div>
+<button id="finish">確定</button>
+<style>.runner-mark,.batter-runner{display:grid!important;place-items:center;width:36px!important;height:36px!important;border:3px solid #fff!important;border-radius:50%!important;color:#332400!important;background:#f6a800!important;font-size:11px!important;font-style:normal;font-weight:800;cursor:pointer;transition:background .12s}.runner-mark{top:-18px!important;right:-18px!important}.runner-mark.chosen,.batter-runner.chosen{color:#fff!important;background:#df2525!important;outline:4px solid #ffaaa3}.runner-mark.processed,.batter-runner.processed{color:#fff!important;background:#79523a!important}.base.selected{background:#333d;outline:none}.base.destination{outline:3px dashed #ffd34d}.base.target,.base:active{color:#2c2100;background:#ffd21f!important;outline:4px solid #fff0a2}.base.out-result{color:#fff!important;background:#d82424!important;outline:4px solid #ffaaa3}.base.safe-result{color:#fff!important;background:#1673d1!important;outline:4px solid #9fd1ff}.confirm-panel{display:flex;justify-content:flex-end;margin:7px 0 0;padding:0;background:transparent;box-shadow:none}.confirm-panel[hidden]{display:none}.confirm-panel #finish{width:auto;min-width:112px;margin:0}.judgement-popup{position:absolute;left:50%;bottom:5%;z-index:16;width:42%;padding:8px;border:2px solid #fff;border-radius:12px;background:#173424f2;box-shadow:0 4px 12px #0008;transform:translateX(-50%)}.judgement-popup[hidden]{display:none}.judgement-popup p{margin:0 0 6px;color:#fff;text-align:center}.judgement-popup button{min-height:42px}</style>
+</section>
+<div class="sticky">
+<button id="undo">1つ戻る</button>
+</div>
+<section>
+<h2>操作履歴</h2>
+<ol id="history">
+<li>まだ操作はありません</li>
+</ol>
+</section>
+<section id="rosterPanel" class="management-panel" hidden><button class="panel-close" data-close-panel>×</button><h2>自チーム名簿</h2><label>チーム名<input id="teamName"></label><button id="saveTeam">チームを保存</button><form id="playerForm"><input type="hidden" name="id"><label>正式氏名<input name="canonicalName" required></label><label>氏名かな<input name="nameKana"></label><label>別名・旧字体<textarea name="aliases"></textarea></label><label>背番号<input name="uniformNumber" inputmode="numeric"></label><fieldset><legend>主な守備位置</legend><div id="positionChoices" class="position-choices"></div></fieldset><button type="submit">選手を保存</button></form><div class="data-actions"><button id="exportRoster">JSON書き出し</button><label class="file-button">JSON読込み<input id="importRoster" type="file" accept="application/json"></label></div><div id="rosterRows"></div></section>
+<section id="orderPanel" class="management-panel" hidden><button class="panel-close" data-close-panel>×</button><h2>試合前オーダー票</h2><div class="side-choice"><label><input type="radio" name="orderSide" value="own" checked>自チーム</label><label><input type="radio" name="orderSide" value="opponent">相手チーム</label></div><div class="order-methods"><button id="startManualOrder">手入力で作成</button><button id="showChatgptSteps">ChatGPTで読取</button></div><p>手入力はアカウント・通信・画像送信が不要です。</p><div id="chatgptWorkflow" hidden><ol class="order-steps"><li>オーダー票を撮影します。</li><li>「指示文をコピー」を押します。</li><li>「ChatGPTを開く」を押し、写真と指示文を送ります。</li><li>返されたJSON全体をコピーします。</li><li>この画面へ戻り、JSONを貼り付けます。</li></ol><label class="file-button">① 撮影・画像を選択<input id="orderImage" type="file" accept="image/jpeg,image/png,image/webp" capture="environment"></label><img id="orderPreview" alt="選択したオーダー票" hidden><div class="chatgpt-actions"><button id="copyPrompt" disabled>② 指示文をコピー</button><button id="shareOrderImage" disabled>写真を共有</button><a href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer">③ ChatGPTを開く</a></div><p class="privacy-note">写真は利用者自身がChatGPTへ送信します。運営者のサーバーへは送信しません。撮影・送信前に必要な同意を確認してください。</p><label>④ ChatGPTのJSONを貼り付け<textarea id="chatgptJson" rows="9" spellcheck="false" placeholder="{ &quot;teamNameRaw&quot;: ... }"></textarea></label><button id="importChatgptJson">⑤ JSONを読み込む</button></div><p id="imageWarnings" class="warning"></p><div id="extractionRows"></div><button id="confirmOrder">確認済みオーダーを確定</button></section>
+<section id="substitutionPanel" class="management-panel" hidden><button class="panel-close" data-close-panel>×</button><h2>選手交代・守備変更</h2><form id="substitutionForm"><label>種別<select name="type"><option value="pitcher">投手交代</option><option value="pinchHitter">代打</option><option value="pinchRunner">代走</option><option value="defense">守備交代</option><option value="positionChange">守備位置変更</option><option value="exit">試合から退く</option></select></label><label>チーム<select name="side"><option value="own">自チーム</option><option value="opponent">相手チーム</option></select></label><label>打順<input name="battingOrder" type="number" min="1" max="9"></label><label>塁（代走のみ）<select name="base"><option value="">－</option><option value="1">一塁</option><option value="2">二塁</option><option value="3">三塁</option></select></label><label>交代前選手ID<input name="outgoingPlayerId"></label><label>交代後選手ID<input name="incomingPlayerId"></label><label>変更前守備<input name="fromPosition"></label><label>変更後守備<input name="toPosition"></label><button type="submit">交代を記録</button></form><p>「投手から野手へ移る」と「試合から退く」は別イベントです。再出場可否は大会規則に応じて判断してください。</p></section>
+<p id="manageStatus" role="status"></p>
+</main>
+<script src="data-store.js">
+</script>
+<script src="scorebook.js">
+</script>
+<script src="management.js">
+</script>
+</body>
+</html>
+
