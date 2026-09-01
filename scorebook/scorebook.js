@@ -84,7 +84,7 @@
       text = `${location}${state.contact === "ゴロ" ? "ゴロ" : state.contact === "ライナー" ? "直" : state.contact === "フライ" ? "飛" : "OUT"}`;
       tone = "out";
     }
-    state.plateAppearances[team][batterIndex].push({text, tone, score:{result,contact:state.contact,fielders:[...state.fielders],pitches:[...(state.pitchSequence||[])],decisions:clone(state.decisions),outNumber:batterDecision?.result==="OUT"?Math.min(3,state.outs+1):null}});
+    state.plateAppearances[team][batterIndex].push({text, tone, score:{inning:state.inning,half:state.half,result,contact:state.contact,fielders:[...state.fielders],pitches:[...(state.pitchSequence||[])],decisions:clone(state.decisions),outNumber:batterDecision?.result==="OUT"?Math.min(3,state.outs+1):null}});
   }
 
   function save() { undoStack.push(clone(state)); }
