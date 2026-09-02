@@ -30,7 +30,8 @@
     pitchEventAvailable: false, eventPitchNumber: null, selected: null, pendingTarget: null, decisions: [], runEvents: [], log: []
   });
 
-  const GAME_STORAGE_KEY = "baseball-iq-scorebook-current-game-v1";
+  const gameId = new URLSearchParams(location.search).get("game")?.replace(/[^A-Za-z0-9_-]/g,"") || "current";
+  const GAME_STORAGE_KEY = gameId === "current" ? "baseball-iq-scorebook-current-game-v1" : `baseball-iq-scorebook-game-${gameId}-v1`;
   function loadGame() {
     try {
       const saved = JSON.parse(localStorage.getItem(GAME_STORAGE_KEY));
@@ -458,6 +459,7 @@
   }
 
   function setup() {
+    $("#newGame").onclick=()=>{const url=new URL(location.href);url.search="";url.searchParams.set("game",`${Date.now()}`);window.open(url.toString(),"_blank","noopener");};
     const paColorOverride = document.createElement("style");
     paColorOverride.textContent = ".pa-hit{color:#18211c!important;background:#74d9ee!important}.pa-out{color:#fff!important;background:#e44f4f!important}.game-top{align-items:start!important}.game-top #inning,.game-top #score,.batter-summary #batter{font-size:1.3rem!important;line-height:1.2!important}";
     document.head.appendChild(paColorOverride);
