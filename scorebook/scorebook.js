@@ -37,11 +37,41 @@
   const playerById = id => state.players.find(player=>player.id===id);
   const batterPlayer = () => playerById(state.lineupSlots[offense()][state.batters[offense()]].currentPlayerId);
   const batterName = () => batterPlayer()?.canonicalName || names[state.batters[offense()]];
-  const makeBatterRunner = () => ({
+  const makeBatterRunner = scoreId => ({
     playerId: batterPlayer()?.id || null,
     name: batterName(),
-    responsiblePitcherId: currentPitcher().id
+    responsiblePitcherId: currentPitcher().id,
+    scoreId: scoreId || null
   });
+  function scoreById(id) {
+    if (!id) return null;
+    for (const team of state.plateAppearances) for (const row of team) {
+      const pa = row.find(item => item.score?.id === id);
+      if (pa) return pa.score;
+    }
+    return null;
+  }
+  function recordRunnerProgress(runner, from, to, result, reason, outNumber) {
+    const score = scoreById(runner?.scoreId);
+    if (!score) return;
+    const mark = reason || String(state.batters[offense()] + 1);
+    if (result === "SAFE") {
+      let base = from;
+      while (base !== to) {
+        const next = base === 3 ? 0 : base + 1;
+        score.advances.push({from:base,to:next,mark});
+        base = next;
+      }
+      if (to === 0) score.final = "run";
+    } else {
+      score.final = "out";
+      score.finalOutNumber = outNumber;
+      score.advances.push({from,to,mark,result:"OUT"});
+    }
+  }
+  function markLeftOnBase() {
+    state.bases.slice(1).forEach(runner => { const score=scoreById(runner?.scoreId); if(score&&!score.final) score.final="left"; });
+  }
   function scoreRunner(runner, cause) {
     state.scores[offense()] += 1;
     state.runEvents.push({
@@ -84,7 +114,9 @@
       text = `${location}${state.contact === "ゴロ" ? "ゴロ" : state.contact === "ライナー" ? "直" : state.contact === "フライ" ? "飛" : "OUT"}`;
       tone = "out";
     }
-    state.plateAppearances[team][batterIndex].push({text, tone, score:{inning:state.inning,half:state.half,result,contact:state.contact,fielders:[...state.fielders],pitches:[...(state.pitchSequence||[])],decisions:clone(state.decisions),outNumber:batterDecision?.result==="OUT"?Math.min(3,state.outs+1):null}});
+    const id=`pa-${Date.now()}-${team}-${batterIndex}-${state.plateAppearances[team][batterIndex].length}`;
+    state.plateAppearances[team][batterIndex].push({text, tone, score:{id,inning:state.inning,half:state.half,result,contact:state.contact,fielders:[...state.fielders],pitches:[...(state.pitchSequence||[])],decisions:clone(state.decisions),advances:[],final:batterDecision?.result==="OUT"?"out":result==="本塁打"?"run":null,outNumber:batterDecision?.result==="OUT"?Math.min(3,state.outs+1):null}});
+    return id;
   }
 
   function save() { undoStack.push(clone(state)); }
@@ -111,23 +143,25 @@
   }
   function queueBatterOut(label, outType = null, plateResult = outType) {
     startDecisionMode();
-    state.selected = null;
     state.pendingTarget = null;
     state.decisions = [{runner:"batter", to:null, result:"OUT", outType}];
+    state.selected = leadingRunnerKey();
     state.plateResult = plateResult;
     state.log.push(label);
   }
 
   function forceFirst(resultLabel) {
+    const scoreId = recordPlateAppearance(resultLabel);
     if (state.bases[1]) {
       if (state.bases[2]) {
-        if (state.bases[3]) { scoreRunner(state.bases[3], "四球・死球の押し出し"); state.bases[3] = null; }
+        if (state.bases[3]) { recordRunnerProgress(state.bases[3],3,0,"SAFE",String(state.batters[offense()]+1)); scoreRunner(state.bases[3], "四球・死球の押し出し"); state.bases[3] = null; }
+        recordRunnerProgress(state.bases[2],2,3,"SAFE",String(state.batters[offense()]+1));
         state.bases[3] = state.bases[2];
       }
+      recordRunnerProgress(state.bases[1],1,2,"SAFE",String(state.batters[offense()]+1));
       state.bases[2] = state.bases[1];
     }
-    state.bases[1] = makeBatterRunner();
-    recordPlateAppearance(resultLabel);
+    state.bases[1] = makeBatterRunner(scoreId);
     nextBatter();
   }
 
@@ -166,15 +200,22 @@
     state.playMode = "plate";
     if (resetCount) { state.balls = 0; state.strikes = 0; }
   }
+  function leadingRunnerKey() {
+    for (let base = 3; base >= 1; base -= 1) {
+      const key = runnerKeyForBase(base);
+      if (state.bases[base] && !decisionFor(key)) return key;
+    }
+    return null;
+  }
   function startRunnerEvent(reason) {
     if (state.runnerMode || !state.bases.slice(1).some(Boolean)) return;
     act(`走者イベント：${reason}`, () => {
       state.runnerMode = true;
       state.playMode = "runnerEvent";
       state.eventReason = reason;
-      state.selected = null;
       state.pendingTarget = null;
       state.decisions = [];
+      state.selected = leadingRunnerKey();
       if ((reason === "暴投" || reason === "捕逸") && !state.pitchEventAvailable) {
         currentPitcher().pitchCount += 1;
         state.pitchEventAvailable = true;
@@ -246,19 +287,22 @@
         state.plateResult = classifiedResult;
         state.log.push(`自動判定：${classifiedResult}`);
       }
-      if (!runnerEvent) recordPlateAppearance(classifiedResult);
+      const plateScoreId = !runnerEvent ? recordPlateAppearance(classifiedResult) : null;
       const oldBases = clone(state.bases);
       state.decisions.forEach(d => {
         if (d.runner.startsWith("base")) state.bases[Number(d.runner.slice(4))] = null;
       });
       let newOuts = 0;
       state.decisions.forEach(d => {
-        const runner = d.runner === "batter" ? makeBatterRunner() : oldBases[Number(d.runner.slice(4))];
-        if (d.result === "OUT") newOuts += 1;
+        const from=d.runner === "batter"?0:Number(d.runner.slice(4));
+        const runner = d.runner === "batter" ? makeBatterRunner(plateScoreId) : oldBases[from];
+        if (d.result === "OUT") { newOuts += 1; if(d.runner!=="batter") recordRunnerProgress(runner,from,d.to,d.result,d.reason,Math.min(3,state.outs+newOuts)); }
         else if (d.to === 0) scoreRunner(runner, d.reason || state.plateResult || state.eventReason);
         else state.bases[d.to] = runner;
+        if(d.result==="SAFE"&&d.runner!=="batter") recordRunnerProgress(runner,from,d.to,d.result,d.reason);
       });
       state.outs += newOuts;
+      if(state.outs>=3) markLeftOnBase();
       if (runnerEvent) {
         if (state.outs >= 3) switchSides();
         else {
@@ -280,6 +324,7 @@
   function presetBatterSafe(destination, label) {
     startDecisionMode();
     state.decisions.push({runner:"batter", to:destination, result:"SAFE"});
+    state.selected = leadingRunnerKey();
     state.plateResult = label;
     state.log.push(label);
   }
@@ -375,7 +420,8 @@
     $("#judgement").hidden = state.pendingTarget === null;
     if (state.pendingTarget !== null) $("#judgementText").textContent = `${state.pendingTarget === 0 ? "ホーム" : state.pendingTarget + "塁"}の判定`;
     $("#hitChoices").hidden = true; $("#errorChoices").hidden = true;
-    $("#status").textContent = state.pendingTarget !== null ? "③ OUT／SAFEを選択" : state.selected ? "② 到達する塁を選択" : state.runnerMode ? `① ${state.eventReason ? state.eventReason + "：" : ""}次の走者を選択、または確定` : "打球後、走者またはバッターランナーを選択できます";
+    const selectedLabel = state.selected === "batter" ? "バッターランナー" : state.selected ? `${Number(state.selected.slice(4))}塁走者` : "";
+    $("#status").textContent = state.pendingTarget !== null ? `③ ${selectedLabel}：OUT／SAFEを選択` : state.selected ? `② ${selectedLabel}：到達する塁を選択` : state.runnerMode ? `① ${state.eventReason ? state.eventReason + "：" : ""}次の走者を選択、または確定` : "打球後、走者またはバッターランナーを選択できます";
     $("#undo").disabled = undoStack.length === 0;
     $("#history").innerHTML = state.log.length ? state.log.slice(-12).reverse().map(x => `<li>${escapeHtml(x)}</li>`).join("") : "<li>まだ操作はありません</li>";
   }
