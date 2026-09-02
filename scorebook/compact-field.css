@@ -10,7 +10,7 @@ body .batter-summary #batter{font-size:1rem!important}
 .manage-nav{margin-top:4px!important;gap:5px!important}
 .manage-nav button{min-height:30px!important;font-size:.8rem}
 .base{width:32px!important;height:32px!important;min-width:32px!important;min-height:32px!important;border-radius:7px!important;font-size:.55rem!important}
-.field-controls{bottom:8%!important;width:21%!important;height:42%!important;gap:3px!important}
+.field-controls{bottom:21%!important;width:21%!important;height:42%!important;gap:3px!important}
 .field-controls button{min-height:32px!important;padding:2px!important;font-size:11px!important}
 .field-popup{right:24%!important;width:32%!important}
 .bso-board{padding:2px 3px!important;border-radius:6px!important}
