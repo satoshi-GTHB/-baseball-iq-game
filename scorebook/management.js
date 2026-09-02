@@ -105,6 +105,9 @@
   function resolvePlayerReference(side,type,value){
     const state=window.ScorebookGame?.snapshot();if(!state)throw new Error("試合情報を取得できません");
     const team=side==="own"?0:1,teamId=state.teams[team].id,number=String(value||"").trim();if(!number)throw new Error("選手を特定する番号を入力してください");
+    if(type==="base"){
+      const base=Number(number);if(base<1||base>3)throw new Error("塁は1～3で入力してください");const runner=state.bases[base];if(!runner?.playerId)throw new Error(`${base}塁に走者がいません`);const battingOrder=state.lineupSlots[team].findIndex(slot=>slot.currentPlayerId===runner.playerId)+1;return {id:runner.playerId,battingOrder:battingOrder||null,base};
+    }
     if(type==="battingOrder"){
       const order=Number(number);if(order<1||order>9)throw new Error("打順は1～9で入力してください");
       const id=state.lineupSlots[team][order-1]?.currentPlayerId;if(!id)throw new Error(`${order}番の選手が登録されていません`);return {id,battingOrder:order};
@@ -118,16 +121,17 @@
   function submitSubstitution(event) {
     event.preventDefault();const f=new FormData(event.currentTarget),data=Object.fromEntries(f);try{
       const outgoing=resolvePlayerReference(data.side,data.outgoingLookupType,data.outgoingLookupValue);
-      let incoming=null;if(data.type!=="exit"&&data.type!=="positionChange")incoming=resolvePlayerReference(data.side,data.incomingLookupType,data.incomingLookupValue);
+      const incoming=resolvePlayerReference(data.side,data.incomingLookupType,data.incomingLookupValue);
       if(incoming&&incoming.id===outgoing.id)throw new Error("交代前と交代後に同じ選手は指定できません");
-      data.outgoingPlayerId=outgoing.id;data.incomingPlayerId=incoming?.id||"";data.battingOrder=outgoing.battingOrder||data.battingOrder;
-      window.ScorebookGame?.substitute(data);toast("交代を記録しました");showPanel(null);
+      if(data.outgoingLookupType==="defensiveNumber"&&data.incomingLookupType==="defensiveNumber")window.ScorebookGame?.swapDefense(data.side,outgoing.id,incoming.id);
+      else{data.type=data.outgoingLookupType==="base"?"pinchRunner":"defense";data.base=outgoing.base||"";data.outgoingPlayerId=outgoing.id;data.incomingPlayerId=incoming.id;data.battingOrder=outgoing.battingOrder||data.battingOrder;window.ScorebookGame?.substitute(data);}
+      toast("交代を記録しました");showPanel(null);
     }catch(e){toast(e.message);}
   }
   function setup(){
     const sideLabels=[...document.querySelectorAll("#orderPanel .side-choice label")];if(sideLabels[0])sideLabels[0].lastChild.textContent="先攻";if(sideLabels[1])sideLabels[1].lastChild.textContent="後攻";
     const orderStatus=document.createElement("p");orderStatus.id="orderStatus";orderStatus.setAttribute("role","status");$("#confirmOrder").after(orderStatus);$("#confirmOrder").disabled=true;$("#extractionRows").addEventListener("input",updateConfirmOrderState);
-    $("#substitutionForm").innerHTML=`<label>種別<select name="type"><option value="pitcher">投手交代</option><option value="pinchHitter">代打</option><option value="pinchRunner">代走</option><option value="defense">守備交代</option><option value="positionChange">守備位置変更</option><option value="exit">試合から退く</option></select></label><label>チーム<select name="side"><option value="own">自チーム</option><option value="opponent">相手チーム</option></select></label><fieldset><legend>交代前の選手</legend><label>指定方法<select name="outgoingLookupType"><option value="battingOrder">打順</option><option value="uniformNumber">背番号</option><option value="defensiveNumber">守備番号</option></select></label><label>番号<input name="outgoingLookupValue" inputmode="numeric" required></label></fieldset><fieldset><legend>交代後の選手</legend><label>指定方法<select name="incomingLookupType"><option value="uniformNumber">背番号</option><option value="battingOrder">打順</option><option value="defensiveNumber">守備番号</option></select></label><label>番号<input name="incomingLookupValue" inputmode="numeric"></label></fieldset><label>塁（代走のみ）<select name="base"><option value="">－</option><option value="1">一塁</option><option value="2">二塁</option><option value="3">三塁</option></select></label><label>変更前守備<input name="fromPosition"></label><label>変更後守備<input name="toPosition"></label><button type="submit">交代を記録</button>`;
+    $("#substitutionForm").innerHTML=`<label>チーム<select name="side"><option value="own">先攻</option><option value="opponent">後攻</option></select></label><fieldset><legend>交代前選手</legend><label>指定方法<select name="outgoingLookupType"><option value="defensiveNumber">守備番号</option><option value="battingOrder">打順</option><option value="base">塁（代走のみ）</option><option value="uniformNumber">背番号</option></select></label><label>番号<input name="outgoingLookupValue" inputmode="numeric" required></label></fieldset><fieldset><legend>交代後選手</legend><label>指定方法<select name="incomingLookupType"><option value="defensiveNumber">守備番号</option><option value="battingOrder">打順</option><option value="uniformNumber">背番号</option></select></label><label>番号<input name="incomingLookupValue" inputmode="numeric" required></label></fieldset><button type="submit">交代を記録</button>`;
     $("#positionChoices").innerHTML=positions.map(p=>`<label><input type="checkbox" name="positions" value="${p}">${p}</label>`).join("");
     document.querySelectorAll("[data-open-panel]").forEach(b=>b.onclick=()=>showPanel(b.dataset.openPanel)); document.querySelectorAll("[data-close-panel]").forEach(b=>b.onclick=()=>showPanel(null));
     $("#saveTeam").onclick=saveTeam; $("#playerForm").onsubmit=savePlayer; $("#rosterRows").onclick=e=>{if(e.target.dataset.editPlayer)editPlayer(e.target.dataset.editPlayer);};

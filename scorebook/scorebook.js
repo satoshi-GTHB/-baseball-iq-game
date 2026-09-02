@@ -549,6 +549,20 @@
       });
       state.log.push(`${side === "own" ? "自" : "相手"}チームのオーダーを登録`); render();
     },
+    swapDefense(side, firstPlayerId, secondPlayerId) {
+      const team=side==="own"?0:1,slots=state.lineupSlots[team];
+      const firstSlot=slots.find(slot=>slot.currentPlayerId===firstPlayerId),secondSlot=slots.find(slot=>slot.currentPlayerId===secondPlayerId);
+      if(!firstSlot||!secondSlot)throw new Error("現在の打順にいる選手を指定してください");
+      const appearance=id=>[...(state.appearances||[])].reverse().find(a=>a.playerId===id&&!a.exitedAt);
+      const history=(slot,id)=>[...(slot.history||[])].reverse().find(h=>h.playerId===id||h.incomingPlayerId===id);
+      const firstAppearance=appearance(firstPlayerId),secondAppearance=appearance(secondPlayerId);
+      const firstNumber=String(firstAppearance?.defensiveNumber||history(firstSlot,firstPlayerId)?.defensiveNumber||""),secondNumber=String(secondAppearance?.defensiveNumber||history(secondSlot,secondPlayerId)?.defensiveNumber||"");
+      if(!firstNumber||!secondNumber)throw new Error("両選手の守備番号を確認してください");
+      save();const now={inning:state.inning,half:state.half,timestamp:new Date().toISOString()};
+      if(firstAppearance)firstAppearance.defensiveNumber=secondNumber;if(secondAppearance)secondAppearance.defensiveNumber=firstNumber;
+      firstSlot.history.push({playerId:firstPlayerId,type:"positionChange",defensiveNumber:secondNumber,...now});secondSlot.history.push({playerId:secondPlayerId,type:"positionChange",defensiveNumber:firstNumber,...now});
+      state.substitutionEvents.push({id:`sub-${Date.now()}`,teamId:state.teams[team].id,type:"defenseSwap",firstPlayerId,secondPlayerId,fromPosition:firstNumber,toPosition:secondNumber,...now});state.log.push(`守備位置入替：${firstNumber}⇄${secondNumber}`);render();
+    },
     substitute(event) {
       const team=event.side==="own"?0:1; const order=Number(event.battingOrder); const now={inning:state.inning,half:state.half,timestamp:new Date().toISOString()};
       if(event.type==="pinchRunner") {
