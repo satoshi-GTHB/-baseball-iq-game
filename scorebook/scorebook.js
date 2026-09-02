@@ -29,7 +29,17 @@
     pitchEventAvailable: false, selected: null, pendingTarget: null, decisions: [], runEvents: [], log: []
   });
 
-  let state = initial();
+  const GAME_STORAGE_KEY = "baseball-iq-scorebook-current-game-v1";
+  function loadGame() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(GAME_STORAGE_KEY));
+      return saved && saved.teams && saved.plateAppearances ? saved : initial();
+    } catch (_) { return initial(); }
+  }
+  function persistGame() {
+    try { localStorage.setItem(GAME_STORAGE_KEY, JSON.stringify(state)); } catch (_) {}
+  }
+  let state = loadGame();
   const undoStack = [];
   const offense = () => state.half === "top" ? 0 : 1;
   const defense = () => state.half === "top" ? 1 : 0;
@@ -424,6 +434,7 @@
     $("#status").textContent = state.pendingTarget !== null ? `③ ${selectedLabel}：OUT／SAFEを選択` : state.selected ? `② ${selectedLabel}：到達する塁を選択` : state.runnerMode ? `① ${state.eventReason ? state.eventReason + "：" : ""}次の走者を選択、または確定` : "打球後、走者またはバッターランナーを選択できます";
     $("#undo").disabled = undoStack.length === 0;
     $("#history").innerHTML = state.log.length ? state.log.slice(-12).reverse().map(x => `<li>${escapeHtml(x)}</li>`).join("") : "<li>まだ操作はありません</li>";
+    persistGame();
   }
 
   function setup() {
