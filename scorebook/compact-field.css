@@ -18,3 +18,6 @@ body .batter-summary #batter{font-size:1rem!important}
 .bso-board b{width:9px!important;font-size:8px!important}
 .bso-board i{width:8px!important;height:8px!important;border-width:1.5px!important}
 @media(max-width:390px){.field-controls{width:22%!important;gap:3px!important}.field-controls button{min-height:30px!important;font-size:10px!important}.field-popup{right:25%!important;width:34%!important}}
+.base[data-base="1"] .runner-mark{top:-18px!important;right:-18px!important;bottom:auto!important;left:auto!important}
+.base[data-base="2"] .runner-mark{top:-18px!important;right:auto!important;bottom:auto!important;left:-18px!important}
+.base[data-base="3"] .runner-mark{top:auto!important;right:-18px!important;bottom:-18px!important;left:auto!important}
