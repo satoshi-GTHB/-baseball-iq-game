@@ -26,7 +26,7 @@
       pitcherA: {id:"pitcherA", name:"投手A", pitchCount:0},
       pitcherB: {id:"pitcherB", name:"投手B", pitchCount:0}
     },
-    contact: null, battedBallLocation: null, fielders: [], plateResult: null, pitchSequence: [], runnerMode: false, playMode: "plate", eventReason: null,
+    contact: null, battedBallLocation: null, fielders: [], continuationFielders: [], continuationReason: null, plateResult: null, pitchSequence: [], runnerMode: false, playMode: "plate", eventReason: null,
     pitchEventAvailable: false, eventPitchNumber: null, selected: null, pendingTarget: null, decisions: [], runEvents: [], log: []
   });
 
@@ -63,11 +63,11 @@
     }
     return null;
   }
-  function recordRunnerProgress(runner, from, to, result, reason, outNumber, pitchNumber) {
+  function recordRunnerProgress(runner, from, to, result, reason, outNumber, pitchNumber, markOverride) {
     const score = scoreById(runner?.scoreId);
     if (!score) return;
     const eventMark = ({盗塁:"S",盗塁死:"CS",牽制:"PK",牽制死:"PK",暴投:"WP",捕逸:"PB",ボーク:"BK",打撃妨害:"IF",走塁妨害:"OB",守備妨害:"IP"})[reason] || reason;
-    const mark = eventMark || `（${"１２３４５６７８９"[state.batters[offense()]]}）`;
+    const mark = markOverride || eventMark || `（${"１２３４５６７８９"[state.batters[offense()]]}）`;
     if (result === "SAFE") {
       const distance = (to - from + 4) % 4;
       score.advances.push({from,to,mark,pitchNumber:pitchNumber||null,multiBase:distance>=2});
@@ -137,7 +137,7 @@
     render();
   }
   function resetPlay() {
-    state.balls = 0; state.strikes = 0; state.contact = null; state.battedBallLocation = null; state.fielders = []; state.plateResult = null; state.pitchSequence = [];
+    state.balls = 0; state.strikes = 0; state.contact = null; state.battedBallLocation = null; state.fielders = []; state.continuationFielders=[];state.continuationReason=null;state.plateResult = null; state.pitchSequence = [];
     state.runnerMode = false; state.playMode = "plate"; state.eventReason = null; state.pitchEventAvailable = false; state.eventPitchNumber = null;
     state.selected = null; state.pendingTarget = null; state.decisions = [];
   }
@@ -260,6 +260,8 @@
   }
   function runnerKeyForBase(base) { return `base${base}`; }
   function decisionFor(key) { return state.decisions.find(d => d.runner === key); }
+  function latestDecisionFor(key) { return [...state.decisions].reverse().find(d => d.runner === key); }
+  function runnerFrom(key) { const latest=latestDecisionFor(key);return latest?.result==="SAFE"?latest.to:key==="batter"?0:Number(key.slice(4)); }
 
   function chooseRunner(key) {
     if (state.playMode === "plate" && state.plateResult === "strikeout" && key !== "batter") return;
@@ -271,7 +273,8 @@
       const base = Number(key.slice(4));
       if (!state.bases[base]) return;
     }
-    if (decisionFor(key)) return;
+    if (decisionFor(key) && !state.continuationReason) return;
+    if (state.continuationReason && runnerFrom(key) === 0) return;
     act(key === "batter" ? "バッターランナーを選択" : `${Number(key.slice(4))}塁走者を選択`, () => {
       if (!state.runnerMode) startDecisionMode();
       state.selected = key;
@@ -281,7 +284,7 @@
 
   function chooseBase(to) {
     if (!state.runnerMode || !state.selected || state.pendingTarget !== null) return;
-    const from = state.selected === "batter" ? 0 : Number(state.selected.slice(4));
+    const from = runnerFrom(state.selected);
     if (to !== 0 && to <= from) return;
     act(`${to === 0 ? "ホーム" : to + "塁"}を選択`, () => { state.pendingTarget = to; });
   }
@@ -292,12 +295,17 @@
     const to = state.pendingTarget;
     const label = key === "batter" ? "バッターランナー" : `${Number(key.slice(4))}塁走者`;
     act(`${label} → ${to === 0 ? "ホーム" : to + "塁"}（${result}）`, () => {
-      const reason = state.playMode === "runnerEvent" ? state.eventReason : null;
+      const reason = state.continuationReason || (state.playMode === "runnerEvent" ? state.eventReason : null);
       const outcomeReason = reason === "盗塁" && result === "OUT" ? "盗塁死" : reason === "牽制" && result === "OUT" ? "牽制死" : reason;
-      state.decisions.push({runner:key, to, result, reason:outcomeReason, pitchNumber:state.eventPitchNumber, outType:result === "OUT" ? null : undefined});
-      state.selected = state.playMode === "runnerEvent" ? nextEventParticipantKey() : decisionFor("batter") ? leadingRunnerKey() : null;
+      const from=runnerFrom(key);const errorMark=state.continuationReason?errorAdvanceMark(state.continuationReason):null;
+      state.decisions.push({runner:key, from, to, result, reason:outcomeReason, advanceMark:errorMark, pitchNumber:state.eventPitchNumber, outType:result === "OUT" ? null : undefined});
+      state.selected = state.continuationReason ? null : state.playMode === "runnerEvent" ? nextEventParticipantKey() : decisionFor("batter") ? leadingRunnerKey() : null;
       state.pendingTarget = null;
     });
+  }
+  function errorAdvanceMark(kind) {
+    const numbers=state.continuationFielders.map(String);if(!numbers.length)return kind;
+    return kind==="送球エラー"?`${numbers[0]}E${numbers.length>1?"-"+numbers.slice(1).join("-"):""}`:`E${numbers.at(-1)}`;
   }
   function finishPlay() {
     if (!state.runnerMode) return;
@@ -310,6 +318,9 @@
     if (!runnerEvent && !batterDecision) {
       $("#status").textContent = "バッターランナーの結果を入力してください";
       return;
+    }
+    if(state.continuationReason&&!state.decisions.some(d=>d.reason===state.continuationReason)){
+      $("#status").textContent="エラーで変化した走者を入力してください";return;
     }
     act(runnerEvent ? `${state.eventReason}を確定` : "プレーを確定", () => {
       const outsBefore = state.outs;
@@ -326,13 +337,13 @@
       });
       let newOuts = 0;
       state.decisions.forEach(d => {
-        const from=d.runner === "batter"?0:Number(d.runner.slice(4));
-        const runner = d.runner === "batter" ? makeBatterRunner(plateScoreId) : oldBases[from];
-        if(d.result==="HOLD")return;
-        if (d.result === "OUT") { newOuts += 1; if(d.runner!=="batter") recordRunnerProgress(runner,from,d.to,d.result,d.reason,Math.min(3,state.outs+newOuts),d.pitchNumber); }
+        const originalFrom=d.runner === "batter"?0:Number(d.runner.slice(4));const from=d.from??originalFrom;
+        const runner = d.runner === "batter" ? makeBatterRunner(plateScoreId) : oldBases[originalFrom];
+        if(d.result==="HOLD")return;if(from>0&&from!==originalFrom)state.bases[from]=null;
+        if (d.result === "OUT") { newOuts += 1; if(d.runner!=="batter") recordRunnerProgress(runner,from,d.to,d.result,d.reason,Math.min(3,state.outs+newOuts),d.pitchNumber,d.advanceMark); }
         else if (d.to === 0) scoreRunner(runner, d.reason || state.plateResult || state.eventReason);
         else state.bases[d.to] = runner;
-        if(d.result==="SAFE"&&d.runner!=="batter") recordRunnerProgress(runner,from,d.to,d.result,d.reason,null,d.pitchNumber);
+        if(d.result==="SAFE"&&d.runner!=="batter") recordRunnerProgress(runner,from,d.to,d.result,d.reason,null,d.pitchNumber,d.advanceMark);
       });
       state.outs += newOuts;
       if(state.outs>=3) markLeftOnBase();
@@ -367,26 +378,18 @@
   }
   function hit(kind) {
     act(kind, () => {
-      if (kind === "本塁打") {
-        const scoringRunners = [...state.bases.slice(1).filter(Boolean), makeBatterRunner()];
-        const runs = scoringRunners.length;
-        scoringRunners.forEach(runner => scoreRunner(runner, "本塁打"));
-        state.bases = [null, null, null, null];
-        state.log.push(`本塁打：${runs}得点`);
-        state.plateResult = "本塁打";
-        recordPlateAppearance("本塁打");
-        nextBatter();
-      } else presetBatterSafe({単打:1,二塁打:2,三塁打:3}[kind], kind);
+      if (kind === "本塁打") {startDecisionMode();state.plateResult="本塁打";for(let base=3;base>=1;base--)if(state.bases[base])state.decisions.push({runner:`base${base}`,from:base,to:0,result:"SAFE"});state.decisions.push({runner:"batter",from:0,to:0,result:"SAFE"});state.selected=null;state.log.push("本塁打：確定待ち");}
+      else presetBatterSafe({単打:1,二塁打:2,三塁打:3}[kind], kind);
     });
   }
   function result(kind) {
-    if (state.runnerMode) return;
+    if (state.runnerMode) {if(kind==="エラー"&&state.playMode==="plate"&&state.decisions.some(d=>d.result==="SAFE")){$("#errorChoices").hidden=false;$("#hitChoices").hidden=true;}return;}
     if (kind === "安打") { $("#hitChoices").hidden = false; $("#errorChoices").hidden = true; return; }
     if (kind === "エラー") { $("#errorChoices").hidden = false; $("#hitChoices").hidden = true; return; }
     if (kind === "捕球") act("捕球アウト", () => queueBatterOut("捕球アウト", "catch", "catch", true));
     else if (kind === "野選") act("野選", () => presetBatterSafe(1, "野選"));
   }
-  function error(kind) { act(kind, () => presetBatterSafe(1, kind)); }
+  function error(kind) {if(state.runnerMode){if(state.playMode!=="plate"||!state.continuationFielders.length){$("#status").textContent="先に送球した守備番号を選択してください";return;}act(`追加進塁：${errorAdvanceMark(kind)}`,()=>{state.continuationReason=kind;state.selected=null;state.pendingTarget=null;});return;}act(kind, () => presetBatterSafe(1, kind));}
 
   function classifyPlateResult(outsBefore) {
     if (state.playMode !== "plate") return null;
@@ -422,7 +425,7 @@
     const appearances = state.plateAppearances[side][state.batters[side]];
     $("#paHistory").innerHTML = appearances.map(pa => `<span class="pa-box pa-${pa.tone}">${escapeHtml(pa.text)}</span>`).join("");
     $$("[data-contact]").forEach(b => b.classList.toggle("active", b.dataset.contact === state.contact));
-    $$(".fielder").forEach(b => b.classList.toggle("selected", state.fielders.includes(+b.dataset.fielder)));
+    $$(".fielder").forEach(b => b.classList.toggle("selected", state.fielders.includes(+b.dataset.fielder)||state.continuationFielders?.includes(+b.dataset.fielder)));
     $$(".field-gap").forEach(b => b.classList.toggle("selected", b.dataset.location === state.battedBallLocation));
 
     $$(".base").forEach(base => {
@@ -453,15 +456,15 @@
       button.disabled = state.runnerMode;
     });
 
-    const sequence = [state.contact, ...state.fielders].filter(Boolean);
-    $("#sequence").textContent = sequence.length ? `打球・守備：${sequence.join(" → ")}` : "打球・守備：未入力";
+    const sequence = [state.contact, ...state.fielders].filter(Boolean);const continuation=state.continuationFielders?.length?`／追加送球：${state.continuationFielders.join(" → ")}${state.continuationReason?` → ${errorAdvanceMark(state.continuationReason)}`:""}`:"";
+    $("#sequence").textContent = sequence.length ? `打球・守備：${sequence.join(" → ")}${continuation}` : "打球・守備：未入力";
     $("#runnerPanel").hidden = !state.runnerMode;
     $("#judgement").hidden = state.pendingTarget === null;
     if (state.pendingTarget !== null) $("#judgementText").textContent = `${state.pendingTarget === 0 ? "ホーム" : state.pendingTarget + "塁"}の判定`;
     $("#hitChoices").hidden = true; $("#errorChoices").hidden = true;
     const selectedLabel = state.selected === "batter" ? "バッターランナー" : state.selected ? `${Number(state.selected.slice(4))}塁走者` : "";
     const optionalRunner=state.playMode === "plate" && state.selected?.startsWith("base") && !!decisionFor("batter");
-    $("#status").textContent = state.pendingTarget !== null ? `③ ${selectedLabel}：OUT／SAFEを選択` : state.selected ? state.playMode === "runnerEvent" || optionalRunner ? `① ${selectedLabel}：変化があれば到達塁、なければ後ろの走者または確定` : `② ${selectedLabel}：到達する塁を選択` : state.runnerMode && state.plateResult === "strikeout" ? "三振アウト：確定を押してください" : state.runnerMode ? `① ${state.eventReason ? state.eventReason + "：" : ""}次の走者を選択、または確定` : "打球後、走者またはバッターランナーを選択できます";
+    $("#status").textContent = state.pendingTarget !== null ? `③ ${selectedLabel}：OUT／SAFEを選択` : state.selected ? state.playMode === "runnerEvent" || optionalRunner || state.continuationReason ? `① ${selectedLabel}：変化があれば到達塁、なければ後ろの走者または確定` : `② ${selectedLabel}：到達する塁を選択` : state.continuationReason ? `${errorAdvanceMark(state.continuationReason)}：さらに動いた走者を選択してください` : state.runnerMode && state.plateResult === "strikeout" ? "三振アウト：確定を押してください" : state.runnerMode ? `① ${state.eventReason ? state.eventReason + "：" : ""}次の走者を選択、または確定` : "打球後、走者またはバッターランナーを選択できます";
     $("#undo").disabled = undoStack.length === 0;
     $("#history").innerHTML = state.log.length ? state.log.slice(-12).reverse().map(x => `<li>${escapeHtml(x)}</li>`).join("") : "<li>まだ操作はありません</li>";
     persistGame();
@@ -477,7 +480,7 @@
       const button = document.createElement("button");
       button.className = "fielder"; button.dataset.fielder = number; button.textContent = number;
       button.style.left = `${p[0]}%`; button.style.top = `${p[1]}%`;
-      button.onclick = () => { if (!state.runnerMode && state.contact) act(`守備${number}`, () => state.fielders.push(+number)); };
+      button.onclick = () => { if (!state.runnerMode && state.contact) act(`守備${number}`, () => state.fielders.push(+number));else if(state.runnerMode&&state.playMode==="plate"&&state.decisions.some(d=>d.result==="SAFE"))act(`追加送球${number}`,()=>{state.continuationFielders??=[];state.continuationFielders.push(+number);}); };
       holder.appendChild(button);
     });
     [["7・8",36.5,15],["8・9",63.5,15]].forEach(([label,left,top])=>{
