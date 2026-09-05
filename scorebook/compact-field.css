@@ -23,3 +23,5 @@ body .batter-summary #batter{font-size:1rem!important}
 .base[data-base="2"] .runner-mark{top:-18px!important;right:auto!important;bottom:auto!important;left:-18px!important}
 .base[data-base="3"] .runner-mark{top:auto!important;right:-18px!important;bottom:-18px!important;left:auto!important}
 .sticky{justify-content:space-between!important;gap:8px}.sticky button{min-width:0!important;flex:1 1 0}.sticky #newGame{border-color:#c89b00!important;color:#111!important;background:#ffd531!important}.sticky #exportStats{border-color:#0b5fad!important;color:#fff!important;background:#1673d1!important}
+
+.event-subheading{margin:12px 0 7px;color:#6a3631;font-size:.9rem}.interference-events button{border-color:#d5aaa5!important;background:#fff4f2!important}
