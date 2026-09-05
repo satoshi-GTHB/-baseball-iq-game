@@ -19,9 +19,9 @@ body .batter-summary #batter{font-size:1rem!important}
 .bso-board i{width:8px!important;height:8px!important;border-width:1.5px!important}
 .field-gap{position:absolute;z-index:3;width:42px;height:24px;padding:0;border:2px solid #53665b;border-radius:50%;color:#17211c;background:#fff;font-size:10px;font-weight:800;box-shadow:0 2px 5px #0004;transform:translate(-50%,-50%)}.field-gap.selected{color:#fff;background:#e68016;border-color:#fff;outline:2px solid #ffe29e}
 @media(max-width:390px){.field-controls{width:22%!important;gap:3px!important}.field-controls button{min-height:30px!important;font-size:10px!important}.field-popup{right:25%!important;width:34%!important}}
-.base[data-base="1"] .runner-mark{top:-18px!important;right:-18px!important;bottom:auto!important;left:auto!important}
-.base[data-base="2"] .runner-mark{top:-18px!important;right:auto!important;bottom:auto!important;left:-18px!important}
-.base[data-base="3"] .runner-mark{top:auto!important;right:-18px!important;bottom:-18px!important;left:auto!important}
+.base[data-base="1"] .runner-mark{top:-48px!important;right:auto!important;bottom:auto!important;left:-14px!important}
+.base[data-base="2"] .runner-mark{top:-2px!important;right:auto!important;bottom:auto!important;left:-36px!important}
+.base[data-base="3"] .runner-mark{top:-2px!important;right:-36px!important;bottom:auto!important;left:auto!important}
 .sticky{justify-content:space-between!important;gap:8px}.sticky button{min-width:0!important;flex:1 1 0}.sticky #newGame{border-color:#c89b00!important;color:#111!important;background:#ffd531!important}.sticky #exportStats{border-color:#0b5fad!important;color:#fff!important;background:#1673d1!important}
 
 .event-subheading{margin:12px 0 7px;color:#6a3631;font-size:.9rem}.interference-events button{border-color:#d5aaa5!important;background:#fff4f2!important}
