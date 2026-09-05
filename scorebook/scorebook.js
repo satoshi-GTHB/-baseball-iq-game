@@ -298,13 +298,13 @@
       const reason = state.playMode === "runnerEvent" ? state.eventReason : null;
       const outcomeReason = reason === "盗塁" && result === "OUT" ? "盗塁死" : reason === "牽制" && result === "OUT" ? "牽制死" : reason;
       state.decisions.push({runner:key, to, result, reason:outcomeReason, pitchNumber:state.eventPitchNumber, outType:result === "OUT" ? null : undefined});
-      state.selected = state.playMode === "runnerEvent" ? nextEventParticipantKey() : null;
+      state.selected = state.playMode === "runnerEvent" ? nextEventParticipantKey() : decisionFor("batter") ? leadingRunnerKey() : null;
       state.pendingTarget = null;
     });
   }
   function finishPlay() {
     if (!state.runnerMode) return;
-    if (state.pendingTarget !== null || (state.selected && state.playMode !== "runnerEvent")) {
+    if (state.pendingTarget !== null || (state.selected && state.playMode !== "runnerEvent" && !decisionFor("batter"))) {
       $("#status").textContent = "先にOUT／SAFEを入力してください";
       return;
     }
@@ -463,7 +463,8 @@
     if (state.pendingTarget !== null) $("#judgementText").textContent = `${state.pendingTarget === 0 ? "ホーム" : state.pendingTarget + "塁"}の判定`;
     $("#hitChoices").hidden = true; $("#errorChoices").hidden = true;
     const selectedLabel = state.selected === "batter" ? "バッターランナー" : state.selected ? `${Number(state.selected.slice(4))}塁走者` : "";
-    $("#status").textContent = state.pendingTarget !== null ? `③ ${selectedLabel}：OUT／SAFEを選択` : state.selected ? state.playMode === "runnerEvent" ? `① ${selectedLabel}：変化があれば到達塁、なければ次の走者または確定` : `② ${selectedLabel}：到達する塁を選択` : state.runnerMode && state.plateResult === "strikeout" ? "三振アウト：確定を押してください" : state.runnerMode ? `① ${state.eventReason ? state.eventReason + "：" : ""}次の走者を選択、または確定` : "打球後、走者またはバッターランナーを選択できます";
+    const optionalRunner=state.playMode === "plate" && state.selected?.startsWith("base") && !!decisionFor("batter");
+    $("#status").textContent = state.pendingTarget !== null ? `③ ${selectedLabel}：OUT／SAFEを選択` : state.selected ? state.playMode === "runnerEvent" || optionalRunner ? `① ${selectedLabel}：変化があれば到達塁、なければ後ろの走者または確定` : `② ${selectedLabel}：到達する塁を選択` : state.runnerMode && state.plateResult === "strikeout" ? "三振アウト：確定を押してください" : state.runnerMode ? `① ${state.eventReason ? state.eventReason + "：" : ""}次の走者を選択、または確定` : "打球後、走者またはバッターランナーを選択できます";
     $("#undo").disabled = undoStack.length === 0;
     $("#history").innerHTML = state.log.length ? state.log.slice(-12).reverse().map(x => `<li>${escapeHtml(x)}</li>`).join("") : "<li>まだ操作はありません</li>";
     persistGame();
