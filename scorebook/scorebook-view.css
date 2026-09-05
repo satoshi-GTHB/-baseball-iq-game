@@ -7,6 +7,7 @@
 .score-symbol .cell-guides{fill:none;stroke:#9ab7a6;stroke-width:.8;stroke-dasharray:3 2}.score-symbol .pitch-seq{font-size:7px;text-anchor:middle}.score-symbol .pitch-total{font-size:7px;font-weight:800}.score-symbol .play-mark{font-size:8px}.score-symbol .out-mark{font-size:9px;font-weight:800}
 .score-symbol .play-mark{font-size:15px;font-weight:800}.score-symbol .trajectory{font-size:15px;font-weight:800}.score-symbol .out-mark{font-family:serif;font-size:20px;font-weight:800}
 .score-symbol .advance-mark{font-size:11px;font-weight:800}
+.score-symbol .later-arrow{fill:none;stroke:#d32626;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.score-symbol marker path{fill:#d32626}
 .score-grid td.pa{overflow:visible}.score-symbol{position:relative;z-index:2;overflow:visible}.score-symbol .play-mark{font-size:13px;letter-spacing:-.45px}
 .player-stack{display:flex;min-height:64px;flex-direction:column;justify-content:center}.player-stack span{display:grid;place-items:center;min-height:25px;padding:2px}.player-stack span+span{border-top:2px double #66786d}.score-grid td.player .player-stack span{place-items:center start}.score-grid td.pa>.score-symbol+.score-symbol{border-top:2px double #66786d}
 .score-grid tbody td{height:84px}.score-symbol{height:78px}.player-stack{min-height:78px}.player-stack span{box-sizing:border-box;min-height:26px}

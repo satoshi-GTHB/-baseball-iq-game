@@ -66,14 +66,11 @@
   function recordRunnerProgress(runner, from, to, result, reason, outNumber, pitchNumber) {
     const score = scoreById(runner?.scoreId);
     if (!score) return;
-    const mark = ({盗塁:"S",盗塁死:"CS",牽制:"PK",牽制死:"PK",暴投:"WP",捕逸:"PB",ボーク:"BK",打撃妨害:"IF",走塁妨害:"OB",守備妨害:"IP"})[reason] || reason || String(state.batters[offense()] + 1);
+    const eventMark = ({盗塁:"S",盗塁死:"CS",牽制:"PK",牽制死:"PK",暴投:"WP",捕逸:"PB",ボーク:"BK",打撃妨害:"IF",走塁妨害:"OB",守備妨害:"IP"})[reason] || reason;
+    const mark = eventMark || `（${"１２３４５６７８９"[state.batters[offense()]]}）`;
     if (result === "SAFE") {
-      let base = from;
-      while (base !== to) {
-        const next = base === 3 ? 0 : base + 1;
-        score.advances.push({from:base,to:next,mark,pitchNumber:pitchNumber||null});
-        base = next;
-      }
+      const distance = (to - from + 4) % 4;
+      score.advances.push({from,to,mark,pitchNumber:pitchNumber||null,multiBase:distance>=2});
       if (to === 0) score.final = "run";
     } else {
       score.final = "out";
