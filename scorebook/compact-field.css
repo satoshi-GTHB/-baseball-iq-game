@@ -17,6 +17,7 @@ body .batter-summary #batter{font-size:1rem!important}
 .bso-board div{gap:1px!important;height:12px!important}
 .bso-board b{width:9px!important;font-size:8px!important}
 .bso-board i{width:8px!important;height:8px!important;border-width:1.5px!important}
+.field-gap{position:absolute;z-index:3;width:42px;height:24px;padding:0;border:2px solid #53665b;border-radius:50%;color:#17211c;background:#fff;font-size:10px;font-weight:800;box-shadow:0 2px 5px #0004;transform:translate(-50%,-50%)}.field-gap.selected{color:#fff;background:#e68016;border-color:#fff;outline:2px solid #ffe29e}
 @media(max-width:390px){.field-controls{width:22%!important;gap:3px!important}.field-controls button{min-height:30px!important;font-size:10px!important}.field-popup{right:25%!important;width:34%!important}}
 .base[data-base="1"] .runner-mark{top:-18px!important;right:-18px!important;bottom:auto!important;left:auto!important}
 .base[data-base="2"] .runner-mark{top:-18px!important;right:auto!important;bottom:auto!important;left:-18px!important}

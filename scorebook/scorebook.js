@@ -26,7 +26,7 @@
       pitcherA: {id:"pitcherA", name:"投手A", pitchCount:0},
       pitcherB: {id:"pitcherB", name:"投手B", pitchCount:0}
     },
-    contact: null, fielders: [], plateResult: null, pitchSequence: [], runnerMode: false, playMode: "plate", eventReason: null,
+    contact: null, battedBallLocation: null, fielders: [], plateResult: null, pitchSequence: [], runnerMode: false, playMode: "plate", eventReason: null,
     pitchEventAvailable: false, eventPitchNumber: null, selected: null, pendingTarget: null, decisions: [], runEvents: [], log: []
   });
 
@@ -98,7 +98,7 @@
   function recordPlateAppearance(explicitResult = null) {
     const team = offense();
     const batterIndex = state.batters[team];
-    const location = ({1:"投",2:"捕",3:"一",4:"二",5:"三",6:"遊",7:"左",8:"中",9:"右"})[state.fielders[0]] || "";
+    const location = state.battedBallLocation || ({1:"投",2:"捕",3:"一",4:"二",5:"三",6:"遊",7:"左",8:"中",9:"右"})[state.fielders[0]] || "";
     const result = explicitResult || state.plateResult;
     const batterDecision = state.decisions.find(d => d.runner === "batter");
     let text = result || "結果";
@@ -127,7 +127,7 @@
       tone = "out";
     }
     const id=`pa-${Date.now()}-${team}-${batterIndex}-${state.plateAppearances[team][batterIndex].length}`;
-    state.plateAppearances[team][batterIndex].push({text, tone, score:{id,inning:state.inning,half:state.half,result,contact:state.contact,fielders:[...state.fielders],fielderPlayerIds:state.fielders.map(number=>{const item=[...(state.appearances||[])].reverse().find(a=>!a.exitedAt&&String(a.defensiveNumber||"")===String(number)&&playerById(a.playerId)?.teamId===state.teams[defense()].id);return item?.playerId||null;}),batterPlayerId:batterPlayer()?.id||null,pitcherId:currentPitcher()?.id||null,pitches:[...(state.pitchSequence||[])],decisions:clone(state.decisions),advances:[],final:batterDecision?.result==="OUT"?"out":result==="本塁打"?"run":null,outNumber:batterDecision?.result==="OUT"?Math.min(3,state.outs+1):null}});
+    state.plateAppearances[team][batterIndex].push({text, tone, score:{id,inning:state.inning,half:state.half,result,contact:state.contact,battedBallLocation:state.battedBallLocation,fielders:[...state.fielders],fielderPlayerIds:state.fielders.map(number=>{const item=[...(state.appearances||[])].reverse().find(a=>!a.exitedAt&&String(a.defensiveNumber||"")===String(number)&&playerById(a.playerId)?.teamId===state.teams[defense()].id);return item?.playerId||null;}),batterPlayerId:batterPlayer()?.id||null,pitcherId:currentPitcher()?.id||null,pitches:[...(state.pitchSequence||[])],decisions:clone(state.decisions),advances:[],final:batterDecision?.result==="OUT"?"out":result==="本塁打"?"run":null,outNumber:batterDecision?.result==="OUT"?Math.min(3,state.outs+1):null}});
     return id;
   }
 
@@ -139,7 +139,7 @@
     render();
   }
   function resetPlay() {
-    state.balls = 0; state.strikes = 0; state.contact = null; state.fielders = []; state.plateResult = null; state.pitchSequence = [];
+    state.balls = 0; state.strikes = 0; state.contact = null; state.battedBallLocation = null; state.fielders = []; state.plateResult = null; state.pitchSequence = [];
     state.runnerMode = false; state.playMode = "plate"; state.eventReason = null; state.pitchEventAvailable = false; state.eventPitchNumber = null;
     state.selected = null; state.pendingTarget = null; state.decisions = [];
   }
@@ -417,6 +417,7 @@
     $("#paHistory").innerHTML = appearances.map(pa => `<span class="pa-box pa-${pa.tone}">${escapeHtml(pa.text)}</span>`).join("");
     $$("[data-contact]").forEach(b => b.classList.toggle("active", b.dataset.contact === state.contact));
     $$(".fielder").forEach(b => b.classList.toggle("selected", state.fielders.includes(+b.dataset.fielder)));
+    $$(".field-gap").forEach(b => b.classList.toggle("selected", b.dataset.location === state.battedBallLocation));
 
     $$(".base").forEach(base => {
       const n = +base.dataset.base;
@@ -469,6 +470,13 @@
       button.className = "fielder"; button.dataset.fielder = number; button.textContent = number;
       button.style.left = `${p[0]}%`; button.style.top = `${p[1]}%`;
       button.onclick = () => { if (!state.runnerMode && state.contact) act(`守備${number}`, () => state.fielders.push(+number)); };
+      holder.appendChild(button);
+    });
+    [["7・8",36.5,15],["8・9",63.5,15]].forEach(([label,left,top])=>{
+      const button=document.createElement("button");
+      button.className="field-gap";button.dataset.location=label;button.textContent=label;
+      button.style.left=`${left}%`;button.style.top=`${top}%`;
+      button.onclick=()=>{if(!state.runnerMode&&state.contact)act(`打球地点${label}`,()=>state.battedBallLocation=label);};
       holder.appendChild(button);
     });
     $$(".base").forEach(base => {
