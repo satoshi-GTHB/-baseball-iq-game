@@ -104,7 +104,8 @@
     let text = result || "結果";
     let tone = "neutral";
     if (["単打","二塁打","三塁打","本塁打"].includes(result)) {
-      text = result === "単打" ? `${state.contact === "フライ" ? "T" : ""}${location}安` : result === "二塁打" ? `${location}2` : result === "三塁打" ? `${location}3` : `${location}本`;
+      const texasHit=state.contact === "フライ" && /^[789]$/.test(String(location));
+      text = result === "単打" ? `${texasHit ? "T" : ""}${location}安` : result === "二塁打" ? `${location}2` : result === "三塁打" ? `${location}3` : `${location}本`;
       tone = "hit";
     } else if (result === "四球" || result === "死球") {
       text = result;
