@@ -138,6 +138,13 @@
   function setup(){
     const orderWorkflow=$("#chatgptWorkflow"),orderSteps=orderWorkflow.querySelector(".order-steps"),orderImage=$("#orderImage"),copyOrderPrompt=$("#copyPrompt"),openChatgpt=orderWorkflow.querySelector('.chatgpt-actions a[href*="chatgpt.com"]');
     $("#showChatgptSteps").textContent="ChatGPTで読取";
+    const methods=$("#orderPanel .order-methods"),manualButton=$("#startManualOrder"),aiButton=$("#showChatgptSteps");
+    methods.innerHTML="";
+    [[manualButton,"アカウント・通信・画像送信不要","manual-method"],[aiButton,"自動で氏名・守備を取り込む","ai-method"]].forEach(([button,caption,className])=>{const option=document.createElement("div");option.className=`order-method-option ${className}`;option.append(button);const note=document.createElement("small");note.textContent=caption;option.append(note);methods.append(option);});
+    if(methods.nextElementSibling)methods.nextElementSibling.hidden=true;
+    const workflowClose=document.createElement("button");workflowClose.type="button";workflowClose.id="closeChatgptWorkflow";workflowClose.className="workflow-close";workflowClose.textContent="× 閉じる";orderWorkflow.prepend(workflowClose);
+    const workflowTitle=document.createElement("h3");workflowTitle.textContent="ChatGPTで読み取る手順";workflowClose.after(workflowTitle);
+    orderWorkflow.querySelector(".privacy-note").textContent="写真は利用者自身がChatGPTへ送信します。運営者のサーバーへは送信しません。撮影・送信前に必要な同意を確認してください。";
     orderSteps.innerHTML="<li><b>①を押すと、指示文がコピーされてChatGPTが開きます。</b></li><li>開いたChatGPTの入力欄を長押しし、<b>「ペースト」→「送信」</b>を押します。</li><li>ChatGPTの案内どおりに撮影し、読み取り後に<b>「出力」</b>と送信します。</li><li>JSONだけの回答をコピーしてこの画面へ戻り、<b>② 回答を取り込む</b>を押します。</li>";
     orderImage.closest(".file-button").hidden=true;$("#orderPreview").hidden=true;
     copyOrderPrompt.hidden=false;copyOrderPrompt.disabled=false;copyOrderPrompt.textContent="① 指示文をコピーしてChatGPTを開く";copyOrderPrompt.classList.add("next-action");openChatgpt.hidden=true;
@@ -152,7 +159,8 @@
     $("#saveTeam").onclick=saveTeam; $("#playerForm").onsubmit=savePlayer; $("#rosterRows").onclick=e=>{if(e.target.dataset.editPlayer)editPlayer(e.target.dataset.editPlayer);};
     $("#rosterChatgptJson").addEventListener("input",updateJsonImportButtons); $("#chatgptJson").addEventListener("input",updateJsonImportButtons); updateJsonImportButtons();
     $("#exportRoster").onclick=downloadRoster; $("#importRoster").onchange=e=>importRoster(e.target.files[0]); $("#showRosterPdfSteps").onclick=()=>{$("#rosterPdfWorkflow").hidden=false;toast("PDFを選択し、番号順に操作してください");}; $("#rosterPdf").onchange=e=>{const file=e.target.files[0];if(!file)return;if(file.type!=="application/pdf"||file.size>20*1024*1024){toast("20MB以下のPDFを選択してください");e.target.value="";return;}$("#rosterPdfName").textContent=`選択済み：${file.name}`;$("#copyRosterPrompt").disabled=false;toast("PDFを確認しました。次に指示文をコピーします");}; $("#copyRosterPrompt").onclick=copyRosterPrompt; $("#importRosterChatgptJson").onclick=importRosterChatgptJson; $("#confirmRosterExtraction").onclick=confirmRosterExtraction; $("#startManualOrder").onclick=startManualOrder; $("#showChatgptSteps").onclick=()=>{$("#chatgptWorkflow").hidden=false;toast("番号順に操作してください");}; $("#orderImage").onchange=e=>handlePhoto(e.target.files[0]); $("#copyPrompt").onclick=copyPrompt; $("#shareOrderImage").onclick=shareOrderImage; $("#importChatgptJson").onclick=importChatgptJson; $("#confirmOrder").onclick=confirmOrder; $("#substitutionForm").onsubmit=submitSubstitution;
-    $("#showChatgptSteps").onclick=()=>{$("#chatgptWorkflow").hidden=false;toast("まず①「ChatGPTを開く」を押してください");};
+    $("#showChatgptSteps").onclick=()=>{$("#chatgptWorkflow").hidden=false;toast("表示された順番で操作してください");};
+    $("#closeChatgptWorkflow").onclick=()=>{$("#chatgptWorkflow").hidden=true;};
     $("#copyPrompt").onclick=launchChatgptOrderReader;$("#importChatgptJson").onclick=importOrderFromClipboard;
     load().catch(e=>toast(`保存領域を開けません：${e.message}`));
   }
