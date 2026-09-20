@@ -3,3 +3,4 @@
 #copyPrompt{grid-column:1/-1}
 .clipboard-import-action{background:#1673d1;box-shadow:0 2px 7px #0b4f8d55;animation:none!important}
 #chatgptWorkflow .order-steps{margin:10px 0;padding:10px 10px 10px 2rem;border-radius:10px;background:#eef5f1}#chatgptWorkflow .file-button,#chatgptWorkflow .chatgpt-actions button,#chatgptWorkflow .json-import-action{transition:opacity .15s,transform .15s,box-shadow .15s}#chatgptWorkflow .next-action{outline:3px solid #ffd43b;box-shadow:0 0 0 5px #fff2a8;animation:next-action-pulse 1.4s ease-in-out infinite}#chatgptWorkflow button:disabled{filter:grayscale(1);opacity:.42!important;box-shadow:none!important}#orderPreview{display:block;max-height:180px;margin:8px auto;border-radius:8px}@keyframes next-action-pulse{50%{transform:scale(1.015)}}
+.paste-guide{margin:12px 0 7px;padding:12px;border:2px solid #e5b700;border-radius:10px;color:#2b2508;background:#fff8c9;line-height:1.55;text-align:center}.paste-guide b{font-size:1.05rem}
