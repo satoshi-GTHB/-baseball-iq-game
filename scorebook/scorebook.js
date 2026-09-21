@@ -56,7 +56,19 @@
   const gamePhase = () => orderSetup().phase;
   const offense = () => state.half === "top" ? orderSetup().topTeam : 1-orderSetup().topTeam;
   const defense = () => 1-offense();
-  const currentPitcher = () => state.pitchers[state.currentPitcherIds[defense()]];
+  function pitcherForTeam(team) {
+    const teamId=state.teams[team]?.id;
+    const appearance=[...(state.appearances||[])].reverse().find(item=>!item.exitedAt&&String(item.defensiveNumber||"")==="1"&&playerById(item.playerId)?.teamId===teamId);
+    if(appearance){
+      const id=appearance.playerId,player=playerById(id);
+      if(!state.pitchers[id])state.pitchers[id]={id,name:player?.canonicalName||"投手",pitchCount:0};
+      else if(player?.canonicalName)state.pitchers[id].name=player.canonicalName;
+      state.currentPitcherIds[team]=id;
+    }
+    const id=state.currentPitcherIds[team];
+    return state.pitchers[id]||(state.pitchers[id]={id,name:"投手",pitchCount:0});
+  }
+  const currentPitcher = () => pitcherForTeam(defense());
   const playerById = id => state.players.find(player=>player.id===id);
   const batterPlayer = () => playerById(state.lineupSlots[offense()][state.batters[offense()]].currentPlayerId);
   const batterName = () => batterPlayer()?.canonicalName || names[state.batters[offense()]];
@@ -630,8 +642,12 @@
         const slot=state.lineupSlots[team][order-1]; save();
         if(event.type!=="positionChange"&&event.type!=="exit") slot.currentPlayerId=event.incomingPlayerId;
         slot.history.push({outgoingPlayerId:event.outgoingPlayerId,incomingPlayerId:event.incomingPlayerId,type:event.type,...now});
-        const outgoing=state.appearances.findLast?.(a=>a.playerId===event.outgoingPlayerId&&!a.exitedAt); if(outgoing&&event.type!=="positionChange") outgoing.exitedAt=now;
-        if(event.incomingPlayerId) state.appearances.push({playerId:event.incomingPlayerId,enteredAt:now,exitedAt:null,battingOrder:order,defensivePositions:event.toPosition?[event.toPosition]:[]});
+        const outgoing=state.appearances.findLast?.(a=>a.playerId===event.outgoingPlayerId&&!a.exitedAt);const inheritedDefensiveNumber=String(outgoing?.defensiveNumber||"");if(outgoing&&event.type!=="positionChange") outgoing.exitedAt=now;
+        if(event.incomingPlayerId) state.appearances.push({playerId:event.incomingPlayerId,enteredAt:now,exitedAt:null,battingOrder:order,defensiveNumber:inheritedDefensiveNumber,defensivePositions:event.toPosition?[event.toPosition]:[]});
+        if(inheritedDefensiveNumber==="1"&&event.incomingPlayerId){
+          if(!state.pitchers[event.incomingPlayerId])state.pitchers[event.incomingPlayerId]={id:event.incomingPlayerId,name:playerById(event.incomingPlayerId)?.canonicalName||"投手",pitchCount:0};
+          state.currentPitcherIds[team]=event.incomingPlayerId;
+        }
         if(event.type==="pitcher") {
           if(!state.pitchers[event.incomingPlayerId]) state.pitchers[event.incomingPlayerId]={id:event.incomingPlayerId,name:playerById(event.incomingPlayerId)?.canonicalName||event.incomingPlayerId,pitchCount:0};
           state.currentPitcherIds[team]=event.incomingPlayerId;
