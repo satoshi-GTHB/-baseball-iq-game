@@ -27,7 +27,7 @@
       pitcherA: {id:"pitcherA", name:"投手A", pitchCount:0},
       pitcherB: {id:"pitcherB", name:"投手B", pitchCount:0}
     },
-    contact: null, battedBallLocation: null, fielders: [], continuationFielders: [], continuationReason: null, plateResult: null, pitchSequence: [], runnerMode: false, playMode: "plate", eventReason: null,
+    contact: null, battedBallLocation: null, fielders: [], continuationFielders: [], continuationReason: null, plateResult: null, pitchSequence: [], platePitchCount: 0, runnerMode: false, playMode: "plate", eventReason: null,
     pitchEventAvailable: false, eventPitchNumber: null, awaitingEventPitch: false, eventLinkMark: null, eventLinkCount: 0, selected: null, pendingTarget: null, decisions: [], runEvents: [], log: []
   });
 
@@ -43,6 +43,7 @@
     try { localStorage.setItem(GAME_STORAGE_KEY, JSON.stringify(state)); } catch (_) {}
   }
   let state = loadGame();
+  if(!Number.isInteger(state.platePitchCount))state.platePitchCount=state.pitchSequence?.length||0;
   const undoStack = [];
   function orderSetup() {
     if(state.teams?.[0]?.name==="チームA")state.teams[0].name="自チーム";
@@ -151,7 +152,7 @@
       tone = "out";
     }
     const id=`pa-${Date.now()}-${team}-${batterIndex}-${state.plateAppearances[team][batterIndex].length}`;
-    state.plateAppearances[team][batterIndex].push({text, tone, score:{id,inning:state.inning,half:state.half,result,contact:state.contact,battedBallLocation:state.battedBallLocation,fielders:[...state.fielders],fielderPlayerIds:state.fielders.map(number=>{const item=[...(state.appearances||[])].reverse().find(a=>!a.exitedAt&&String(a.defensiveNumber||"")===String(number)&&playerById(a.playerId)?.teamId===state.teams[defense()].id);return item?.playerId||null;}),batterPlayerId:batterPlayer()?.id||null,pitcherId:currentPitcher()?.id||null,pitches:[...(state.pitchSequence||[])],decisions:clone(state.decisions),advances:[],final:batterDecision?.result==="OUT"?"out":result==="本塁打"?"run":null,outNumber:batterDecision?.result==="OUT"?Math.min(3,state.outs+1):null}});
+    state.plateAppearances[team][batterIndex].push({text, tone, score:{id,inning:state.inning,half:state.half,result,contact:state.contact,battedBallLocation:state.battedBallLocation,fielders:[...state.fielders],fielderPlayerIds:state.fielders.map(number=>{const item=[...(state.appearances||[])].reverse().find(a=>!a.exitedAt&&String(a.defensiveNumber||"")===String(number)&&playerById(a.playerId)?.teamId===state.teams[defense()].id);return item?.playerId||null;}),batterPlayerId:batterPlayer()?.id||null,pitcherId:currentPitcher()?.id||null,pitches:[...(state.pitchSequence||[])],pitchTotal:state.platePitchCount,decisions:clone(state.decisions),advances:[],final:batterDecision?.result==="OUT"?"out":result==="本塁打"?"run":null,outNumber:batterDecision?.result==="OUT"?Math.min(3,state.outs+1):null}});
     return id;
   }
 
@@ -163,7 +164,7 @@
     render();
   }
   function resetPlay() {
-    state.balls = 0; state.strikes = 0; state.contact = null; state.battedBallLocation = null; state.fielders = []; state.continuationFielders=[];state.continuationReason=null;state.plateResult = null; state.pitchSequence = [];
+    state.balls = 0; state.strikes = 0; state.contact = null; state.battedBallLocation = null; state.fielders = []; state.continuationFielders=[];state.continuationReason=null;state.plateResult = null; state.pitchSequence = [];state.platePitchCount=0;
     state.runnerMode = false; state.playMode = "plate"; state.eventReason = null; state.pitchEventAvailable = false; state.eventPitchNumber = null; state.awaitingEventPitch = false; state.eventLinkMark = null; state.eventLinkCount = 0;
     state.selected = null; state.pendingTarget = null; state.decisions = [];
   }
@@ -211,12 +212,13 @@
       if(state.playMode!=="runnerEvent"||state.eventPitchNumber!==null)return;
       const finishAfterPitch=state.awaitingEventPitch;
       act(`${kind}＋${state.eventReason}`,()=>{
-        currentPitcher().pitchCount+=1;state.pitchEventAvailable=true;state.eventPitchNumber=currentPitcher().pitchCount;
+        currentPitcher().pitchCount+=1;state.platePitchCount+=1;state.pitchEventAvailable=true;state.eventPitchNumber=currentPitcher().pitchCount;
         state.awaitingEventPitch=false;
         state.decisions.forEach(decision=>{if(decision.pitchNumber==null)decision.pitchNumber=state.eventPitchNumber;});
         const pitchMark=pitchNotation(kind);
         const eventMark=state.eventLinkMark||(({盗塁:"S",牽制:"PK",暴投:"WP",捕逸:"PB",ボーク:"BK"})[state.eventReason]||state.eventReason),linkedPitchMark=["盗塁","暴投","捕逸"].includes(state.eventReason)?"'".repeat(state.eventLinkCount||1):`・${eventMark}`;
-        state.pitchSequence.push(`${pitchMark}${linkedPitchMark}`);
+        const terminalPitch=kind==="死球"||kind==="ボール"&&state.balls===3||!["ボール","ファウル","死球"].includes(kind)&&state.strikes===2;
+        if(!terminalPitch)state.pitchSequence.push(`${pitchMark}${linkedPitchMark}`);
         if(kind==="ボール")state.balls+=1;else if(kind==="ファウル"){if(state.strikes<2)state.strikes+=1;}else if(kind!=="死球")state.strikes+=1;
       });
       if(finishAfterPitch)finishPlay();
@@ -224,9 +226,10 @@
     }
     const buntAttempt=state.contact==="バント"&&state.fielders.length===0&&!state.plateResult;
     act(kind, () => {
-      if(!buntAttempt)currentPitcher().pitchCount += 1;
+      currentPitcher().pitchCount += 1;state.platePitchCount+=1;
       state.pitchEventAvailable = true;
-      state.pitchSequence.push(pitchNotation(kind,buntAttempt));
+      const terminalPitch=kind==="死球"||kind==="ボール"&&state.balls===3||!["ボール","ファウル","死球"].includes(kind)&&state.strikes===2;
+      if(!terminalPitch)state.pitchSequence.push(pitchNotation(kind,buntAttempt));
       if(buntAttempt){state.contact=null;state.fielders=[];state.battedBallLocation=null;}
       if (kind === "死球") { forceFirst("死球"); return; }
       if (kind === "ボール") {
@@ -242,9 +245,9 @@
   function droppedThirdStrike() {
     if (state.runnerMode) return;
     act("振り逃げ", () => {
-      currentPitcher().pitchCount += 1;
+      currentPitcher().pitchCount += 1;state.platePitchCount+=1;
       state.pitchEventAvailable = true;
-      state.pitchSequence.push("⊕");
+      state.eventPitchNumber = currentPitcher().pitchCount;
       state.strikes = 3;
       state.plateResult = "振り逃げ";
       startDecisionMode(false);
@@ -459,7 +462,8 @@
     });
     $("#batter").textContent = `${state.batters[side] + 1}番 ${batterName()}`;
     const appearances = state.plateAppearances[side][state.batters[side]];
-    $("#paHistory").innerHTML = appearances.map(pa => `<span class="pa-box pa-${pa.tone}">${escapeHtml(pa.text)}</span>`).join("");
+    const livePitches=state.pitchSequence.length?`<span class="pa-box pa-pending">投球：${state.pitchSequence.map(escapeHtml).join(" ")}</span>`:"";
+    $("#paHistory").innerHTML = appearances.map(pa => `<span class="pa-box pa-${pa.tone}">${escapeHtml(pa.text)}</span>`).join("")+livePitches;
     const awaitingEventPitch=!!state.awaitingEventPitch;
     const directionChosen=!!(state.battedBallLocation||state.fielders.length),battedEntryStarted=!state.runnerMode&&!!(directionChosen||state.contact);
     $$("[data-contact]").forEach(b => {b.classList.toggle("active", b.dataset.contact === state.contact);b.disabled=awaitingEventPitch||state.runnerMode||!directionChosen||!!state.contact;});
@@ -586,7 +590,7 @@
     $$("[data-pitch]").forEach(b => b.onclick = () => pitch(b.dataset.pitch));
     $("#droppedThirdStrike").onclick = droppedThirdStrike;
     $$("[data-run-event]").forEach(b => b.onclick = () => startRunnerEvent(b.dataset.runEvent));
-    $$("[data-contact]").forEach(b => b.onclick = () => { if (!state.runnerMode&&(state.battedBallLocation||state.fielders.length)&&!state.contact) act(b.dataset.contact, () => { currentPitcher().pitchCount += 1; state.contact=b.dataset.contact;commitDeferredResult(); }); });
+    $$("[data-contact]").forEach(b => b.onclick = () => { if (!state.runnerMode&&(state.battedBallLocation||state.fielders.length)&&!state.contact) act(b.dataset.contact, () => { currentPitcher().pitchCount += 1;state.platePitchCount+=1;state.contact=b.dataset.contact;commitDeferredResult(); }); });
     const hitButton = $('[data-result="安打"]');
     hitButton.textContent = "ヒット";
     const catchButton = $('[data-result="アウト"]');
