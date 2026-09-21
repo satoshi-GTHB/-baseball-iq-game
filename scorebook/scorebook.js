@@ -215,8 +215,8 @@
         state.awaitingEventPitch=false;
         state.decisions.forEach(decision=>{if(decision.pitchNumber==null)decision.pitchNumber=state.eventPitchNumber;});
         const pitchMark=pitchNotation(kind);
-        const eventMark=state.eventLinkMark||(({盗塁:"S",牽制:"PK",暴投:"WP",捕逸:"PB",ボーク:"BK"})[state.eventReason]||state.eventReason);
-        state.pitchSequence.push(`${pitchMark}・${eventMark}`);
+        const eventMark=state.eventLinkMark||(({盗塁:"S",牽制:"PK",暴投:"WP",捕逸:"PB",ボーク:"BK"})[state.eventReason]||state.eventReason),linkedPitchMark=["盗塁","暴投","捕逸"].includes(state.eventReason)?"'".repeat(state.eventLinkCount||1):`・${eventMark}`;
+        state.pitchSequence.push(`${pitchMark}${linkedPitchMark}`);
         if(kind==="ボール")state.balls+=1;else if(kind==="ファウル"){if(state.strikes<2)state.strikes+=1;}else if(kind!=="死球")state.strikes+=1;
       });
       if(finishAfterPitch)finishPlay();
@@ -281,7 +281,7 @@
       state.awaitingEventPitch = false;
       if(["盗塁","暴投","捕逸"].includes(reason)){state.eventLinkCount=(state.eventLinkCount||0)+1;state.eventLinkMark=`${eventSymbol}${"'".repeat(state.eventLinkCount)}`;}else state.eventLinkMark=null;
       state.selected = nextEventParticipantKey();
-      if(linkedToPitch) state.pitchSequence[state.pitchSequence.length-1]+=`・${state.eventLinkMark||eventSymbol}`;
+      if(linkedToPitch) state.pitchSequence[state.pitchSequence.length-1]+=["盗塁","暴投","捕逸"].includes(reason)?"'".repeat(state.eventLinkCount||1):`・${state.eventLinkMark||eventSymbol}`;
       state.eventPitchNumber = state.pitchEventAvailable ? currentPitcher().pitchCount : null;
     });
   }

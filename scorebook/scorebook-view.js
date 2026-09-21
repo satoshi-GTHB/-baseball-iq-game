@@ -15,7 +15,7 @@
       const old=String(pa.text||"");if(old==="三振")mark="K";else if(old==="四球"){mark="B";advance=1;}else if(old==="死球"){mark="DB";advance=1;}else if(/本$/.test(old)){mark="HR";advance=4;}else if(/3$/.test(old)){mark="③";advance=3;}else if(/2$/.test(old)){mark="②";advance=2;}else if(/安$/.test(old)){mark="∪";advance=1;}else if(/失$/.test(old)){mark="E";advance=1;}else if(/野選$/.test(old)){mark="FC";advance=1;}else if(/直$/.test(old))mark="－";else if(/飛$/.test(old))mark="∩";else mark=old;
     }
     let trajectory=mark.includes(")")||mark.includes("∪")?")":mark.includes("(")||mark.includes("∩")?"(":mark.includes("|")||mark.includes("－")?"|":"";mark=mark.replaceAll("∪","").replaceAll("∩","").replaceAll("－","");if(trajectory)mark=mark.replaceAll(trajectory,"");
-    const trajectoryX=fielders.length>1?68:76;
+    const firstFielderIndex=Math.max(0,mark.search(/[1-9]/)),trajectoryX=76-Math.max(0,mark.length-1)*4.2+firstFielderIndex*8.4;
     const later=normalizedAdvances(s.advances);
     const finalOut=s.finalOutNumber||s.outNumber;const center=s.final==="run"?"○":s.final==="left"?"ℓ":({1:"Ⅰ",2:"Ⅱ",3:"Ⅲ"})[finalOut]||"";
     return {mark,trajectory,trajectoryX,advance,pitches:s.pitches||[],out:center,run:s.final==="run",later};
