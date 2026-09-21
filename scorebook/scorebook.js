@@ -13,7 +13,7 @@
     inning: 1, half: "top", balls: 0, strikes: 0, outs: 0,
     scores: [0, 0], batters: [0, 0],
     teams: [{id:"team-away",name:"チームA"},{id:"team-home",name:"チームB"}],
-    orderSetup: { topTeam: 0, confirmed: false, warned: false, registered: [false, false], phase: "pregame" },
+    orderSetup: { topTeam: 0, confirmed: false, warned: false, registered: [false, false], rows: [[], []], phase: "pregame" },
     players: names.flatMap((name,index)=>[
       {id:`away-${index+1}`,teamId:"team-away",canonicalName:name,active:true},
       {id:`home-${index+1}`,teamId:"team-home",canonicalName:name,active:true}
@@ -50,6 +50,7 @@
       state.orderSetup = { topTeam: 0, confirmed: false, warned: false, registered: [logs.some(item=>/自チーム|チームA/.test(item)&&/オーダー/.test(item)),logs.some(item=>/相手チーム|チームB/.test(item)&&/オーダー/.test(item))], phase: "pregame" };
     }
     if (!Array.isArray(state.orderSetup.registered)) state.orderSetup.registered = [false, false];
+    if (!Array.isArray(state.orderSetup.rows)) state.orderSetup.rows = [[], []];
     if (!state.orderSetup.phase) state.orderSetup.phase = state.orderSetup.confirmed ? "playing" : "pregame";
     return state.orderSetup;
   }
@@ -610,7 +611,7 @@
         if(!playerById(id)) state.players.push({id,teamId:state.teams[team].id,canonicalName:row.playerNameRaw,uniformNumber:row.uniformNumberRaw,active:true});
         if(row.battingOrder>0){const slot=state.lineupSlots[team][row.battingOrder-1];slot.currentPlayerId=id;slot.history.push({playerId:id,enteredAt:new Date().toISOString(),position:row.positionRaw,defensiveNumber:row.defensiveNumberRaw});state.appearances.push({playerId:id,enteredAt:{inning:state.inning,half:state.half},exitedAt:null,battingOrder:row.battingOrder,defensiveNumber:row.defensiveNumberRaw,defensivePositions:[row.positionRaw]});}
       });
-      const setup=orderSetup();setup.registered[team]=true;setup.confirmed=false;setup.warned=false;setup.phase="pregame";
+      const setup=orderSetup();setup.registered[team]=true;setup.rows[team]=clone(rows);setup.confirmed=false;setup.warned=false;setup.phase="pregame";
       state.log.push(`${side === "own" ? "チームA" : "チームB"}のオーダーを登録`); render();
     },
     resetGame() {
