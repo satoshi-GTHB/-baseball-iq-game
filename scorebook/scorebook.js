@@ -580,10 +580,9 @@
     },
     allowRecordingStart() {
       const setup=orderSetup();
-      if(setup.confirmed||setup.warned)return true;
-      const proceed=window.confirm("オーダー票の2チーム設定が確定されていません。このまま試合の記録を開始しますか？\n\n「キャンセル」を押すとオーダー票へ戻れます。");
-      if(proceed){setup.warned=true;persistGame();return true;}
-      document.querySelector('[data-open-panel="orderPanel"]')?.click();return false;
+      if(setup.confirmed)return true;
+      document.querySelector('[data-open-panel="orderPanel"]')?.click();
+      return false;
     },
     setLineup(side, rows, teamName) {
       save();
