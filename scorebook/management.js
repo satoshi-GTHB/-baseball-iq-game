@@ -34,7 +34,7 @@
     $("#orderHubTeamAStatus").textContent=setup.registered?.[0]?"登録済み":"未登録";$("#orderHubTeamBStatus").textContent=setup.registered?.[1]?"登録済み":"未登録";
     $("#orderHubTeamA").classList.toggle("registered",!!setup.registered?.[0]);$("#orderHubTeamB").classList.toggle("registered",!!setup.registered?.[1]);
     $(setup.topTeam===1?'#topTeamB':'#topTeamA').checked=true;
-    const ready=!!setup.registered?.every(Boolean),confirm=$("#confirmOrderSetup");confirm.hidden=!ready;confirm.disabled=false;confirm.textContent=setup.confirmed?"メイン画面へ戻る":"プレイボール";
+    const ready=!!setup.registered?.every(Boolean),confirm=$("#confirmOrderSetup");confirm.hidden=!ready;confirm.disabled=false;confirm.textContent="プレイボール";
     $("#orderHubStatus").textContent=setup.confirmed?`${state.teams[setup.topTeam].name}が先攻、${state.teams[1-setup.topTeam].name}が後攻です`:(ready?"表・裏を確認し、「プレイボール」を押してください":"両チームのオーダーを登録してください");showPanel("orderPanel");
   }
   function openOrderEditor(side){
