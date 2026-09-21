@@ -39,6 +39,8 @@
   }
   function openOrderEditor(side){
     const panel=$("#orderPanel");panel.classList.remove("order-hub-mode","review-mode");panel.classList.add("order-editor-mode");
+    panel.querySelectorAll(".order-method-option").forEach(option=>{option.classList.remove("selected");option.querySelector("button")?.setAttribute("aria-pressed","false");});
+    $("#chatgptWorkflow").hidden=true;const reviewGuide=$("#orderReviewGuide");if(reviewGuide)reviewGuide.hidden=true;
     $(`input[name=orderSide][value="${side}"]`).checked=true;extraction=extractionForSide(side);renderExtraction();$("#imageWarnings").textContent="先発9名＋ベンチ11名（合計20名）を表示しています";$("#orderEditorTitle").textContent=side==="own"?"チームAのオーダー":"チームBのオーダー";panel.scrollTop=0;
   }
   function toast(text) { const status=$("#manageStatus");status.textContent=text;const order=$("#orderStatus");if(order&&!$("#orderPanel").hidden)order.textContent=text;clearTimeout(toastTimer);toastTimer=setTimeout(()=>{if(status.textContent===text)status.textContent="";},3500); }
