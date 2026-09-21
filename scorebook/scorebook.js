@@ -453,6 +453,7 @@
   function escapeHtml(text) {
     const span = document.createElement("span"); span.textContent = text; return span.innerHTML;
   }
+  function plateAppearanceLabel(pa){const score=pa?.score||{},result=score.result||"",fielders=score.fielders||[],rawLocation=score.battedBallLocation||fielders[0]||"",position={1:"投",2:"捕",3:"一",4:"二",5:"三",6:"遊",7:"左",8:"中",9:"右"},direction=value=>{const text=String(value);if(text==="8・9")return "右";if(text==="7・8")return "左";return position[text]||text;},hitDirection=direction(rawLocation);if(result==="単打")return /^[1-6]$/.test(String(rawLocation))?"内安":`${hitDirection}安`;if(result==="二塁打")return `${hitDirection}二`;if(result==="三塁打")return `${hitDirection}三`;if(result==="本塁打")return `${hitDirection}本`;if(result==="捕球エラー"||result==="送球エラー"){const responsible=result==="送球エラー"?(fielders.at(-2)||fielders.at(-1)):(fielders.at(-1)||fielders[0]);return `${direction(responsible)}失`;}if(result==="strikeout"||result==="三振")return "三振";if(result==="振り逃げ")return "振逃";if(result==="四球")return "四球";if(result==="死球")return "死球";if(result==="野選")return "野選";if(result==="犠打")return "犠打";if(result==="犠飛")return `${hitDirection}犠飛`;if(result==="バントアウト")return `${hitDirection}犠打`;if(result==="catch"||pa?.tone==="out"){const suffix=score.contact==="ゴロ"?"ゴ":score.contact==="ライナー"?"直":score.contact==="フライ"?"飛":"凡";return `${hitDirection}${suffix}`;}return pa?.text||result||"";}
 
   function render() {
     const side = offense();
@@ -467,8 +468,7 @@
     });
     $("#batter").textContent = `${state.batters[side] + 1}番 ${batterName()}`;
     const appearances = state.plateAppearances[side][state.batters[side]];
-    const livePitches=state.pitchSequence.length?`<span class="pa-box pa-pending">投球：${state.pitchSequence.map(escapeHtml).join(" ")}</span>`:"";
-    $("#paHistory").innerHTML = appearances.map(pa => `<span class="pa-box pa-${pa.tone}">${escapeHtml(pa.text)}</span>`).join("")+livePitches;
+    $("#paHistory").innerHTML = appearances.map(pa => `<span class="pa-box pa-${pa.tone}">（${escapeHtml(plateAppearanceLabel(pa))}）</span>`).join("");
     const awaitingEventPitch=!!state.awaitingEventPitch;
     const directionChosen=!!(state.battedBallLocation||state.fielders.length),battedEntryStarted=!state.runnerMode&&!!(directionChosen||state.contact);
     $$("[data-contact]").forEach(b => {b.classList.toggle("active", b.dataset.contact === state.contact);b.disabled=awaitingEventPitch||state.runnerMode||!directionChosen||!!state.contact;});
