@@ -329,9 +329,14 @@
     });
   }
   function errorAdvanceMark(kind) {
-    const numbers=state.continuationFielders.map(String);if(!numbers.length)return kind;
-    return kind==="送球エラー"?`${numbers[0]}E${numbers.length>1?"-"+numbers.slice(1).join("-"):""}`:`E${numbers.at(-1)}`;
+    const numbers=[...state.fielders,...(state.continuationFielders||[])].map(String);if(!numbers.length)return kind;
+    if(kind==="送球エラー"){
+      const thrower=numbers.at(-2)||numbers.at(-1),receiver=numbers.length>1?numbers.at(-1):"";
+      return `${thrower}E${receiver?`-${receiver}`:""}`;
+    }
+    return `E${numbers.at(-1)}`;
   }
+  function errorResponsibleFielder(kind){const numbers=[...state.fielders,...(state.continuationFielders||[])].map(String);return kind==="送球エラー"?(numbers.at(-2)||numbers.at(-1)||""):(numbers.at(-1)||"");}
   function needsBattedBallDetails(){return state.playMode==="plate"&&["単打","二塁打","三塁打","本塁打","catch","野選","捕球エラー","送球エラー","犠打","犠飛","バントアウト"].includes(state.plateResult);}
   function battedBallDetailsComplete(){return !needsBattedBallDetails()||!!(state.contact&&(state.battedBallLocation||state.fielders.length));}
   function finishPlay() {
@@ -422,7 +427,7 @@
     if (kind === "捕球") act("捕球アウト", () => queueBatterOut("捕球アウト", "catch", "catch", true));
     else if (kind === "野選") act("野選", () => presetBatterSafe(1, "野選"));
   }
-  function error(kind) {if(state.runnerMode){if(state.playMode!=="plate"||!state.continuationFielders.length){$("#status").textContent="先に送球した守備番号を選択してください";return;}act(`追加進塁：${errorAdvanceMark(kind)}`,()=>{state.continuationReason=kind;state.selected=null;state.pendingTarget=null;});return;}if(!state.contact)return;act(kind, () => presetBatterSafe(1, kind));}
+  function error(kind) {if(state.runnerMode){if(state.playMode!=="plate"||state.fielders.length+(state.continuationFielders?.length||0)<2){$("#status").textContent="先に送球先の守備番号を選択してください";return;}act(`追加進塁：${errorAdvanceMark(kind)}`,()=>{state.continuationReason=kind;state.selected=null;state.pendingTarget=null;});return;}if(!state.contact)return;act(kind, () => presetBatterSafe(1, kind));}
 
   function classifyPlateResult(outsBefore) {
     if (state.playMode !== "plate") return null;
@@ -498,8 +503,18 @@
       button.disabled = state.runnerMode||awaitingEventPitch||battedEntryStarted;
     });
 
-    const sequence = [state.battedBallLocation,...state.fielders,state.contact].filter(Boolean);const continuation=state.continuationFielders?.length?`／追加送球：${state.continuationFielders.join(" → ")}${state.continuationReason?` → ${errorAdvanceMark(state.continuationReason)}`:""}`:"";
-    $("#sequence").textContent = sequence.length ? `打球・守備：${sequence.join(" → ")}${continuation}` : "打球・守備：未入力";
+    const throwRoute=[state.battedBallLocation,...state.fielders,...(state.continuationFielders||[])].filter(Boolean);
+    const resultNames={catch:"アウト",捕球アウト:"アウト"};
+    const resultParts=[];
+    if(state.plateResult&&!String(state.plateResult).includes("エラー"))resultParts.push(resultNames[state.plateResult]||state.plateResult);
+    const recordedError=state.continuationReason||(String(state.plateResult||"").includes("エラー")?state.plateResult:null);
+    if(recordedError)resultParts.push(`${recordedError}：${errorResponsibleFielder(recordedError)}`);
+    const ballResult=state.contact?`${state.contact}${resultParts.length?`（${resultParts.join("／")}）`:""}`:"未入力";
+    $("#sequence").innerHTML=`打球・送球：${escapeHtml(throwRoute.join(" → ")||"未入力")}<br>打球結果：${escapeHtml(ballResult)}`;
+    const errorRoute=[...state.fielders,...(state.continuationFielders||[])].map(String),thrower=errorRoute.at(-2)||errorRoute.at(-1)||"",receiver=errorRoute.at(-1)||"";
+    const throwingErrorButton=$('[data-error="送球エラー"]'),fieldingErrorButton=$('[data-error="捕球エラー"]');
+    if(throwingErrorButton)throwingErrorButton.textContent=thrower?`投げた側 ${thrower}`:"投げた側";
+    if(fieldingErrorButton)fieldingErrorButton.textContent=receiver?`取る側 ${receiver}`:"取る側";
     $("#runnerPanel").hidden = !state.runnerMode;
     $("#finish").disabled=awaitingEventPitch||!state.runnerMode||state.pendingTarget!==null||(state.playMode==="plate"&&(!decisionFor("batter")||!battedBallDetailsComplete()))||!!(state.continuationReason&&!state.decisions.some(d=>d.reason===state.continuationReason));
     $("#judgement").hidden = state.pendingTarget === null;
@@ -528,7 +543,7 @@
       const button = document.createElement("button");
       button.className = "fielder"; button.dataset.fielder = number; button.textContent = number;
       button.style.left = `${p[0]}%`; button.style.top = `${p[1]}%`;
-      button.onclick = () => { const hasRunnerDecision=state.decisions.some(d=>d.runner.startsWith("base"));if(!state.runnerMode&&!state.contact)act(state.fielders.length||state.battedBallLocation?`送球${number}`:`打球方向${number}`,()=>state.fielders.push(+number));else if(state.runnerMode&&state.playMode==="plate"&&!state.continuationReason&&!hasRunnerDecision)act(`守備${number}`,()=>state.fielders.push(+number));else if(state.runnerMode&&state.playMode==="plate"&&state.decisions.some(d=>d.result==="SAFE"))act(`追加送球${number}`,()=>{state.continuationFielders??=[];state.continuationFielders.push(+number);}); };
+      button.onclick = () => { if(!state.runnerMode&&!state.contact)act(state.fielders.length||state.battedBallLocation?`送球${number}`:`打球方向${number}`,()=>state.fielders.push(+number));else if(state.runnerMode&&state.playMode==="plate"&&!state.continuationReason&&state.decisions.some(d=>d.result==="SAFE"))act(`追加送球${number}`,()=>{state.continuationFielders??=[];state.continuationFielders.push(+number);}); };
       holder.appendChild(button);
     });
     [["7・8",36.5,15],["8・9",63.5,15]].forEach(([label,left,top])=>{
@@ -583,9 +598,9 @@
     choiceButton.dataset.result = "野選"; choiceButton.textContent = "FC（野選）";
     $("#hitChoices > b").textContent = "ヒットの種類";
     const fieldingErrorButton = $('[data-error="捕球エラー"]');
-    fieldingErrorButton.textContent = "捕球"; fieldingErrorButton.style.whiteSpace = "nowrap";
+    fieldingErrorButton.textContent = "取る側"; fieldingErrorButton.style.whiteSpace = "nowrap";
     const throwingErrorButton = $('[data-error="送球エラー"]');
-    throwingErrorButton.textContent = "送球"; throwingErrorButton.style.whiteSpace = "nowrap";
+    throwingErrorButton.textContent = "投げた側"; throwingErrorButton.style.whiteSpace = "nowrap";
     $$(".field-controls").forEach(box => { box.style.height = "38%"; });
     $$(".field-controls button").forEach(button => {
       button.style.width = "100%";
