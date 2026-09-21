@@ -3,7 +3,7 @@
   const $ = q => document.querySelector(q);
   const uid = prefix => `${prefix}-${Date.now().toString(36)}-${crypto.getRandomValues(new Uint32Array(1))[0].toString(36)}`;
   const positions = ["投手","捕手","一塁手","二塁手","三塁手","遊撃手","左翼手","中堅手","右翼手","指名打者"];
-  let teams = [], players = [], extraction = null, rosterExtraction = null, photoUrl = null;
+  let teams = [], players = [], extraction = null, rosterExtraction = null, photoUrl = null, toastTimer = null;
 
   const normalize = value => (value || "").normalize("NFKC").toLowerCase().replace(/[\s・･.．]/g, "").replace(/[﨑]/g,"崎").replace(/[髙]/g,"高").replace(/[邊邉]/g,"辺").replace(/[ヵ-ヶ]/g, c => String.fromCharCode(c.charCodeAt(0)-0x60));
   function distance(a, b) {
@@ -27,7 +27,7 @@
     return value && ["own","opponent"].includes(value.side) && Array.isArray(value.rows) && value.rows.length<=20 && value.rows.every(row => Number.isInteger(+row.battingOrder) && +row.battingOrder>=0 && +row.battingOrder<=9 && typeof row.playerNameRaw==="string" && Array.isArray(row.warnings));
   }
   function showPanel(id) { document.querySelectorAll(".management-panel").forEach(p=>p.hidden=p.id!==id); if(id) document.body.classList.add("panel-open"); else document.body.classList.remove("panel-open"); }
-  function toast(text) { $("#manageStatus").textContent=text;const order=$("#orderStatus");if(order&&!$("#orderPanel").hidden)order.textContent=text; }
+  function toast(text) { const status=$("#manageStatus");status.textContent=text;const order=$("#orderStatus");if(order&&!$("#orderPanel").hidden)order.textContent=text;clearTimeout(toastTimer);toastTimer=setTimeout(()=>{if(status.textContent===text)status.textContent="";},3500); }
   function updateConfirmOrderState(){
     const button=$("#confirmOrder");if(!button)return;
     const starters=[...document.querySelectorAll('.extraction-row[data-order]:not([data-order="0"])')];
