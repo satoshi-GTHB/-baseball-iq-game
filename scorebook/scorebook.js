@@ -242,8 +242,12 @@
     });
   }
 
+  function canDroppedThirdStrike() {
+    return state.strikes === 2 && (state.outs === 2 || (state.outs < 2 && !state.bases[1]));
+  }
+
   function droppedThirdStrike() {
-    if (state.runnerMode) return;
+    if (state.runnerMode || !canDroppedThirdStrike()) return;
     act("振り逃げ", () => {
       currentPitcher().pitchCount += 1;state.platePitchCount+=1;
       state.pitchEventAvailable = true;
@@ -504,7 +508,9 @@
     $$("[data-pitch]").forEach(button=>button.disabled=awaitingEventPitch?!(["空振り","見逃し","ボール"].includes(button.dataset.pitch)):(battedEntryStarted||(state.runnerMode&&!runnerPitchAllowed)));
     $$("[data-result]").forEach(button=>{const pickoff=state.playMode==="runnerEvent"&&state.eventReason==="牽制";button.disabled=awaitingEventPitch||(!state.runnerMode&&!directionChosen)||(state.runnerMode&&!(button.dataset.result==="エラー"&&(pickoff||state.playMode==="plate"&&state.decisions.some(d=>d.result==="SAFE"))));});
     $$("[data-hit],[data-error],[data-judge]").forEach(button=>button.disabled=awaitingEventPitch);
-    $("#droppedThirdStrike").disabled=awaitingEventPitch||battedEntryStarted||state.runnerMode;
+    const droppedThirdStrikeAllowed=canDroppedThirdStrike();
+    $("#droppedThirdStrike").disabled=awaitingEventPitch||battedEntryStarted||state.runnerMode||!droppedThirdStrikeAllowed;
+    $("#droppedThirdStrike").title=droppedThirdStrikeAllowed?"":"2ストライクで、0・1アウト時は一塁走者なし、または2アウト時に使用できます";
     $$("[data-run-event]").forEach(button => {
       button.classList.toggle("active", state.playMode === "runnerEvent" && state.eventReason === button.dataset.runEvent);
       button.disabled = state.runnerMode||awaitingEventPitch||battedEntryStarted;
