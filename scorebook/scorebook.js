@@ -12,7 +12,7 @@
     gameDate: new Date().toLocaleDateString("sv-SE"),
     inning: 1, half: "top", balls: 0, strikes: 0, outs: 0,
     scores: [0, 0], batters: [0, 0],
-    teams: [{id:"team-away",name:"チームA"},{id:"team-home",name:"チームB"}],
+    teams: [{id:"team-away",name:"自チーム"},{id:"team-home",name:"相手チーム"}],
     orderSetup: { topTeam: 0, confirmed: false, warned: false, registered: [false, false], rows: [[], []], phase: "pregame" },
     players: names.flatMap((name,index)=>[
       {id:`away-${index+1}`,teamId:"team-away",canonicalName:name,active:true},
@@ -45,6 +45,8 @@
   let state = loadGame();
   const undoStack = [];
   function orderSetup() {
+    if(state.teams?.[0]?.name==="チームA")state.teams[0].name="自チーム";
+    if(state.teams?.[1]?.name==="チームB")state.teams[1].name="相手チーム";
     if (!state.orderSetup) {
       const logs=state.log||[];
       state.orderSetup = { topTeam: 0, confirmed: false, warned: false, registered: [logs.some(item=>/自チーム|チームA/.test(item)&&/オーダー/.test(item)),logs.some(item=>/相手チーム|チームB/.test(item)&&/オーダー/.test(item))], phase: "pregame" };
@@ -510,7 +512,7 @@
     const recordedError=state.continuationReason||(String(state.plateResult||"").includes("エラー")?state.plateResult:null);
     if(recordedError)resultParts.push(`${recordedError}：${errorResponsibleFielder(recordedError)}`);
     const ballResult=state.contact?`${state.contact}${resultParts.length?`（${resultParts.join("／")}）`:""}`:"未入力";
-    $("#sequence").innerHTML=`打球・送球：${escapeHtml(throwRoute.join(" → ")||"未入力")}<br>打球結果：${escapeHtml(ballResult)}`;
+    $("#sequence").innerHTML=`打・送球：${escapeHtml(throwRoute.join(" → ")||"未入力")}<br>打球結果：${escapeHtml(ballResult)}`;
     const errorRoute=[...state.fielders,...(state.continuationFielders||[])].map(String),thrower=errorRoute.at(-2)||errorRoute.at(-1)||"",receiver=errorRoute.at(-1)||"";
     const throwingErrorButton=$('[data-error="送球エラー"]'),fieldingErrorButton=$('[data-error="捕球エラー"]');
     if(throwingErrorButton)throwingErrorButton.textContent=thrower?`投げた側 ${thrower}`:"投げた側";
@@ -643,7 +645,7 @@
         if(row.battingOrder>0){const slot=state.lineupSlots[team][row.battingOrder-1];slot.currentPlayerId=id;slot.history.push({playerId:id,enteredAt:new Date().toISOString(),position:row.positionRaw,defensiveNumber:row.defensiveNumberRaw});state.appearances.push({playerId:id,enteredAt:{inning:state.inning,half:state.half},exitedAt:null,battingOrder:row.battingOrder,defensiveNumber:row.defensiveNumberRaw,defensivePositions:[row.positionRaw]});}
       });
       const setup=orderSetup();setup.registered[team]=true;setup.rows[team]=clone(rows);setup.confirmed=false;setup.warned=false;setup.phase="pregame";
-      state.log.push(`${side === "own" ? "チームA" : "チームB"}のオーダーを登録`); render();
+      state.log.push(`${side === "own" ? "自チーム" : "相手チーム"}のオーダーを登録`); render();
     },
     resetGame() {
       state=initial();undoStack.length=0;persistGame();render();
