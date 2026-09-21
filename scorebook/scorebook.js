@@ -502,7 +502,6 @@
   }
 
   function setup() {
-    $("#newGame").onclick=()=>{const url=new URL(location.href);url.search="";url.searchParams.set("game",`${Date.now()}`);window.open(url.toString(),"_blank","noopener");};
     $("#gameSet").onclick=()=>{if(gamePhase()!=="playing")return;save();const current=orderSetup();current.phase="finished";state.log.push("ゲームセット");render();};
     const paColorOverride = document.createElement("style");
     paColorOverride.textContent = ".pa-hit{color:#18211c!important;background:#74d9ee!important}.pa-out{color:#fff!important;background:#e44f4f!important}.game-top{align-items:start!important}.game-top #inning,.game-top #score,.batter-summary #batter{font-size:1.3rem!important;line-height:1.2!important}";
