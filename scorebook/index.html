@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="management.css?v=20260921-7">
 <link rel="stylesheet" href="chatgpt-workflow.css?v=20260921-21">
 <link rel="stylesheet" href="manual-order.css">
-<link rel="stylesheet" href="scorebook-view.css?v=20260921-2">
+<link rel="stylesheet" href="scorebook-view.css?v=20260921-3">
 </head>
 <body>
 <main class="app">
@@ -139,7 +139,7 @@
 <section id="substitutionPanel" class="management-panel" hidden><button class="panel-close" data-close-panel>×</button><h2>選手交代・守備変更</h2><form id="substitutionForm"><label>種別<select name="type"><option value="pitcher">投手交代</option><option value="pinchHitter">代打</option><option value="pinchRunner">代走</option><option value="defense">守備交代</option><option value="positionChange">守備位置変更</option><option value="exit">試合から退く</option></select></label><label>チーム<select name="side"><option value="own">自チーム</option><option value="opponent">相手チーム</option></select></label><label>打順<input name="battingOrder" type="number" min="1" max="9"></label><label>塁（代走のみ）<select name="base"><option value="">－</option><option value="1">一塁</option><option value="2">二塁</option><option value="3">三塁</option></select></label><label>交代前選手ID<input name="outgoingPlayerId"></label><label>交代後選手ID<input name="incomingPlayerId"></label><label>変更前守備<input name="fromPosition"></label><label>変更後守備<input name="toPosition"></label><button type="submit">交代を記録</button></form><p>「投手から野手へ移る」と「試合から退く」は別イベントです。再出場可否は大会規則に応じて判断してください。</p></section>
 <p id="manageStatus" role="status"></p>
 </main>
-<section id="scorebookView" class="scorebook-view" hidden aria-label="スコアブック表示"><div class="scorebook-toolbar"><button id="closeScorebook">閉じる</button><strong id="scorebookSideLabel">先攻</strong><button id="toggleScorebookSide">後攻へ</button><button id="exportScorebook">出力</button></div><p class="landscape-hint">スマホを横向きにすると見やすくなります。</p><div class="scorebook-scroll"><div id="scorebookSheet" class="scorebook-sheet"></div></div></section>
+<section id="scorebookView" class="scorebook-view" hidden aria-label="スコアブック表示"><div class="scorebook-toolbar"><div class="scorebook-toolbar-left"><button id="toggleScorebookSide">後攻へ</button><button id="openScorebookLegend">凡例</button></div><strong id="scorebookSideLabel">先攻</strong><div class="scorebook-toolbar-right"><button id="exportScorebook">出力</button><button id="closeScorebook">閉じる</button></div></div><p id="scorebookLandscapeHint" class="landscape-hint">スマホを横向きにすると見やすくなります。</p><div id="scorebookScroll" class="scorebook-scroll"><div id="scorebookSheet" class="scorebook-sheet"></div></div><div id="scorebookLegend" class="scorebook-legend" hidden><div id="scorebookLegendContent" class="scorebook-legend-content"></div></div></section>
 <link rel="stylesheet" href="compact-field.css?v=20260921-32">
 <script src="data-store.js">
 </script>
@@ -147,7 +147,7 @@
 </script>
 <script src="management.js?v=20260921-41">
 </script>
-<script src="scorebook-view.js?v=20260921-22">
+<script src="scorebook-view.js?v=20260921-23">
 </script>
 <script src="stats-export.js">
 </script>
