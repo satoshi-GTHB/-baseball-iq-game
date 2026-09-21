@@ -162,6 +162,7 @@
     }catch(e){toast(e.message);}
   }
   function setup(){
+    $("#exportRoster")?.closest(".data-actions")?.remove();$("#importRoster")?.closest(".data-actions")?.remove();
     const orderWorkflow=$("#chatgptWorkflow"),orderSteps=orderWorkflow.querySelector(".order-steps"),orderImage=$("#orderImage"),copyOrderPrompt=$("#copyPrompt"),openChatgpt=orderWorkflow.querySelector('.chatgpt-actions a[href*="chatgpt.com"]');
     const rosterMethods=$("#rosterPanel .roster-methods"),rosterManual=$("#focusRosterManual"),rosterAi=$("#showRosterPdfSteps");
     const rosterStyle=document.createElement("style");rosterStyle.textContent="#rosterPdfWorkflow{position:fixed;inset:max(16px,env(safe-area-inset-top)) 12px max(16px,env(safe-area-inset-bottom));z-index:135;width:min(520px,calc(100% - 24px));margin:auto;padding:16px;overflow:auto;border:2px solid #17623e;border-radius:16px;background:#fff;box-shadow:0 12px 50px #0009}#rosterPdfWorkflow .workflow-close{position:sticky;top:0;float:right;z-index:2;min-height:40px;padding:7px 12px;border:0;border-radius:8px;color:#fff;background:#38443d;font-weight:800}#rosterPdfWorkflow>h3{margin:8px 90px 12px 0;color:#173424}#rosterPdfWorkflow .chatgpt-actions{grid-template-columns:1fr}#rosterExtractionRows:not(:empty){margin-top:14px;padding-top:12px;border-top:3px solid #1673d1}";document.head.append(rosterStyle);

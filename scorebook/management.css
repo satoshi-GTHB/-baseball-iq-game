@@ -6,3 +6,5 @@
 #orderPanel{inset:0!important;width:min(100%,560px);max-width:560px;height:100dvh;max-height:none;margin:0 auto;padding-top:max(18px,env(safe-area-inset-top));padding-bottom:max(36px,env(safe-area-inset-bottom));overflow-x:hidden;overflow-y:auto;border-radius:0;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y}body:has(#orderPanel:not([hidden])){position:fixed;inset:0;width:100%;overflow:hidden}
 #extractionRows .extraction-row[data-order="9"]+.extraction-row[data-order="0"]{position:relative;margin-top:22px;padding-top:18px;border-top:4px solid #17623e}#extractionRows .extraction-row[data-order="9"]+.extraction-row[data-order="0"]::before{content:"控え選手";position:absolute;top:-14px;left:10px;padding:2px 9px;border-radius:999px;color:#fff;background:#17623e;font-size:.75rem;font-weight:900}
 #extractionRows .extraction-row[data-order="0"]{border-left-color:#29945f;background:#f1fbf5}
+
+#rosterPanel .data-actions{display:none!important}
