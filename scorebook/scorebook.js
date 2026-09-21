@@ -680,7 +680,11 @@
       if(event.type==="pinchRunner") {
         const base=Number(event.base); if(!base||!state.bases[base]) throw new Error("代走対象の走者がいません");
         if(event.outgoingPlayerId&&state.bases[base].playerId!==event.outgoingPlayerId) throw new Error("交代前選手が塁上走者と一致しません");
+        const slot=state.lineupSlots[team][order-1],outgoing=state.appearances.findLast?.(a=>a.playerId===event.outgoingPlayerId&&!a.exitedAt),inheritedDefensiveNumber=String(outgoing?.defensiveNumber||"");
         save(); state.bases[base].playerId=event.incomingPlayerId; state.bases[base].name=playerById(event.incomingPlayerId)?.canonicalName||state.bases[base].name;
+        if(slot){slot.currentPlayerId=event.incomingPlayerId;slot.history.push({outgoingPlayerId:event.outgoingPlayerId,incomingPlayerId:event.incomingPlayerId,type:event.type,...now});}
+        if(outgoing)outgoing.exitedAt=now;
+        state.appearances.push({playerId:event.incomingPlayerId,enteredAt:now,exitedAt:null,battingOrder:order,defensiveNumber:inheritedDefensiveNumber,defensivePositions:[]});
       } else {
         if(!order||order<1||order>9) throw new Error("打順を1～9で指定してください");
         const slot=state.lineupSlots[team][order-1]; save();

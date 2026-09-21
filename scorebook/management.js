@@ -166,25 +166,69 @@
     const active=order>=0&&!!appearance,defensiveNumber=active?String(appearance.defensiveNumber||""):"";
     return {name:player?.canonicalName||"－",uniformNumber:String(player?.uniformNumber??"－"),battingOrder:active?String(order+1):"－",defense:active?(defensiveNumber?`${defensiveNumber}（${positions[Number(defensiveNumber)-1]||"－"}）`:"－"):"－"};
   }
+  function referenceById(side,id){
+    const state=window.ScorebookGame?.snapshot(),team=side==="own"?0:1,order=state?.lineupSlots?.[team]?.findIndex(slot=>slot.currentPlayerId===id)??-1;
+    if(!id||!state?.players?.some(player=>player.id===id))throw new Error("選手を選択してください");
+    return {id,battingOrder:order>=0?order+1:null};
+  }
+  function benchPlayers(side){
+    const state=window.ScorebookGame?.snapshot(),team=side==="own"?0:1,teamId=state?.teams?.[team]?.id,used=new Set((state?.appearances||[]).map(item=>item.playerId));
+    return (state?.players||[]).filter(player=>player.teamId===teamId&&player.active!==false&&!used.has(player.id));
+  }
+  function playerSelectOptions(players){return `<option value="">選択してください</option>`+players.map(player=>`<option value="${escapeHtml(player.id)}">${escapeHtml(String(player.uniformNumber??"－"))}　${escapeHtml(player.canonicalName||"－")}</option>`).join("");}
+  function activeDefenseOptions(side){
+    const state=window.ScorebookGame?.snapshot(),team=side==="own"?0:1,teamId=state?.teams?.[team]?.id;
+    return (state?.appearances||[]).filter(item=>!item.exitedAt&&state.players?.find(player=>player.id===item.playerId)?.teamId===teamId&&/^[1-9]$/.test(String(item.defensiveNumber||""))).sort((a,b)=>Number(a.defensiveNumber)-Number(b.defensiveNumber)).map(item=>{const player=state.players.find(candidate=>candidate.id===item.playerId);return `<option value="${item.defensiveNumber}">${item.defensiveNumber}（${positions[Number(item.defensiveNumber)-1]}） ${escapeHtml(player?.canonicalName||"")}</option>`;}).join("");
+  }
+  function renderSubstitutionFields(){
+    const form=$("#substitutionForm"),role=form?.elements.role?.value||"offense";if(!form)return;const side=sideForRole(role),state=window.ScorebookGame?.snapshot(),team=side==="own"?0:1;
+    const outgoing=form.querySelector("[data-substitution-fields=outgoing]"),incoming=form.querySelector("[data-substitution-fields=incoming]");
+    if(role==="offense"){
+      outgoing.innerHTML=`<label>対象<select name="outgoingMode"><option value="batter">打者</option><option value="runner">走者</option></select></label><label class="runner-base-choice" hidden>走者のいる塁<select name="runnerBase"><option value="">選択してください</option>${[1,2,3].map(base=>`<option value="${base}" ${state?.bases?.[base]?"":"disabled"}>${base}塁${state?.bases?.[base]?"":"（走者なし）"}</option>`).join("")}</select></label>`;
+      incoming.innerHTML=`<label>控え選手<select name="incomingPlayerId">${playerSelectOptions(benchPlayers(side))}</select></label>`;
+    }else{
+      const defenseOptions=activeDefenseOptions(side);
+      outgoing.innerHTML=`<label>守備番号<select name="outgoingDefense"><option value="">選択してください</option>${defenseOptions}</select></label>`;
+      incoming.innerHTML=`<label>選手区分<select name="incomingStatus"><option value="active">出場中</option><option value="bench">ベンチ</option></select></label><label class="incoming-active-choice">守備番号<select name="incomingDefense"><option value="">選択してください</option>${defenseOptions}</select></label><label class="incoming-bench-choice" hidden>控え選手<select name="incomingPlayerId">${playerSelectOptions(benchPlayers(side))}</select></label>`;
+    }
+    updateSubstitutionPreviews();
+  }
+  function substitutionReferences(data,side){
+    const state=window.ScorebookGame?.snapshot(),team=side==="own"?0:1;
+    if(data.role==="offense"){
+      const outgoing=data.outgoingMode==="runner"?resolvePlayerReference(side,"base",data.runnerBase):referenceById(side,state?.lineupSlots?.[team]?.[state?.batters?.[team]||0]?.currentPlayerId);
+      return {outgoing,incoming:referenceById(side,data.incomingPlayerId),type:data.outgoingMode==="runner"?"pinchRunner":"pinchHitter",base:outgoing.base||""};
+    }
+    const outgoing=resolvePlayerReference(side,"defensiveNumber",data.outgoingDefense);
+    const incoming=data.incomingStatus==="bench"?referenceById(side,data.incomingPlayerId):resolvePlayerReference(side,"defensiveNumber",data.incomingDefense);
+    return {outgoing,incoming,type:data.incomingStatus==="active"?"defenseSwap":"defense",base:""};
+  }
   function updateSubstitutionPreviews(){
     const form=$("#substitutionForm");if(!form)return;const data=Object.fromEntries(new FormData(form));
     let side;try{side=sideForRole(data.role);}catch(_){return;}
     const state=window.ScorebookGame?.snapshot(),team=side==="own"?0:1,roleLabel=data.role==="defense"?"守備":"攻撃";
     const teamPreview=$("#substitutionTeamPreview");if(teamPreview)teamPreview.textContent=`対象チーム：${roleLabel}中の「${state?.teams?.[team]?.name||"－"}」`;
-    [["outgoing",data.outgoingLookupType,data.outgoingLookupValue],["incoming",data.incomingLookupType,data.incomingLookupValue]].forEach(([key,type,value])=>{
+    const references={},currentState=window.ScorebookGame?.snapshot();
+    if(data.role==="offense"){
+      try{references.outgoing=data.outgoingMode==="runner"?(data.runnerBase?resolvePlayerReference(side,"base",data.runnerBase):null):referenceById(side,currentState?.lineupSlots?.[team]?.[currentState?.batters?.[team]||0]?.currentPlayerId);}catch(_){}
+      try{references.incoming=data.incomingPlayerId?referenceById(side,data.incomingPlayerId):null;}catch(_){}
+    }else{
+      try{references.outgoing=data.outgoingDefense?resolvePlayerReference(side,"defensiveNumber",data.outgoingDefense):null;}catch(_){}
+      try{references.incoming=data.incomingStatus==="bench"?(data.incomingPlayerId?referenceById(side,data.incomingPlayerId):null):(data.incomingDefense?resolvePlayerReference(side,"defensiveNumber",data.incomingDefense):null);}catch(_){}
+    }
+    [["outgoing",references.outgoing],["incoming",references.incoming]].forEach(([key,reference])=>{
       const target=form.querySelector(`[data-player-preview="${key}"]`);if(!target)return;
-      if(!String(value||"").trim()){target.innerHTML="<span>選手を指定すると情報が表示されます</span>";return;}
-      try{const details=playerReferenceDetails(side,resolvePlayerReference(side,type,value));target.innerHTML=`<b>${escapeHtml(details.name)}</b><span>背番号：${escapeHtml(details.uniformNumber)}</span><span>打順：${escapeHtml(details.battingOrder)}</span><span>守備位置：${escapeHtml(details.defense)}</span>`;}catch(error){target.innerHTML=`<span class="preview-error">${escapeHtml(error.message)}</span>`;}
+      if(!reference){target.innerHTML="<span>選手を選択すると情報が表示されます</span>";return;}
+      const details=playerReferenceDetails(side,reference);target.innerHTML=`<b>${escapeHtml(details.name)}</b><span>背番号：${escapeHtml(details.uniformNumber)}</span><span>打順：${escapeHtml(details.battingOrder)}</span><span>守備位置：${escapeHtml(details.defense)}</span>`;
     });
   }
   function submitSubstitution(event) {
     event.preventDefault();const f=new FormData(event.currentTarget),data=Object.fromEntries(f);try{
       data.side=sideForRole(data.role);
-      const outgoing=resolvePlayerReference(data.side,data.outgoingLookupType,data.outgoingLookupValue);
-      const incoming=resolvePlayerReference(data.side,data.incomingLookupType,data.incomingLookupValue);
+      const {outgoing,incoming,type,base}=substitutionReferences(data,data.side);
       if(incoming&&incoming.id===outgoing.id)throw new Error("交代前と交代後に同じ選手は指定できません");
-      if(data.outgoingLookupType==="defensiveNumber"&&data.incomingLookupType==="defensiveNumber")window.ScorebookGame?.swapDefense(data.side,outgoing.id,incoming.id);
-      else{data.type=data.outgoingLookupType==="base"?"pinchRunner":"defense";data.base=outgoing.base||"";data.outgoingPlayerId=outgoing.id;data.incomingPlayerId=incoming.id;data.battingOrder=outgoing.battingOrder||data.battingOrder;window.ScorebookGame?.substitute(data);}
+      if(type==="defenseSwap")window.ScorebookGame?.swapDefense(data.side,outgoing.id,incoming.id);
+      else{data.type=type;data.base=base;data.outgoingPlayerId=outgoing.id;data.incomingPlayerId=incoming.id;data.battingOrder=outgoing.battingOrder;window.ScorebookGame?.substitute(data);}
       toast("交代を記録しました");showPanel(null);
     }catch(e){toast(e.message);}
   }
@@ -224,10 +268,10 @@
     $("#confirmOrderSetup").onclick=()=>{try{window.ScorebookGame?.setOrderSetup(+$("input[name=topTeam]:checked").value);toast("プレイボール。スコア入力を開始できます");showPanel(null);}catch(error){toast(error.message);}};
     document.addEventListener("click",event=>{const control=event.target.closest("#fielders button,.base,[data-pitch],[data-contact],[data-result],[data-hit],[data-error],[data-run-event],[data-judge],#droppedThirdStrike,#finish");if(control&&!window.ScorebookGame?.allowRecordingStart()){event.preventDefault();event.stopImmediatePropagation();toast("先に両チームのオーダーを登録し、「プレイボール」を押してください");}},true);
     const orderStatus=document.createElement("p");orderStatus.id="orderStatus";orderStatus.setAttribute("role","status");$("#confirmOrder").after(orderStatus);$("#confirmOrder").disabled=true;$("#extractionRows").addEventListener("input",updateConfirmOrderState);
-    $("#substitutionForm").innerHTML=`<label>攻撃／守備<select name="role"><option value="offense">攻撃</option><option value="defense">守備</option></select></label><p id="substitutionTeamPreview" class="substitution-team-preview"></p><fieldset><legend>交代前選手</legend><label>指定方法<select name="outgoingLookupType"><option value="defensiveNumber">守備番号</option><option value="battingOrder">打順</option><option value="base">塁（代走のみ）</option><option value="uniformNumber">背番号</option></select></label><label>番号<input name="outgoingLookupValue" inputmode="numeric" required></label><div class="substitution-player-preview" data-player-preview="outgoing"><span>選手を指定すると情報が表示されます</span></div></fieldset><fieldset><legend>交代後選手</legend><label>指定方法<select name="incomingLookupType"><option value="defensiveNumber">守備番号</option><option value="battingOrder">打順</option><option value="uniformNumber">背番号</option></select></label><label>番号<input name="incomingLookupValue" inputmode="numeric" required></label><div class="substitution-player-preview" data-player-preview="incoming"><span>選手を指定すると情報が表示されます</span></div></fieldset><button type="submit">交代を記録</button>`;
-    $("#substitutionForm").addEventListener("input",updateSubstitutionPreviews);$("#substitutionForm").addEventListener("change",updateSubstitutionPreviews);updateSubstitutionPreviews();
+    $("#substitutionForm").innerHTML=`<label>攻撃／守備<select name="role"><option value="offense">攻撃</option><option value="defense">守備</option></select></label><p id="substitutionTeamPreview" class="substitution-team-preview"></p><fieldset><legend>交代前選手</legend><div data-substitution-fields="outgoing"></div><div class="substitution-player-preview" data-player-preview="outgoing"><span>選手を選択すると情報が表示されます</span></div></fieldset><fieldset><legend>交代後選手</legend><div data-substitution-fields="incoming"></div><div class="substitution-player-preview" data-player-preview="incoming"><span>選手を選択すると情報が表示されます</span></div></fieldset><button type="submit">交代を記録</button>`;
+    $("#substitutionForm").addEventListener("change",event=>{if(event.target.name==="role"){renderSubstitutionFields();return;}if(event.target.name==="outgoingMode"){const runnerChoice=$("#substitutionForm .runner-base-choice");if(runnerChoice)runnerChoice.hidden=event.target.value!=="runner";}if(event.target.name==="incomingStatus"){const bench=event.target.value==="bench";$("#substitutionForm .incoming-active-choice").hidden=bench;$("#substitutionForm .incoming-bench-choice").hidden=!bench;}updateSubstitutionPreviews();});renderSubstitutionFields();
     $("#positionChoices").innerHTML=positions.map(p=>`<label><input type="checkbox" name="positions" value="${p}">${p}</label>`).join("");
-    document.querySelectorAll("[data-open-panel]").forEach(b=>b.onclick=()=>{if(b.dataset.openPanel==="orderPanel"){openOrderHub();return;}if(b.dataset.openPanel==="rosterPanel"){purgeLegacyRosterControls();rosterMethods.querySelectorAll(".order-method-option").forEach(option=>{option.classList.remove("selected");option.querySelector("button")?.setAttribute("aria-pressed","false");});$("#rosterPdfWorkflow").hidden=true;$("#rosterManualArea").hidden=true;}showPanel(b.dataset.openPanel);if(b.dataset.openPanel==="substitutionPanel")updateSubstitutionPreviews();}); document.querySelectorAll("[data-close-panel]").forEach(b=>b.onclick=()=>showPanel(null));
+    document.querySelectorAll("[data-open-panel]").forEach(b=>b.onclick=()=>{if(b.dataset.openPanel==="orderPanel"){openOrderHub();return;}if(b.dataset.openPanel==="rosterPanel"){purgeLegacyRosterControls();rosterMethods.querySelectorAll(".order-method-option").forEach(option=>{option.classList.remove("selected");option.querySelector("button")?.setAttribute("aria-pressed","false");});$("#rosterPdfWorkflow").hidden=true;$("#rosterManualArea").hidden=true;}showPanel(b.dataset.openPanel);if(b.dataset.openPanel==="substitutionPanel")renderSubstitutionFields();}); document.querySelectorAll("[data-close-panel]").forEach(b=>b.onclick=()=>showPanel(null));
     $("#saveTeam").onclick=saveTeam; $("#playerForm").onsubmit=savePlayer; $("#rosterRows").onclick=e=>{if(e.target.dataset.editPlayer)editPlayer(e.target.dataset.editPlayer);};
     $("#rosterChatgptJson").addEventListener("input",updateJsonImportButtons);$("#rosterChatgptJson").addEventListener("paste",()=>setTimeout(()=>{if($("#rosterChatgptJson").value.trim())importRosterChatgptJson();},0)); $("#chatgptJson").addEventListener("input",updateJsonImportButtons);$("#chatgptJson").addEventListener("paste",()=>setTimeout(()=>{if($("#chatgptJson").value.trim())importChatgptJson();},0)); updateJsonImportButtons();
     rosterManual.onclick=()=>{selectRosterMethod(rosterManual);$("#rosterPdfWorkflow").hidden=true;$("#rosterManualArea").hidden=false;$("#rosterManualArea").scrollIntoView({behavior:"smooth",block:"start"});toast("チーム名と選手情報を入力してください");};
