@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>野球スコアブック入力 Sprint1</title>
 <link rel="stylesheet" href="scorebook.css">
-<link rel="stylesheet" href="management.css?v=20260921-1">
+<link rel="stylesheet" href="management.css?v=20260921-2">
 <link rel="stylesheet" href="chatgpt-workflow.css?v=20260921-21">
 <link rel="stylesheet" href="manual-order.css">
 <link rel="stylesheet" href="scorebook-view.css?v=20260906-1">
@@ -31,7 +31,7 @@
 </span>
 <strong id="pitcher">投手：投手B　0球</strong>
 </div>
-<nav class="manage-nav"><button data-open-panel="rosterPanel">名簿</button><button data-open-panel="orderPanel">オーダー票</button><button data-open-panel="substitutionPanel">選手交代</button><button id="openScorebook">スコアブック表示</button></nav>
+<nav class="manage-nav"><button data-open-panel="rosterPanel">名簿</button><button id="openOrderPanel" data-open-panel="orderPanel">オーダー票</button><button data-open-panel="substitutionPanel">選手交代</button><button id="openScorebook">スコアブック表示</button></nav>
 </header>
 <style>.game-top{display:grid!important;grid-template-columns:auto minmax(58px,.7fr) minmax(145px,1.5fr);gap:8px!important;align-items:center}.game-top #score{margin:0!important;text-align:center}.batter-summary{min-width:0;text-align:right}.batter-summary #batter{display:block;font-size:.95rem;white-space:nowrap}.counts #pitcher{margin-left:0;font-size:.95rem}#paHistory{display:flex;justify-content:flex-end;gap:3px;min-height:24px;margin-top:4px;overflow-x:auto}#paHistory .pa-box{display:grid;place-items:center;flex:0 0 auto;min-width:34px;height:22px;padding:0 4px;border:1px solid #fff;border-radius:7px;color:#18211c;font-size:9px;font-weight:800;white-space:nowrap}.pa-hit{background:#74d9ee}.pa-out{background:#f2a3b6}.pa-neutral{background:#fff}</style>
 <section class="field-wrap">
@@ -126,6 +126,7 @@
 <div class="sticky">
 <button id="newGame">新規作成</button>
 <button id="exportStats">データ出力</button>
+<button id="gameSet" hidden>ゲームセット</button>
 <button id="undo">1つ戻る</button>
 </div>
 <section>
@@ -143,9 +144,9 @@
 <link rel="stylesheet" href="compact-field.css">
 <script src="data-store.js">
 </script>
-<script src="scorebook.js?v=20260921-22">
+<script src="scorebook.js?v=20260921-23">
 </script>
-<script src="management.js?v=20260921-24">
+<script src="management.js?v=20260921-25">
 </script>
 <script src="scorebook-view.js?v=20260921-21">
 </script>

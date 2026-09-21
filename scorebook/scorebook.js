@@ -13,7 +13,7 @@
     inning: 1, half: "top", balls: 0, strikes: 0, outs: 0,
     scores: [0, 0], batters: [0, 0],
     teams: [{id:"team-away",name:"チームA"},{id:"team-home",name:"チームB"}],
-    orderSetup: { topTeam: 0, confirmed: false, warned: false, registered: [false, false] },
+    orderSetup: { topTeam: 0, confirmed: false, warned: false, registered: [false, false], phase: "pregame" },
     players: names.flatMap((name,index)=>[
       {id:`away-${index+1}`,teamId:"team-away",canonicalName:name,active:true},
       {id:`home-${index+1}`,teamId:"team-home",canonicalName:name,active:true}
@@ -47,11 +47,13 @@
   function orderSetup() {
     if (!state.orderSetup) {
       const logs=state.log||[];
-      state.orderSetup = { topTeam: 0, confirmed: false, warned: false, registered: [logs.some(item=>/自チーム|チームA/.test(item)&&/オーダー/.test(item)),logs.some(item=>/相手チーム|チームB/.test(item)&&/オーダー/.test(item))] };
+      state.orderSetup = { topTeam: 0, confirmed: false, warned: false, registered: [logs.some(item=>/自チーム|チームA/.test(item)&&/オーダー/.test(item)),logs.some(item=>/相手チーム|チームB/.test(item)&&/オーダー/.test(item))], phase: "pregame" };
     }
     if (!Array.isArray(state.orderSetup.registered)) state.orderSetup.registered = [false, false];
+    if (!state.orderSetup.phase) state.orderSetup.phase = state.orderSetup.confirmed ? "playing" : "pregame";
     return state.orderSetup;
   }
+  const gamePhase = () => orderSetup().phase;
   const offense = () => state.half === "top" ? orderSetup().topTeam : 1-orderSetup().topTeam;
   const defense = () => 1-offense();
   const currentPitcher = () => state.pitchers[state.currentPitcherIds[defense()]];
@@ -480,12 +482,16 @@
     const optionalRunner=state.playMode === "plate" && state.selected?.startsWith("base") && !!decisionFor("batter");
     $("#status").textContent = state.pendingTarget !== null ? `③ ${selectedLabel}：OUT／SAFEを選択` : state.selected ? state.playMode === "runnerEvent" || optionalRunner || state.continuationReason ? `① ${selectedLabel}：変化があれば到達塁、なければ後ろの走者または確定` : `② ${selectedLabel}：到達する塁を選択` : state.continuationReason ? `${errorAdvanceMark(state.continuationReason)}：さらに動いた走者を選択してください` : state.runnerMode && state.plateResult === "strikeout" ? "三振アウト：確定を押してください" : state.runnerMode ? `① ${state.eventReason ? state.eventReason + "：" : ""}次の走者を選択、または確定` : "打球後、走者またはバッターランナーを選択できます";
     $("#undo").disabled = undoStack.length === 0;
+    const playing=gamePhase()==="playing",orderButton=$("#openOrderPanel"),gameSetButton=$("#gameSet");
+    if(orderButton){orderButton.disabled=playing;orderButton.setAttribute("aria-disabled",String(playing));orderButton.title=playing?"ゲームセット後に操作できます":"";}
+    if(gameSetButton)gameSetButton.hidden=!playing;
     $("#history").innerHTML = state.log.length ? state.log.slice(-12).reverse().map(x => `<li>${escapeHtml(x)}</li>`).join("") : "<li>まだ操作はありません</li>";
     persistGame();
   }
 
   function setup() {
     $("#newGame").onclick=()=>{const url=new URL(location.href);url.search="";url.searchParams.set("game",`${Date.now()}`);window.open(url.toString(),"_blank","noopener");};
+    $("#gameSet").onclick=()=>{if(gamePhase()!=="playing")return;save();const current=orderSetup();current.phase="finished";state.log.push("ゲームセット");render();};
     const paColorOverride = document.createElement("style");
     paColorOverride.textContent = ".pa-hit{color:#18211c!important;background:#74d9ee!important}.pa-out{color:#fff!important;background:#e44f4f!important}.game-top{align-items:start!important}.game-top #inning,.game-top #score,.batter-summary #batter{font-size:1.3rem!important;line-height:1.2!important}";
     document.head.appendChild(paColorOverride);
@@ -576,11 +582,11 @@
       if(![0,1].includes(value))throw new Error("表のチームを選択してください");
       const setup=orderSetup();
       if(!setup.registered.every(Boolean))throw new Error("両チームのオーダーを登録してください");
-      save();setup.topTeam=value;setup.confirmed=true;setup.warned=false;state.log.push(`試合前設定を確定：${state.teams[value].name}が先攻`);render();
+      save();setup.topTeam=value;setup.confirmed=true;setup.warned=false;setup.phase="playing";state.log.push(`試合前設定を確定：${state.teams[value].name}が先攻`);render();
     },
     allowRecordingStart() {
       const setup=orderSetup();
-      if(setup.confirmed)return true;
+      if(setup.phase==="playing")return true;
       document.querySelector('[data-open-panel="orderPanel"]')?.click();
       return false;
     },
@@ -593,8 +599,11 @@
         if(!playerById(id)) state.players.push({id,teamId:state.teams[team].id,canonicalName:row.playerNameRaw,uniformNumber:row.uniformNumberRaw,active:true});
         if(row.battingOrder>0){const slot=state.lineupSlots[team][row.battingOrder-1];slot.currentPlayerId=id;slot.history.push({playerId:id,enteredAt:new Date().toISOString(),position:row.positionRaw,defensiveNumber:row.defensiveNumberRaw});state.appearances.push({playerId:id,enteredAt:{inning:state.inning,half:state.half},exitedAt:null,battingOrder:row.battingOrder,defensiveNumber:row.defensiveNumberRaw,defensivePositions:[row.positionRaw]});}
       });
-      const setup=orderSetup();setup.registered[team]=true;setup.confirmed=false;setup.warned=false;
+      const setup=orderSetup();setup.registered[team]=true;setup.confirmed=false;setup.warned=false;setup.phase="pregame";
       state.log.push(`${side === "own" ? "チームA" : "チームB"}のオーダーを登録`); render();
+    },
+    resetGame() {
+      state=initial();undoStack.length=0;persistGame();render();
     },
     swapDefense(side, firstPlayerId, secondPlayerId) {
       const team=side==="own"?0:1,slots=state.lineupSlots[team];
