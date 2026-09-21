@@ -12,7 +12,8 @@
     gameDate: new Date().toLocaleDateString("sv-SE"),
     inning: 1, half: "top", balls: 0, strikes: 0, outs: 0,
     scores: [0, 0], batters: [0, 0],
-    teams: [{id:"team-away",name:"先攻"},{id:"team-home",name:"後攻"}],
+    teams: [{id:"team-away",name:"チームA"},{id:"team-home",name:"チームB"}],
+    orderSetup: { topTeam: 0, confirmed: false, warned: false, registered: [false, false] },
     players: names.flatMap((name,index)=>[
       {id:`away-${index+1}`,teamId:"team-away",canonicalName:name,active:true},
       {id:`home-${index+1}`,teamId:"team-home",canonicalName:name,active:true}
@@ -43,8 +44,16 @@
   }
   let state = loadGame();
   const undoStack = [];
-  const offense = () => state.half === "top" ? 0 : 1;
-  const defense = () => state.half === "top" ? 1 : 0;
+  function orderSetup() {
+    if (!state.orderSetup) {
+      const logs=state.log||[];
+      state.orderSetup = { topTeam: 0, confirmed: false, warned: false, registered: [logs.some(item=>/自チーム|チームA/.test(item)&&/オーダー/.test(item)),logs.some(item=>/相手チーム|チームB/.test(item)&&/オーダー/.test(item))] };
+    }
+    if (!Array.isArray(state.orderSetup.registered)) state.orderSetup.registered = [false, false];
+    return state.orderSetup;
+  }
+  const offense = () => state.half === "top" ? orderSetup().topTeam : 1-orderSetup().topTeam;
+  const defense = () => 1-offense();
   const currentPitcher = () => state.pitchers[state.currentPitcherIds[defense()]];
   const playerById = id => state.players.find(player=>player.id===id);
   const batterPlayer = () => playerById(state.lineupSlots[offense()][state.batters[offense()]].currentPlayerId);
@@ -417,7 +426,8 @@
   function render() {
     const side = offense();
     $("#inning").textContent = `${state.inning}回${state.half === "top" ? "表" : "裏"}`;
-    $("#score").textContent = `${state.scores[0]} - ${state.scores[1]}`;
+    const topTeam=orderSetup().topTeam;
+    $("#score").textContent = `${state.scores[topTeam]} - ${state.scores[1-topTeam]}`;
     $("#pitcher").textContent = `投手：${currentPitcher().name}　${currentPitcher().pitchCount}球`;
     $("#balls").textContent = state.balls; $("#strikes").textContent = state.strikes; $("#outs").textContent = state.outs;
     $$("#bsoBoard [data-count]").forEach(dot => {
@@ -561,6 +571,20 @@
 
   window.ScorebookGame = {
     snapshot: () => clone(state),
+    setOrderSetup(topTeam) {
+      const value=Number(topTeam);
+      if(![0,1].includes(value))throw new Error("表のチームを選択してください");
+      const setup=orderSetup();
+      if(!setup.registered.every(Boolean))throw new Error("両チームのオーダーを登録してください");
+      save();setup.topTeam=value;setup.confirmed=true;setup.warned=false;state.log.push(`試合前設定を確定：${state.teams[value].name}が先攻`);render();
+    },
+    allowRecordingStart() {
+      const setup=orderSetup();
+      if(setup.confirmed||setup.warned)return true;
+      const proceed=window.confirm("オーダー票の2チーム設定が確定されていません。このまま試合の記録を開始しますか？\n\n「キャンセル」を押すとオーダー票へ戻れます。");
+      if(proceed){setup.warned=true;persistGame();return true;}
+      document.querySelector('[data-open-panel="orderPanel"]')?.click();return false;
+    },
     setLineup(side, rows, teamName) {
       save();
       const team = side === "own" ? 0 : 1;
@@ -570,7 +594,8 @@
         if(!playerById(id)) state.players.push({id,teamId:state.teams[team].id,canonicalName:row.playerNameRaw,uniformNumber:row.uniformNumberRaw,active:true});
         if(row.battingOrder>0){const slot=state.lineupSlots[team][row.battingOrder-1];slot.currentPlayerId=id;slot.history.push({playerId:id,enteredAt:new Date().toISOString(),position:row.positionRaw,defensiveNumber:row.defensiveNumberRaw});state.appearances.push({playerId:id,enteredAt:{inning:state.inning,half:state.half},exitedAt:null,battingOrder:row.battingOrder,defensiveNumber:row.defensiveNumberRaw,defensivePositions:[row.positionRaw]});}
       });
-      state.log.push(`${side === "own" ? "自" : "相手"}チームのオーダーを登録`); render();
+      const setup=orderSetup();setup.registered[team]=true;setup.confirmed=false;setup.warned=false;
+      state.log.push(`${side === "own" ? "チームA" : "チームB"}のオーダーを登録`); render();
     },
     swapDefense(side, firstPlayerId, secondPlayerId) {
       const team=side==="own"?0:1,slots=state.lineupSlots[team];
