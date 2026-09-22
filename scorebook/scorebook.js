@@ -653,6 +653,7 @@
       rows.forEach((row,index)=>{
         const id=row.matchedPlayerId||`${side}-${Date.now()}-${index}`;
         if(!playerById(id)) state.players.push({id,teamId:state.teams[team].id,canonicalName:row.playerNameRaw,uniformNumber:row.uniformNumberRaw,active:true});
+        row.playerId=id;
         if(row.battingOrder>0){const slot=state.lineupSlots[team][row.battingOrder-1];slot.currentPlayerId=id;slot.history.push({playerId:id,enteredAt:new Date().toISOString(),position:row.positionRaw,defensiveNumber:row.defensiveNumberRaw});state.appearances.push({playerId:id,enteredAt:{inning:state.inning,half:state.half},exitedAt:null,battingOrder:row.battingOrder,defensiveNumber:row.defensiveNumberRaw,defensivePositions:[row.positionRaw]});}
       });
       const setup=orderSetup();setup.registered[team]=true;setup.rows[team]=clone(rows);setup.confirmed=false;setup.warned=false;setup.phase="pregame";

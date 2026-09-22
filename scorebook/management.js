@@ -173,6 +173,11 @@
   }
   function benchPlayers(side){
     const state=window.ScorebookGame?.snapshot(),team=side==="own"?0:1,teamId=state?.teams?.[team]?.id,used=new Set((state?.appearances||[]).map(item=>item.playerId));
+    const registeredRows=state?.orderSetup?.rows?.[team]||[];
+    if(registeredRows.length){
+      const candidates=registeredRows.filter(row=>Number(row.battingOrder)===0&&String(row.playerNameRaw||"").trim()).map(row=>state.players.find(player=>player.id===row.playerId&&player.teamId===teamId)||state.players.find(player=>player.teamId===teamId&&String(player.uniformNumber??"")===String(row.uniformNumberRaw??"")&&normalize(player.canonicalName)===normalize(row.playerNameRaw))).filter(Boolean);
+      return [...new Map(candidates.filter(player=>player.active!==false&&!used.has(player.id)).map(player=>[player.id,player])).values()];
+    }
     return (state?.players||[]).filter(player=>player.teamId===teamId&&player.active!==false&&!used.has(player.id));
   }
   function playerSelectOptions(players){return `<option value="">選択してください</option>`+players.map(player=>`<option value="${escapeHtml(player.id)}">${escapeHtml(String(player.uniformNumber??"－"))}　${escapeHtml(player.canonicalName||"－")}</option>`).join("");}
