@@ -10,3 +10,6 @@
 #extractionRows .extraction-row[data-order="0"]{border-left-color:#29945f;background:#f1fbf5}
 
 #rosterPanel .data-actions{display:none!important}
+
+.sticky #gameSet{border-color:#b78400;color:#161200;background:#ffd43b}
+.sticky #undo{border-color:#0b4f9d;color:#fff;background:#1976d2}
