@@ -349,7 +349,7 @@
   }
   function errorResponsibleFielder(kind){if(state.errorFielder)return String(state.errorFielder);const numbers=[...state.fielders,...(state.continuationFielders||[])].map(String);return kind==="送球エラー"?(numbers.at(-2)||numbers.at(-1)||""):(numbers.at(-1)||"");}
   function needsBattedBallDetails(){return state.playMode==="plate"&&["単打","二塁打","三塁打","本塁打","catch","野選","捕球エラー","送球エラー","犠打","犠飛","バントアウト"].includes(state.plateResult);}
-  function battedBallDetailsComplete(){const batterOut=decisionFor("batter")?.result==="OUT";if(!needsBattedBallDetails()&&!batterOut)return true;if(!state.contact)return false;if(state.plateResult==="catch"||batterOut){if(state.contact==="ゴロ")return state.fielders.length>=2;return state.fielders.length>=1;}return !!(state.battedBallLocation||state.fielders.length);}
+  function battedBallDetailsComplete(){const batterOut=!!state.contact&&decisionFor("batter")?.result==="OUT";if(!needsBattedBallDetails()&&!batterOut)return true;if(!state.contact)return false;if(state.plateResult==="catch"||batterOut){if(state.contact==="ゴロ")return state.fielders.length>=2;return state.fielders.length>=1;}return !!(state.battedBallLocation||state.fielders.length);}
   function finishPlay() {
     if (!state.runnerMode) return;
     if (state.pendingTarget !== null || (state.selected && state.playMode !== "runnerEvent" && !decisionFor("batter"))) {
