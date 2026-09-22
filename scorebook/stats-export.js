@@ -35,7 +35,7 @@
 
       const fielderIds=score.fielderPlayerIds||[];const involved=[...new Set((score.fielders||[]).map((num,i)=>fielderIds[i]||fallbackFielder(state,defenseSide,num)))];
       if(outCount||errorResults.has(result))involved.forEach(id=>get(stats,id,defenseSide,state).chances++);
-      if(errorResults.has(result)&&involved.length)get(stats,involved[involved.length-1],defenseSide,state).errors++;
+      if(errorResults.has(result)&&involved.length){const errorIndex=(score.fielders||[]).findIndex(number=>String(number)===String(score.errorFielder||"")),errorPlayer=errorIndex>=0?(fielderIds[errorIndex]||fallbackFielder(state,defenseSide,score.fielders[errorIndex])):involved[involved.length-1];get(stats,errorPlayer,defenseSide,state).errors++;}
     })));
 
     (state.runEvents||[]).forEach(run=>{const offenseSide=run.half==="top"?0:1;const defenseSide=offenseSide?0:1;const p=get(stats,run.responsiblePitcherId||state.currentPitcherIds?.[defenseSide]||`unknown-pitcher-${defenseSide}`,defenseSide,state);p.r++;if(!/エラー|失策/.test(run.cause||""))p.er++;});
