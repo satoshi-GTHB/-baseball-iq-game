@@ -349,7 +349,7 @@
   }
   function errorResponsibleFielder(kind){const numbers=[...state.fielders,...(state.continuationFielders||[])].map(String);return kind==="送球エラー"?(numbers.at(-2)||numbers.at(-1)||""):(numbers.at(-1)||"");}
   function needsBattedBallDetails(){return state.playMode==="plate"&&["単打","二塁打","三塁打","本塁打","catch","野選","捕球エラー","送球エラー","犠打","犠飛","バントアウト"].includes(state.plateResult);}
-  function battedBallDetailsComplete(){if(!needsBattedBallDetails())return true;if(!state.contact)return false;if(state.plateResult==="catch"){if(state.contact==="ゴロ")return state.fielders.length>=2;return state.fielders.length>=1;}return !!(state.battedBallLocation||state.fielders.length);}
+  function battedBallDetailsComplete(){const batterOut=decisionFor("batter")?.result==="OUT";if(!needsBattedBallDetails()&&!batterOut)return true;if(!state.contact)return false;if(state.plateResult==="catch"||batterOut){if(state.contact==="ゴロ")return state.fielders.length>=2;return state.fielders.length>=1;}return !!(state.battedBallLocation||state.fielders.length);}
   function finishPlay() {
     if (!state.runnerMode) return;
     if (state.pendingTarget !== null || (state.selected && state.playMode !== "runnerEvent" && !decisionFor("batter"))) {
@@ -451,6 +451,7 @@
       if (batterDecision?.result === "OUT") return "バントアウト";
     }
     if (state.contact === "フライ" && outsBefore < 2 && batterDecision?.result === "OUT" && runnerDecisions.some(d => d.result === "SAFE" && d.to === 0)) return "犠飛";
+    if (batterDecision?.result === "OUT") return "catch";
     return state.plateResult;
   }
 
@@ -475,7 +476,7 @@
     $("#paHistory").innerHTML = appearances.map(pa => `<span class="pa-box pa-${pa.tone}">（${escapeHtml(plateAppearanceLabel(pa))}）</span>`).join("");
     const awaitingEventPitch=!!state.awaitingEventPitch;
     const directionChosen=!!(state.battedBallLocation||state.fielders.length),resultChosen=!!state.plateResult,battedEntryStarted=!state.runnerMode&&!!(directionChosen||state.contact);
-    $$("[data-contact]").forEach(b => {b.classList.toggle("active", b.dataset.contact === state.contact);b.disabled=awaitingEventPitch||state.runnerMode||!directionChosen||!resultChosen||!!state.contact;});
+    $$("[data-contact]").forEach(b => {b.classList.toggle("active", b.dataset.contact === state.contact);b.disabled=awaitingEventPitch||state.runnerMode||!directionChosen||!!state.contact;});
     $$(".fielder").forEach(b => {const pickoff=state.playMode==="runnerEvent"&&state.eventReason==="牽制";b.classList.toggle("selected", state.fielders.includes(+b.dataset.fielder)||state.continuationFielders?.includes(+b.dataset.fielder));b.disabled=awaitingEventPitch||state.runnerMode&&!pickoff||(!state.runnerMode&&resultChosen);});
     $$(".field-gap").forEach(b => {b.classList.toggle("selected", b.dataset.location === state.battedBallLocation);b.disabled=awaitingEventPitch||state.runnerMode||resultChosen||!!state.contact||state.fielders.length>0;});
 
@@ -507,7 +508,8 @@
     const runnerPitchAllowed=state.runnerMode&&state.playMode==="runnerEvent"&&state.eventPitchNumber===null;
     $$("[data-pitch]").forEach(button=>button.disabled=awaitingEventPitch?!(["空振り","見逃し","ボール"].includes(button.dataset.pitch)):(battedEntryStarted||(state.runnerMode&&!runnerPitchAllowed)));
     $$("[data-result]").forEach(button=>{const pickoff=state.playMode==="runnerEvent"&&state.eventReason==="牽制";button.disabled=awaitingEventPitch||(!state.runnerMode&&(!directionChosen||resultChosen))||(state.runnerMode&&!(button.dataset.result==="エラー"&&(pickoff||state.playMode==="plate"&&state.decisions.some(d=>d.result==="SAFE"))));});
-    $$("[data-hit],[data-error],[data-judge]").forEach(button=>button.disabled=awaitingEventPitch);
+    $$("[data-hit],[data-error]").forEach(button=>button.disabled=awaitingEventPitch);
+    $$("[data-judge]").forEach(button=>{const implicitBatterOut=state.selected==="batter"&&!state.plateResult;button.disabled=awaitingEventPitch||(implicitBatterOut&&button.dataset.judge==="SAFE");});
     const droppedThirdStrikeAllowed=canDroppedThirdStrike();
     $("#droppedThirdStrike").disabled=awaitingEventPitch||battedEntryStarted||state.runnerMode||!droppedThirdStrikeAllowed;
     $("#droppedThirdStrike").title=droppedThirdStrikeAllowed?"":"2ストライクで、0・1アウト時は一塁走者なし、または2アウト時に使用できます";
@@ -535,7 +537,7 @@
     $("#hitChoices").hidden = true; $("#errorChoices").hidden = true;
     const selectedLabel = state.selected === "batter" ? "バッターランナー" : state.selected ? `${Number(state.selected.slice(4))}塁走者` : "";
     const optionalRunner=state.playMode === "plate" && state.selected?.startsWith("base") && !!decisionFor("batter");
-    $("#status").textContent = awaitingEventPitch ? "投球は？　空振り・見送り・ボールから選択してください" : state.pendingTarget !== null ? `③ ${selectedLabel}：OUT／SAFEを選択` : state.selected ? state.playMode === "runnerEvent" || optionalRunner || state.continuationReason ? `① ${selectedLabel}：変化があれば到達塁、なければ後ろの走者または確定` : `② ${selectedLabel}：到達する塁を選択` : state.continuationReason ? `${errorAdvanceMark(state.continuationReason)}：さらに動いた走者を選択してください` : state.runnerMode && state.plateResult === "strikeout" ? "三振アウト：確定を押してください" : state.runnerMode ? `① ${state.eventReason ? state.eventReason + "：" : ""}次の走者を選択、または確定` : !directionChosen ? "① 打球方向の守備番号を選択してください" : !resultChosen ? "② 必要なら送球先を選び、打球結果を選択してください" : !state.contact ? "③ 打球種類を選択してください" : "走者またはバッターランナーを選択してください";
+    $("#status").textContent = awaitingEventPitch ? "投球は？　空振り・見送り・ボールから選択してください" : state.pendingTarget !== null ? `③ ${selectedLabel}：OUT／SAFEを選択` : state.selected ? state.playMode === "runnerEvent" || optionalRunner || state.continuationReason ? `① ${selectedLabel}：変化があれば到達塁、なければ後ろの走者または確定` : `② ${selectedLabel}：到達する塁を選択` : state.continuationReason ? `${errorAdvanceMark(state.continuationReason)}：さらに動いた走者を選択してください` : state.runnerMode && state.plateResult === "strikeout" ? "三振アウト：確定を押してください" : state.runnerMode ? `① ${state.eventReason ? state.eventReason + "：" : ""}次の走者を選択、または確定` : !directionChosen ? "① 打球方向の守備番号を選択してください" : !state.contact ? resultChosen ? "③ 打球種類を選択してください" : "② 必要なら送球先を選び、セーフならヒット／FC／エラー、アウトなら打球種類を選択してください" : "バッターランナーの到達塁を選択してください";
     $("#undo").disabled = undoStack.length === 0;
     const playing=gamePhase()==="playing",finished=gamePhase()==="finished",orderButton=$("#openOrderPanel"),gameSetButton=$("#gameSet"),exportButton=$("#exportStats"),undoButton=$("#undo");
     if(orderButton){orderButton.disabled=playing;orderButton.setAttribute("aria-disabled",String(playing));orderButton.title=playing?"ゲームセット後に操作できます":"";}
@@ -602,11 +604,9 @@
     $$("[data-pitch]").forEach(b => b.onclick = () => pitch(b.dataset.pitch));
     $("#droppedThirdStrike").onclick = droppedThirdStrike;
     $$("[data-run-event]").forEach(b => b.onclick = () => startRunnerEvent(b.dataset.runEvent));
-    $$("[data-contact]").forEach(b => b.onclick = () => { if (!state.runnerMode&&(state.battedBallLocation||state.fielders.length)&&state.plateResult&&!state.contact) act(b.dataset.contact, () => { currentPitcher().pitchCount += 1;state.platePitchCount+=1;state.contact=b.dataset.contact;commitDeferredResult(); }); });
+    $$("[data-contact]").forEach(b => b.onclick = () => { if (!state.runnerMode&&(state.battedBallLocation||state.fielders.length)&&!state.contact) act(b.dataset.contact, () => { currentPitcher().pitchCount += 1;state.platePitchCount+=1;state.contact=b.dataset.contact;if(state.plateResult)commitDeferredResult();else{startDecisionMode();state.selected="batter";} }); });
     const hitButton = $('[data-result="安打"]');
     hitButton.textContent = "ヒット";
-    const catchButton = $('[data-result="アウト"]');
-    catchButton.dataset.result = "捕球"; catchButton.textContent = "アウト";
     const choiceButton = $('[data-result="セーフ"]');
     choiceButton.dataset.result = "野選"; choiceButton.textContent = "FC（野選）";
     $("#hitChoices > b").textContent = "ヒットの種類";
