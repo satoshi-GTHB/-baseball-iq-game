@@ -1,7 +1,6 @@
 (() => {
   "use strict";
 
-  const names = ["山田", "佐藤", "鈴木", "高橋", "田中", "伊藤", "渡辺", "中村", "小林"];
   const fielders = {1:[50,60],2:[50,96],3:[66,44],4:[60,30],5:[34,44],6:[40,30],7:[23,23],8:[50,7],9:[77,23]};
   const basePositions = {0:[50,83.5],1:[72,51],2:[50,21.5],3:[28.5,51]};
   const $ = q => document.querySelector(q);
@@ -14,18 +13,15 @@
     scores: [0, 0], batters: [0, 0],
     teams: [{id:"team-away",name:"自チーム"},{id:"team-home",name:"相手チーム"}],
     orderSetup: { topTeam: 0, confirmed: false, warned: false, registered: [false, false], rows: [[], []], phase: "pregame" },
-    players: names.flatMap((name,index)=>[
-      {id:`away-${index+1}`,teamId:"team-away",canonicalName:name,active:true},
-      {id:`home-${index+1}`,teamId:"team-home",canonicalName:name,active:true}
-    ]),
-    lineupSlots: [0,1].map(team=>names.map((name,index)=>({teamId:team?"team-home":"team-away",battingOrder:index+1,currentPlayerId:`${team?"home":"away"}-${index+1}`,history:[]}))),
+    players: [],
+    lineupSlots: [0,1].map(team=>Array.from({length:9},(_,index)=>({teamId:team?"team-home":"team-away",battingOrder:index+1,currentPlayerId:null,history:[]}))),
     appearances: [], pitcherAppearances: [], substitutionEvents: [],
     plateAppearances: [Array.from({length:9}, () => []), Array.from({length:9}, () => [])],
     bases: [null, null, null, null],
     currentPitcherIds: ["pitcherA", "pitcherB"],
     pitchers: {
-      pitcherA: {id:"pitcherA", name:"投手A", pitchCount:0},
-      pitcherB: {id:"pitcherB", name:"投手B", pitchCount:0}
+      pitcherA: {id:"pitcherA", name:"未登録", pitchCount:0},
+      pitcherB: {id:"pitcherB", name:"未登録", pitchCount:0}
     },
     contact: null, battedBallLocation: null, fielders: [], continuationFielders: [], continuationReason: null, errorFielder: null, plateResult: null, pitchSequence: [], platePitchCount: 0, runnerMode: false, playMode: "plate", eventReason: null,
     pitchEventAvailable: false, eventPitchNumber: null, awaitingEventPitch: false, eventLinkMark: null, eventLinkCount: 0, selected: null, pendingTarget: null, decisions: [], runEvents: [], log: []
@@ -36,6 +32,7 @@
   function loadGame() {
     try {
       const saved = JSON.parse(localStorage.getItem(GAME_STORAGE_KEY));
+      if(saved&&saved.teams&&saved.plateAppearances&&!saved.orderSetup?.registered?.some(Boolean)&&saved.players?.every(player=>/^(away|home)-[1-9]$/.test(player.id)&&!player.uniformNumber)){saved.players=[];saved.lineupSlots=[0,1].map(team=>Array.from({length:9},(_,index)=>({teamId:team?"team-home":"team-away",battingOrder:index+1,currentPlayerId:null,history:[]})));saved.pitchers={pitcherA:{id:"pitcherA",name:"未登録",pitchCount:0},pitcherB:{id:"pitcherB",name:"未登録",pitchCount:0}};}
       return saved && saved.teams && saved.plateAppearances ? saved : initial();
     } catch (_) { return initial(); }
   }
@@ -75,7 +72,7 @@
   const currentPitcher = () => pitcherForTeam(defense());
   const playerById = id => state.players.find(player=>player.id===id);
   const batterPlayer = () => playerById(state.lineupSlots[offense()][state.batters[offense()]].currentPlayerId);
-  const batterName = () => batterPlayer()?.canonicalName || names[state.batters[offense()]];
+  const batterName = () => batterPlayer()?.canonicalName || "未登録";
   const makeBatterRunner = scoreId => ({
     playerId: batterPlayer()?.id || null,
     name: batterName(),
@@ -542,7 +539,7 @@
     $("#status").textContent = awaitingEventPitch ? "投球は？　空振り・見送り・ボールから選択してください" : awaitingSafeResult ? "バッターランナーの結果をヒット／FC／エラーから選択してください" : state.pendingTarget !== null ? `③ ${selectedLabel}：OUT／SAFEを選択` : state.selected ? state.playMode === "runnerEvent" || optionalRunner || state.continuationReason ? `① ${selectedLabel}：元の塁を含む到達塁を選択してください` : `② ${selectedLabel}：到達する塁を選択` : state.continuationReason ? `${errorAdvanceMark(state.continuationReason)}：さらに動いた走者を選択してください` : state.runnerMode&&state.contact&&!batterDecision ? "バッターランナーを含む未入力の走者を選択してください" : unresolvedRunners ? "塁上の走者を選び、元の塁を含む最後にプレーした塁とOUT／SAFEを入力してください" : state.runnerMode && state.plateResult === "strikeout" ? "三振アウト：確定を押してください" : state.runnerMode ? `① ${state.eventReason ? state.eventReason + "：" : ""}次の走者を選択、または確定` : !directionChosen ? "① 打球方向の守備番号を選択してください" : !state.contact ? "② 必要なら送球先を選び、打球種類を選択してください" : "バッターランナーの到達塁を選択してください";
     $("#undo").disabled = undoStack.length === 0;
     const playing=gamePhase()==="playing",finished=gamePhase()==="finished",orderButton=$("#openOrderPanel"),gameSetButton=$("#gameSet"),exportButton=$("#exportStats"),undoButton=$("#undo");
-    if(orderButton){orderButton.disabled=playing;orderButton.setAttribute("aria-disabled",String(playing));orderButton.title=playing?"ゲームセット後に操作できます":"";}
+    if(orderButton){const orderRequired=!orderSetup().registered.every(Boolean);orderButton.disabled=playing;orderButton.setAttribute("aria-disabled",String(playing));orderButton.classList.toggle("order-required",orderRequired&&!playing);orderButton.title=playing?"ゲームセット後に操作できます":orderRequired?"まず両チームのオーダーを登録してください":"";if(orderRequired&&!playing)$("#status").textContent="まず両チームのオーダーを登録してください";}
     if(gameSetButton)gameSetButton.hidden=!playing;
     if(exportButton)exportButton.hidden=!finished;
     if(undoButton)undoButton.hidden=finished;

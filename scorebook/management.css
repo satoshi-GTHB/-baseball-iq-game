@@ -13,3 +13,4 @@
 
 .sticky #gameSet{border-color:#b78400;color:#161200;background:#ffd43b}
 .sticky #undo{border-color:#0b4f9d;color:#fff;background:#1976d2}
+.manage-nav #openOrderPanel.order-required{border-color:#a87500;color:#161200;background:#ffd43b;box-shadow:0 0 0 3px #ffe98a66}
