@@ -25,9 +25,62 @@
     return {mark,trajectory,trajectoryX,trajectoryBelow:s.contact==="ゴロ"&&trajectory===")",advance,pitches,pitchTotal,out:center,run:s.final==="run",later};
   }
   function symbolCell(pa){const info=symbolInfo(pa);const pts=[[50,60],[72,35],[50,10],[28,35],[50,60]];const lines=Array.from({length:Math.min(4,info.advance)},(_,i)=>`<line x1="${pts[i][0]}" y1="${pts[i][1]}" x2="${pts[i+1][0]}" y2="${pts[i+1][1]}"/>`).join("");const positions={"1-2":[80,21],"2-3":[35,18],"3-0":[24,55]};const routes={"1-3":[[86,7],[20,7]],"1-0":[[86,7],[20,7],[20,64]],"2-0":[[50,7],[20,7],[20,64]]};const later=(info.later||[]).map((a,i)=>{const p=positions[`${a.from}-${a.to}`]||[50,35];const distance=(a.to-a.from+4)%4;if(a.multiBase||distance>=2){const route=routes[`${a.from}-${a.to}`]||[[p[0],p[1]],[20,64]];const label=a.from===1?[75,19]:[66,17];return `<polyline class="later-arrow" points="${route.map(point=>point.join(",")).join(" ")}" marker-end="url(#runner-advance-arrow)"/><text class="advance-mark" x="${label[0]}" y="${label[1]+i*9}">${esc(a.mark)}</text>`;}return `<text class="advance-mark" x="${p[0]}" y="${p[1]}">${esc(a.mark)}</text>`}).join("");const pitchStep=info.pitches.length>1?Math.min(9,48/(info.pitches.length-1)):9,pitches=info.pitches.map((p,i)=>`<tspan x="6" y="${7+i*pitchStep}">${esc(p)}</tspan>`).join("");const tx=info.trajectoryX||76,ty=info.trajectoryBelow?67:47,markY=info.trajectoryBelow?57:65;return `<svg class="score-symbol" viewBox="0 0 90 70" role="img" aria-label="${esc(pa?.text||info.mark||"未記入")}"><defs><marker id="runner-advance-arrow" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0 L6 3 L0 6 Z"/></marker></defs><g class="cell-guides"><line x1="14" y1="0" x2="14" y2="70"/><path d="M50 10 L72 35 L50 60 L28 35 Z"/><line x1="50" y1="0" x2="50" y2="10"/><line x1="72" y1="35" x2="90" y2="35"/><line x1="50" y1="60" x2="50" y2="70"/><line x1="14" y1="35" x2="28" y2="35"/></g><g class="advance ${info.advance?"reached":""}">${lines}</g>${later}<text class="pitch-seq">${pitches}</text><text class="pitch-total" x="12" y="69">${info.pitches.length||""}</text><text class="trajectory" x="${tx}" y="${ty}" dominant-baseline="middle" transform="rotate(90 ${tx} ${ty})">${esc(info.trajectory)}</text><text class="play-mark" x="76" y="${markY}">${esc(info.mark)}</text><text class="out-mark" x="50" y="41">${esc(info.out)}</text></svg>`;}
-  function buildLegend(){const target=$("#scorebookLegendContent");if(target.dataset.ready)return;const example=(label,description,score)=>`<div class="legend-cell-example">${symbolCell({text:label,score})}<div><b>${esc(label)}</b><br><small>${esc(description)}</small></div></div>`;target.innerHTML=`<div class="legend-column"><section class="legend-section"><h3>投球イベント</h3><table class="legend-table"><tbody><tr><th>－</th><td>ボール</td></tr><tr><th>○</th><td>見逃し</td></tr><tr><th>⊕</th><td>空振り</td></tr><tr><th>V</th><td>ファウル</td></tr><tr><th>◎</th><td>バント空振り</td></tr><tr><th>△</th><td>バントファウル</td></tr><tr><th>DB</th><td>死球</td></tr><tr><th>K／ꓘ</th><td>三振／振り逃げ</td></tr><tr><th>WP・PB</th><td>暴投・捕逸（投球と走者の同時記録は ’ で対応）</td></tr></tbody></table></section><section class="legend-section"><h3>送球イベント</h3><table class="legend-table"><tbody><tr><th>1～9</th><td>投手、捕手、一塁手、二塁手、三塁手、遊撃手、左翼手、中堅手、右翼手</td></tr><tr><th>5-3</th><td>三塁手から一塁手への送球</td></tr><tr><th>8-6</th><td>中堅手から遊撃手への送球</td></tr><tr><th>7・8</th><td>左翼手と中堅手の間に落ちた打球</td></tr><tr><th>8・9</th><td>中堅手と右翼手の間に落ちた打球</td></tr></tbody></table></section><section class="legend-section"><h3>エラー</h3><table class="legend-table"><tbody><tr><th>E5</th><td>三塁手の捕球エラー</td></tr><tr><th>6E-3</th><td>遊撃手の送球エラーなど、送球経路と責任守備を記録</td></tr><tr><th>FC</th><td>野手選択</td></tr><tr><th>WP</th><td>暴投</td></tr><tr><th>PB</th><td>捕逸</td></tr><tr><th>BK</th><td>ボーク</td></tr></tbody></table></section></div><div class="legend-column"><section class="legend-section"><h3>セル内の記載方法</h3>${example("未記入","薄いひし形は各塁、左欄は投球記号の記載位置です",{})}${example("ゴロアウト","右下に最初の守備番号・送球経路を記載し、その上にゴロ記号を置きます",{result:"out",contact:"ゴロ",fielders:[5,3],final:"out",outNumber:1})}${example("フライアウト","右下に捕球した守備番号、その上にフライ記号を記載します",{result:"catch",contact:"フライ",fielders:[7],final:"out",outNumber:2})}${example("単打","打者の到達塁まで赤線を引き、右下に打球方向と結果を記載します",{result:"単打",contact:"ゴロ",battedBallLocation:8,fielders:[8]})}${example("後続打者で進塁","ひし形の外側へ（打者番号）を記載し、複数進塁は矢印で結びます",{result:"単打",contact:"ゴロ",battedBallLocation:9,fielders:[9],advances:[{from:1,to:3,mark:"3",multiBase:true}]})}${example("得点・アウト・残塁","中央に○＝得点、Ⅰ～Ⅲ＝アウト数、ℓ＝残塁を記載します",{result:"単打",contact:"ゴロ",fielders:[8],final:"run"})}</section></div>`;target.dataset.ready="true";}
-  function addSacrificeLegend(){if($("#sacrificeLegend"))return;const column=$("#scorebookLegendContent .legend-column:first-child");column?.insertAdjacentHTML("beforeend",`<section id="sacrificeLegend" class="legend-section"><h3>犠牲打の記号</h3><table class="legend-table"><tbody><tr><th>◇</th><td>犠打・犠飛など、打者がアウトになる代わりに走者を進めた犠牲打を示します。</td></tr><tr><th>◇5-3</th><td>三塁手が処理して一塁へ送球した犠打です。</td></tr><tr><th>◇7</th><td>左翼手が捕球した犠飛です。</td></tr></tbody></table></section>`);}
-  function showLegend(show){legendVisible=show;$("#scorebookLegend").hidden=!show;$("#scorebookScroll").hidden=show;$("#scorebookLandscapeHint").hidden=show;const button=$("#openScorebookLegend");button.textContent=show?"凡例を閉じる":"凡例";button.setAttribute("aria-pressed",String(show));if(show){buildLegend();addSacrificeLegend();}}
+  function buildLegend(){
+    const target=$("#scorebookLegendContent");
+    if(target.dataset.ready)return;
+    const rows=items=>items.map(([mark,text])=>`<tr><th>${esc(mark)}</th><td>${esc(text)}</td></tr>`).join("");
+    const section=(title,items)=>`<section class="legend-section"><h3>${esc(title)}</h3><table class="legend-table"><tbody>${rows(items)}</tbody></table></section>`;
+    const example=(label,description,score)=>`<div class="legend-cell-example">${symbolCell({text:label,score})}<div><b>${esc(label)}</b><br><small>${esc(description)}</small></div></div>`;
+    const pitching=[["－","ボール"],["○","見送り（見逃しストライク）"],["⊕","空振り"],["V","ファウル"],["◎","バント空振り"],["△","バントファウル"],["B","四球。最後のボール記号は書かず、球数だけ1球加算"],["DB","死球。最後の投球記号は書かず、球数だけ1球加算"],["K","三振。最後のストライク記号は書かず、球数だけ1球加算"],["ꓘ","振り逃げ"],["左下の数字","その打席の総投球数"]];
+    const batted=[["）","ゴロ。最初に処理した守備番号の上に縦書きで表示"],["（","フライ。捕球した守備番号の上に縦書きで表示"],["｜","ライナー。捕球した守備番号の上に表示"],["BT","バント"],["T","7・8・9へのフライ単打（ポテンヒット）"],["◇","犠打・犠飛"]];
+    const fielding=[["1～9","投手、捕手、一塁手、二塁手、三塁手、遊撃手、左翼手、中堅手、右翼手"],["5-3","三塁手から一塁手への送球"],["6-4-3","捕球・送球した順番"],["7・8","左翼手と中堅手の間に落ちた打球"],["8・9","中堅手と右翼手の間に落ちた打球"],["FC","野手選択"]];
+    const hits=[["安打","打球方向と打球記号を表示し、到達塁まで線を引く"],["②","二塁打"],["③","三塁打"],["HR","本塁打"],["7・8／8・9","外野手の間への単打はTを付けない"]];
+    const runners=[["S","盗塁"],["CS","盗塁死"],["PO","牽制死"],["BK","ボーク"],["WP","暴投"],["PB","捕逸"],["S’／WP’／PB’","同じ投球に対応する盗塁・暴投・捕逸"],["（打者番号）","後続打者の結果による進塁"],["矢印","2ベース以上の進塁"],["記号なし","元の塁でSAFEとなり進塁しなかった場合"]];
+    const interference=[["IF","打撃妨害。打者は一塁へ進み、詰まった走者も押し出し"],["OB","走塁妨害。対象者と押し出される走者が1ベース進塁"],["IP-6","守備妨害。対象者をアウトとし、妨害された守備番号を付記"]];
+    const errors=[["5E","5番の捕球エラー"],["8E-6","8番の送球エラー。送球順を維持"],["8-6E","6番の捕球エラー"],["6-4E-3","中継した4番のエラー"],["Eの位置","「誰のエラー？」で選択した守備番号へ付ける"]];
+    const center=[["○","得点"],["Ⅰ・Ⅱ・Ⅲ","そのイニングのアウト順"],["ℓ","三アウト時の残塁"]];
+    const changes=[["H","代打"],["R","代走"],["守備番号","守備交代"],["2オモテ／3ウラ","交代選手が出場した時点"]];
+    target.innerHTML=`
+      <div class="legend-column">
+        ${section("投球記号",pitching)}
+        ${section("打球種類",batted)}
+        ${section("守備番号・送球",fielding)}
+        ${section("安打・出塁",hits)}
+        ${section("走者イベント",runners)}
+        ${section("妨害イベント",interference)}
+        ${section("エラー",errors)}
+        ${section("セル中央",center)}
+        ${section("選手交代",changes)}
+      </div>
+      <div class="legend-column">
+        <section class="legend-section"><h3>セル内の記載例</h3>
+          ${example("未記入","薄いひし形は各塁、左端は投球記号、左下は総投球数です",{})}
+          ${example("三振","最終ストライクの記号は省略し、総投球数には加算します",{result:"strikeout",pitches:["○","－","⊕"],pitchTotal:4,final:"out",outNumber:1})}
+          ${example("四球","Bと一塁までの線を記載します",{result:"四球",pitches:["－","－","○"],pitchTotal:4})}
+          ${example("ゴロアウト","捕球・送球順を右下へ置き、ゴロ記号を最初の守備番号の上へ置きます",{result:"catch",contact:"ゴロ",fielders:[5,3],final:"out",outNumber:1})}
+          ${example("フライアウト","捕球した守備番号とフライ記号を記載します",{result:"catch",contact:"フライ",fielders:[7],final:"out",outNumber:2})}
+          ${example("ライナーアウト","捕球した守備番号とライナー記号を記載します",{result:"catch",contact:"ライナー",fielders:[6],final:"out",outNumber:3})}
+          ${example("単打","打球方向・打球種類と一塁までの線を記載します",{result:"単打",contact:"ゴロ",battedBallLocation:8,fielders:[8]})}
+          ${example("二塁打","二塁まで線を引き、②を記載します",{result:"二塁打",contact:"ライナー",battedBallLocation:9,fielders:[9]})}
+          ${example("三塁打","三塁まで線を引き、③を記載します",{result:"三塁打",contact:"ゴロ",battedBallLocation:"8・9",fielders:[9]})}
+          ${example("本塁打","ダイヤモンドを一周させ、HRを記載します",{result:"本塁打",contact:"フライ",battedBallLocation:9,fielders:[9],final:"run"})}
+          ${example("野手選択","FCと守備経路を記載します",{result:"野選",contact:"ゴロ",fielders:[6,4]})}
+          ${example("送球エラー","責任守備番号へEを付け、送球順を維持します",{result:"送球エラー",contact:"ゴロ",fielders:[8,6],errorFielder:"8"})}
+          ${example("捕球エラー","ボールを取れなかった守備番号へEを付けます",{result:"捕球エラー",contact:"ゴロ",fielders:[8,6],errorFielder:"6"})}
+          ${example("犠打","◇と送球経路を記載します",{result:"犠打",contact:"バント",fielders:[5,3],final:"out",outNumber:1})}
+          ${example("犠飛","◇と捕球した守備番号を記載します",{result:"犠飛",contact:"フライ",fielders:[7],final:"out",outNumber:2})}
+          ${example("盗塁","進塁区画にSを記載します",{result:"単打",contact:"ゴロ",fielders:[8],advances:[{from:1,to:2,mark:"S"}]})}
+          ${example("後続打者で進塁","進塁区画へ（打者番号）を記載します",{result:"単打",contact:"ゴロ",fielders:[9],advances:[{from:1,to:2,mark:"3"}]})}
+          ${example("複数進塁","2ベース以上の進塁は矢印で結びます",{result:"単打",contact:"ゴロ",fielders:[9],advances:[{from:1,to:3,mark:"4",multiBase:true}]})}
+          ${example("打撃妨害","IFと一塁までの線を記載します",{result:"打撃妨害"})}
+          ${example("走塁妨害","対象者の進塁区画にOBを記載します",{result:"単打",contact:"ゴロ",fielders:[8],advances:[{from:1,to:2,mark:"OB"}]})}
+          ${example("守備妨害","IP-守備番号とアウト番号を記載します",{result:"守備妨害",fielders:[6],final:"out",outNumber:1})}
+          ${example("得点・アウト・残塁","中央へ○、Ⅰ～Ⅲ、ℓのいずれかを記載します",{result:"単打",contact:"ゴロ",fielders:[8],final:"left"})}
+        </section>
+      </div>`;
+    target.dataset.ready="true";
+  }
+  function showLegend(show){legendVisible=show;$("#scorebookLegend").hidden=!show;$("#scorebookScroll").hidden=show;$("#scorebookLandscapeHint").hidden=show;const button=$("#openScorebookLegend");button.textContent=show?"凡例を閉じる":"凡例";button.setAttribute("aria-pressed",String(show));if(show)buildLegend();}
   function slotPlayerIds(slot){const ids=[];const add=id=>{if(id&&!ids.includes(id))ids.push(id);};(slot.history||[]).forEach(h=>{add(h.playerId);add(h.outgoingPlayerId);add(h.incomingPlayerId);});add(slot.currentPlayerId);return ids;}
   function slotPlayerEntries(state,slot){const entries=[],seen=new Set(),timing=change=>change?.inning?`${change.inning}${change.half==="bottom"?"ウラ":"オモテ"}`:"",addPlayer=(id,source={})=>{if(!id||seen.has(id))return;seen.add(id);const player=state.players.find(p=>p.id===id)||{canonicalName:id};const appearance=[...(state.appearances||[])].reverse().find(a=>a.playerId===id);const entered=(slot.history||[]).find(h=>h.incomingPlayerId===id);const initial=(slot.history||[]).find(h=>h.playerId===id&&!h.type);const marker=entered?.type==="pinchHitter"?"H":entered?.type==="pinchRunner"?"R":"";entries.push({player,position:marker||source.defensiveNumber||initial?.defensiveNumber||appearance?.defensiveNumber||appearance?.defensivePositions?.at(-1)||"",changeAt:timing(entered)});};(slot.history||[]).forEach(change=>{if(change.type==="positionChange"){addPlayer(change.playerId);entries.push({player:{canonicalName:"",uniformNumber:""},position:change.defensiveNumber||"",changeAt:timing(change)});}else{addPlayer(change.playerId,change);addPlayer(change.incomingPlayerId,change);}});addPlayer(slot.currentPlayerId);while(entries.length<3)entries.push({player:{canonicalName:"",uniformNumber:""},position:"",changeAt:""});return entries.slice(0,3);}
   function buildSheet(){
